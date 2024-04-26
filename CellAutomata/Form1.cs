@@ -171,7 +171,8 @@ public partial class Form1 : Form
     {
         while (_cts is not null && !_cts.IsCancellationRequested)
         {
-            _env.Evolve();
+            // _env.Evolve();
+            _env.EvolveMultiThread(16);
             _ = ReDraw();
 
             Debug.WriteLine($"Generation: {_env.Generation}");

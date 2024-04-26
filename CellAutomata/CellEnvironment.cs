@@ -84,7 +84,33 @@ public class CellEnvironment
             EvolveInternal();
         }
         ws.Stop();
+        MsTimeUsed = (int)ws.ElapsedMilliseconds; 
+        Generation++;
+    }
+
+    public void EvolveMultiThread(int threadCount)
+    {
+        var ws = Stopwatch.StartNew();
+        var tasks = new List<Task>();
+
+        var blocks = new List<Rectangle>();
+        var blockHeight = _rowCount / threadCount;
+        for (int i = 0; i < threadCount; i++)
+        {
+            var block = new Rectangle(0, i * blockHeight, _colWidth, blockHeight);
+            blocks.Add(block);
+        }
+
+        var sharedBitmap = CreateSnapshot();
+        Parallel.ForEach(blocks, block =>
+        {
+            EvolvePartialInternal(sharedBitmap, block);
+        });
+
+        Task.WaitAll(tasks.ToArray());
+        ws.Stop();
         MsTimeUsed = (int)ws.ElapsedMilliseconds;
+        Generation++;
     }
 
     #region Internal Methods
@@ -101,9 +127,10 @@ public class CellEnvironment
         Generation = 0;
     }
     private IByteArrayBitOperator CreateSnapshotInternal()
-    { 
+    {
         return _bitmap.Clone();
     }
+
     private void EvolveInternal()
     {
         byte n;
@@ -132,8 +159,36 @@ public class CellEnvironment
                 }
             }
         }
+    }
 
-        Generation++;
+    private void EvolvePartialInternal(IByteArrayBitOperator sharedBitMap, Rectangle block)
+    {
+        byte n;
+        var snapshot = sharedBitMap;
+
+        for (int r = block.Top; r < block.Bottom; r++)
+        {
+            for (int c = block.Left; c < block.Right; c++)
+            {
+                n = CountAliveNeighbors(snapshot, Bpc, r, c);
+
+                var bPos = Bpc.Transform(r, c);
+                if (snapshot.Get(ref bPos))
+                {
+                    if (n < 2 || n > 3)
+                    {
+                        _bitmap.Set(ref bPos, false);
+                    }
+                }
+                else
+                {
+                    if (n == 3)
+                    {
+                        _bitmap.Set(ref bPos, true);
+                    }
+                }
+            }
+        }
     }
 
     private static byte CountAliveNeighbors(IByteArrayBitOperator src, IPositionConvert cvt, int row, int col)
