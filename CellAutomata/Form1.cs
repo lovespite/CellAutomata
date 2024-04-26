@@ -76,7 +76,9 @@ public partial class Form1 : Form
         var initLeft = envWidth / 2 - vw / 2;
         var initTop = envWidth / 2 - vh / 2;
 
-        _env = new CellEnvironment(envWidth, envWidth);
+        var bitmap = new FastBitMap(new byte[envWidth * envWidth], envWidth, envWidth);
+
+        _env = new CellEnvironment(bitmap);
         _view = new ViewWindow(_env, vw, vh, CellSize);
         _view.MoveTo(initLeft, initTop);
 
@@ -292,8 +294,8 @@ public class ViewWindow
         var totalRows = _cellEnvironment.Height;
         var totalColumns = _cellEnvironment.Width;
 
-        var bitmap = new ByteArrayBitOperator(_cellEnvironment.CreateSnapshot());
-        var genText = $"Generation: {_cellEnvironment.Generation}";
+        var bitmap = _cellEnvironment.CreateSnapshot();
+        var genText = $"Generation: {_cellEnvironment.Generation}, {_cellEnvironment.MsTimeUsed} ms";
 
         graphics.Clear(Color.Black);
         DrawMainView(graphics, bitmap, bpc);
@@ -301,12 +303,11 @@ public class ViewWindow
         DrawThumbnail(graphics, bitmap, bpc, totalRows, totalColumns);
     }
 
-    private void DrawThumbnail(Graphics graphics, ByteArrayBitOperator bitmap, BitPositionConvert bpc, int totalRows, int totalColumns)
+    private void DrawThumbnail(Graphics graphics, IByteArrayBitOperator bitmap, IPositionConvert bpc, int totalRows, int totalColumns)
     {
         var thumbWidth = 240;
         var cellSize = 1;
         var thumbHeight = totalRows * thumbWidth / totalColumns;
-
 
         // top right corner
         var thumbLeft = _width * _cellSize - thumbWidth - 10;
@@ -357,7 +358,7 @@ public class ViewWindow
 
     }
 
-    private void DrawMainView(Graphics graphics, ByteArrayBitOperator bitmap, BitPositionConvert bpc)
+    private void DrawMainView(Graphics graphics, IByteArrayBitOperator bitmap, IPositionConvert bpc)
     {
         var cellSize = _cellSize;
 
