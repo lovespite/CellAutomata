@@ -33,10 +33,6 @@
             label1 = new Label();
             label2 = new Label();
             inputSize = new NumericUpDown();
-            btnStartStop = new Button();
-            btnClear = new Button();
-            btnSave = new Button();
-            btnLoad = new Button();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             loadFileToolStripMenuItem = new ToolStripMenuItem();
@@ -53,6 +49,10 @@
             toolStripSeparator2 = new ToolStripSeparator();
             clearSelectionToolStripMenuItem = new ToolStripMenuItem();
             shrinkSelectionToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator4 = new ToolStripSeparator();
+            clearAllToolStripMenuItem = new ToolStripMenuItem();
+            actionToolStripMenuItem = new ToolStripMenuItem();
+            btnStartStop = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSize).BeginInit();
@@ -63,10 +63,9 @@
             // 
             pictureBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pictureBox1.BackColor = Color.Black;
-            pictureBox1.BorderStyle = BorderStyle.Fixed3D;
             pictureBox1.Location = new Point(4, 52);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(848, 618);
+            pictureBox1.Size = new Size(935, 619);
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
             pictureBox1.DragDrop += pictureBox1_DragDrop;
@@ -109,61 +108,17 @@
             // 
             inputSize.Increment = new decimal(new int[] { 2, 0, 0, 0 });
             inputSize.Location = new Point(380, 26);
-            inputSize.Maximum = new decimal(new int[] { 11, 0, 0, 0 });
+            inputSize.Maximum = new decimal(new int[] { 21, 0, 0, 0 });
             inputSize.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             inputSize.Name = "inputSize";
             inputSize.Size = new Size(126, 23);
             inputSize.TabIndex = 3;
-            inputSize.Value = new decimal(new int[] { 6, 0, 0, 0 });
+            inputSize.Value = new decimal(new int[] { 10, 0, 0, 0 });
             inputSize.ValueChanged += inputSize_ValueChanged;
-            // 
-            // btnStartStop
-            // 
-            btnStartStop.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnStartStop.Location = new Point(858, 45);
-            btnStartStop.Name = "btnStartStop";
-            btnStartStop.Size = new Size(75, 33);
-            btnStartStop.TabIndex = 5;
-            btnStartStop.Text = "Start";
-            btnStartStop.UseVisualStyleBackColor = true;
-            btnStartStop.Click += btnStartStop_Click;
-            // 
-            // btnClear
-            // 
-            btnClear.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnClear.Location = new Point(858, 84);
-            btnClear.Name = "btnClear";
-            btnClear.Size = new Size(75, 33);
-            btnClear.TabIndex = 6;
-            btnClear.Text = "Clear";
-            btnClear.UseVisualStyleBackColor = true;
-            btnClear.Click += btnClear_Click;
-            // 
-            // btnSave
-            // 
-            btnSave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnSave.Location = new Point(858, 123);
-            btnSave.Name = "btnSave";
-            btnSave.Size = new Size(75, 33);
-            btnSave.TabIndex = 7;
-            btnSave.Text = "Save";
-            btnSave.UseVisualStyleBackColor = true;
-            btnSave.Click += btnSave_Click;
-            // 
-            // btnLoad
-            // 
-            btnLoad.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnLoad.Location = new Point(858, 162);
-            btnLoad.Name = "btnLoad";
-            btnLoad.Size = new Size(75, 33);
-            btnLoad.TabIndex = 7;
-            btnLoad.Text = "Load";
-            btnLoad.UseVisualStyleBackColor = true;
-            btnLoad.Click += btnLoad_Click;
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, editToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, editToolStripMenuItem, actionToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.RenderMode = ToolStripRenderMode.System;
@@ -208,7 +163,7 @@
             // 
             // editToolStripMenuItem
             // 
-            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, toolStripSeparator2, clearSelectionToolStripMenuItem, shrinkSelectionToolStripMenuItem });
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, toolStripSeparator2, clearSelectionToolStripMenuItem, shrinkSelectionToolStripMenuItem, toolStripSeparator4, clearAllToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(42, 21);
             editToolStripMenuItem.Text = "&Edit";
@@ -279,15 +234,39 @@
             shrinkSelectionToolStripMenuItem.Text = "S&hrink selection";
             shrinkSelectionToolStripMenuItem.Click += shrinkSelectionToolStripMenuItem_Click;
             // 
+            // toolStripSeparator4
+            // 
+            toolStripSeparator4.Name = "toolStripSeparator4";
+            toolStripSeparator4.Size = new Size(237, 6);
+            // 
+            // clearAllToolStripMenuItem
+            // 
+            clearAllToolStripMenuItem.Name = "clearAllToolStripMenuItem";
+            clearAllToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.Delete;
+            clearAllToolStripMenuItem.Size = new Size(240, 22);
+            clearAllToolStripMenuItem.Text = "Clear all";
+            clearAllToolStripMenuItem.Click += btnClear_Click;
+            // 
+            // actionToolStripMenuItem
+            // 
+            actionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnStartStop });
+            actionToolStripMenuItem.Name = "actionToolStripMenuItem";
+            actionToolStripMenuItem.Size = new Size(56, 21);
+            actionToolStripMenuItem.Text = "&Action";
+            // 
+            // btnStartStop
+            // 
+            btnStartStop.Name = "btnStartStop";
+            btnStartStop.ShortcutKeys = Keys.F5;
+            btnStartStop.Size = new Size(124, 22);
+            btnStartStop.Text = "&Start";
+            btnStartStop.Click += btnStartStop_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(943, 675);
-            Controls.Add(btnLoad);
-            Controls.Add(btnSave);
-            Controls.Add(btnClear);
-            Controls.Add(btnStartStop);
             Controls.Add(label2);
             Controls.Add(inputSize);
             Controls.Add(label1);
@@ -315,10 +294,6 @@
         private Label label1;
         private Label label2;
         private NumericUpDown inputSize;
-        private Button btnStartStop;
-        private Button btnClear;
-        private Button btnSave;
-        private Button btnLoad;
         private MenuStrip menuStrip1;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem loadFileToolStripMenuItem;
@@ -335,5 +310,9 @@
         private ToolStripMenuItem clearSelectionToolStripMenuItem;
         private ToolStripMenuItem shrinkSelectionToolStripMenuItem;
         private ToolStripMenuItem fillToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator4;
+        private ToolStripMenuItem clearAllToolStripMenuItem;
+        private ToolStripMenuItem actionToolStripMenuItem;
+        private ToolStripMenuItem btnStartStop;
     }
 }

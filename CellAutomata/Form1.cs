@@ -276,7 +276,14 @@ public partial class Form1 : Form
         {
             Invoke((MethodInvoker)delegate
             {
-                pictureBox1.Invalidate();
+                try
+                {
+                    pictureBox1.Invalidate();
+                }
+                catch
+                {
+                    // ignore
+                }
             });
         });
     }

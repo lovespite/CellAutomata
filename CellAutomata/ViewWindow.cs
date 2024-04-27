@@ -65,7 +65,7 @@ public class ViewWindow
 
     public event EventHandler? SelectionChanged;
 
-    private readonly Font _font = new("Arial", 12);
+    private readonly Font _font = new("Arial", 9);
 
     private int _left = 0;
     private int _top = 0;
@@ -81,6 +81,16 @@ public class ViewWindow
         _width = width;
         _height = height;
         _cellSize = cellSize;
+
+        if (_left + _width > _cellEnvironment.Width)
+        {
+            _left = _cellEnvironment.Width - _width;
+        }
+
+        if (_top + _height > _cellEnvironment.Height)
+        {
+            _top = _cellEnvironment.Height - _height;
+        }
     }
 
     public void MoveTo(int left, int top)
@@ -108,11 +118,6 @@ public class ViewWindow
             _top = 0;
         }
 
-    }
-
-    public void Move(int deltaX, int deltaY)
-    {
-        MoveTo(_left + deltaX, _top + deltaY);
     }
 
     public ViewWindow(CellEnvironment cellEnvironment, int width, int height, int cellSize)
@@ -147,8 +152,8 @@ public class ViewWindow
         var thumbHeight = totalRows * thumbWidth / totalColumns;
 
         // top right corner
-        var thumbLeft = _width * _cellSize - thumbWidth - 10;
-        var thumbTop = 10;
+        var thumbLeft = 15;
+        var thumbTop = 15;
 
         var rect = new Rectangle(
             x: thumbLeft,
@@ -268,8 +273,8 @@ public class ViewWindow
     private void DrawGenerationText(Graphics graphics, string genText)
     {
         var size = graphics.MeasureString(genText, _font);
-        var rect = new RectangleF(0, 0, size.Width, size.Height);
+        var rect = new RectangleF(15, 0, size.Width, size.Height);
         graphics.FillRectangle(Brushes.Black, rect);
-        graphics.DrawString(genText, _font, Brushes.White, 0, 0);
+        graphics.DrawString(genText, _font, Brushes.White, rect);
     }
 }
