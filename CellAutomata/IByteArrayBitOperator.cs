@@ -1,6 +1,6 @@
 ﻿namespace CellAutomata
 {
-    public interface IByteArrayBitOperator
+    public interface IByteArrayBitOperator: IDisposable
     {
         byte[] Bytes { get; }
         IPositionConvert Bpc { get; }

@@ -1,23 +1,32 @@
-﻿namespace CellAutomata;
+﻿using System.Buffers;
+
+namespace CellAutomata;
 
 public class BitMap : IByteArrayBitOperator
 {
     private readonly byte[] _bytes;
     private readonly IPositionConvert _bpc;
 
-    public BitMap(byte[] bytes, int rows, int columns)
+    public BitMap(int rows, int columns)
     {
-        _bytes = bytes;
+        var byteLength = (int)Math.Ceiling((double)(rows * columns) / 8);
+        _bytes = ArrayPool<byte>.Shared.Rent(byteLength);
         _bpc = new BitPositionConvert(columns, rows);
+    }
+
+    public void Dispose()
+    {
+        ArrayPool<byte>.Shared.Return(_bytes);
+        GC.SuppressFinalize(this);
     }
 
     public IPositionConvert Bpc => _bpc;
 
     public IByteArrayBitOperator Clone()
     {
-        var bytes = new byte[_bytes.Length];
-        Buffer.BlockCopy(_bytes, 0, bytes, 0, _bytes.Length);
-        return new BitMap(bytes, _bpc.Height, _bpc.Width);
+        var clone = new BitMap(_bpc.Height, _bpc.Width);
+        Buffer.BlockCopy(_bytes, 0, clone.Bytes, 0, _bytes.Length);
+        return clone;
     }
 
     public byte[] Bytes => _bytes;
@@ -55,19 +64,27 @@ public class FastBitMap : IByteArrayBitOperator
 {
     private readonly byte[] _bytes;
     private readonly IPositionConvert _bpc;
-    public FastBitMap(byte[] bytes, int rows, int columns)
+    public FastBitMap(int rows, int columns)
     {
-        _bytes = bytes;
+        var byteLength = (rows * columns);
+        _bytes = ArrayPool<byte>.Shared.Rent(byteLength);
+
         _bpc = new FastBitPositionConvert(columns, rows);
+    }
+
+    public void Dispose()
+    {
+        ArrayPool<byte>.Shared.Return(_bytes);
+        GC.SuppressFinalize(this);
     }
 
     public IPositionConvert Bpc => _bpc;
 
     public IByteArrayBitOperator Clone()
     {
-        var bytes = new byte[_bytes.Length];
-        Buffer.BlockCopy(_bytes, 0, bytes, 0, _bytes.Length);
-        return new FastBitMap(bytes, _bpc.Height, _bpc.Width);
+        var clone = new FastBitMap(_bpc.Height, _bpc.Width);
+        Buffer.BlockCopy(_bytes, 0, clone.Bytes, 0, _bytes.Length);
+        return clone;
     }
 
     public byte[] Bytes => _bytes;

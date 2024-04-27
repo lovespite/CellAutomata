@@ -48,7 +48,7 @@
             pictureBox1.BackColor = Color.Black;
             pictureBox1.Location = new Point(12, 45);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(919, 618);
+            pictureBox1.Size = new Size(838, 618);
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
             pictureBox1.Paint += pictureBox1_Paint;
@@ -58,14 +58,14 @@
             // 
             // inputSpeed
             // 
-            inputSpeed.Increment = new decimal(new int[] { 100, 0, 0, 0 });
+            inputSpeed.Increment = new decimal(new int[] { 20, 0, 0, 0 });
             inputSpeed.Location = new Point(144, 11);
             inputSpeed.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
-            inputSpeed.Minimum = new decimal(new int[] { 100, 0, 0, 0 });
+            inputSpeed.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             inputSpeed.Name = "inputSpeed";
             inputSpeed.Size = new Size(126, 23);
             inputSpeed.TabIndex = 1;
-            inputSpeed.Value = new decimal(new int[] { 200, 0, 0, 0 });
+            inputSpeed.Value = new decimal(new int[] { 100, 0, 0, 0 });
             // 
             // label1
             // 
@@ -94,12 +94,13 @@
             inputSize.Name = "inputSize";
             inputSize.Size = new Size(126, 23);
             inputSize.TabIndex = 3;
-            inputSize.Value = new decimal(new int[] { 10, 0, 0, 0 });
+            inputSize.Value = new decimal(new int[] { 6, 0, 0, 0 });
             inputSize.ValueChanged += inputSize_ValueChanged;
             // 
             // btnStartStop
             // 
-            btnStartStop.Location = new Point(521, 5);
+            btnStartStop.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnStartStop.Location = new Point(858, 45);
             btnStartStop.Name = "btnStartStop";
             btnStartStop.Size = new Size(75, 33);
             btnStartStop.TabIndex = 5;
@@ -109,7 +110,8 @@
             // 
             // btnClear
             // 
-            btnClear.Location = new Point(602, 5);
+            btnClear.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnClear.Location = new Point(858, 84);
             btnClear.Name = "btnClear";
             btnClear.Size = new Size(75, 33);
             btnClear.TabIndex = 6;
@@ -119,21 +121,25 @@
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(683, 5);
+            btnSave.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnSave.Location = new Point(858, 123);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(75, 33);
             btnSave.TabIndex = 7;
             btnSave.Text = "Save";
             btnSave.UseVisualStyleBackColor = true;
+            btnSave.Click += btnSave_Click;
             // 
             // btnLoad
             // 
-            btnLoad.Location = new Point(764, 5);
+            btnLoad.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnLoad.Location = new Point(858, 162);
             btnLoad.Name = "btnLoad";
             btnLoad.Size = new Size(75, 33);
             btnLoad.TabIndex = 7;
             btnLoad.Text = "Load";
             btnLoad.UseVisualStyleBackColor = true;
+            btnLoad.Click += btnLoad_Click;
             // 
             // Form1
             // 
@@ -151,6 +157,7 @@
             Controls.Add(pictureBox1);
             Name = "Form1";
             Text = "Cell Automata";
+            FormClosed += Form1_FormClosed;
             Load += Form1_Load;
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).EndInit();

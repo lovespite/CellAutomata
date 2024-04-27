@@ -6,7 +6,6 @@ public class CellEnvironment
 {
     private readonly int _colWidth;
     private readonly int _rowCount;
-    private readonly IList<(int, int)> _rCells = new List<(int, int)>();
 
     private readonly byte[] _cells;
     private readonly IByteArrayBitOperator _bitmap;
@@ -24,7 +23,6 @@ public class CellEnvironment
         _cells = bitmap.Bytes;
         _colWidth = bitmap.Bpc.Width;
         _rowCount = bitmap.Bpc.Height;
-
     }
 
     public long Generation { get; private set; } = 0;
@@ -35,6 +33,22 @@ public class CellEnvironment
         lock (_lock)
         {
             ToggleCellInternal(row, col);
+        }
+    }
+
+    public void ActivateCell(int row, int col)
+    {
+        lock (_lock)
+        {
+            ActivateCellInternal(row, col);
+        }
+    }
+
+    public void DeactivateCell(int row, int col)
+    {
+        lock (_lock)
+        {
+            DeactivateCellInternal(row, col);
         }
     }
 
@@ -54,7 +68,6 @@ public class CellEnvironment
             return CreateSnapshotInternal();
         }
     }
-
 
     public async Task SaveTo(string file)
     {
@@ -84,30 +97,33 @@ public class CellEnvironment
             EvolveInternal();
         }
         ws.Stop();
-        MsTimeUsed = (int)ws.ElapsedMilliseconds; 
+        MsTimeUsed = (int)ws.ElapsedMilliseconds;
         Generation++;
     }
 
     public void EvolveMultiThread(int threadCount)
     {
         var ws = Stopwatch.StartNew();
-        var tasks = new List<Task>();
 
         var blocks = new List<Rectangle>();
         var blockHeight = _rowCount / threadCount;
         for (int i = 0; i < threadCount; i++)
         {
             var block = new Rectangle(0, i * blockHeight, _colWidth, blockHeight);
+            if (i == threadCount - 1)
+            {
+                // last block, adjust height to the end
+                block.Height = _rowCount - block.Top;
+            }
             blocks.Add(block);
         }
 
-        var sharedBitmap = CreateSnapshot();
+        using var sharedBitmap = CreateSnapshot();
         Parallel.ForEach(blocks, block =>
         {
             EvolvePartialInternal(sharedBitmap, block);
         });
 
-        Task.WaitAll(tasks.ToArray());
         ws.Stop();
         MsTimeUsed = (int)ws.ElapsedMilliseconds;
         Generation++;
@@ -119,8 +135,20 @@ public class CellEnvironment
     {
         var bPos = Bpc.Transform(row, col);
         _bitmap.Toggle(ref bPos);
-        _rCells.Add((row, col));
     }
+
+    private void ActivateCellInternal(int row, int col)
+    {
+        var bPos = Bpc.Transform(row, col);
+        _bitmap.Set(ref bPos, true);
+    }
+
+    private void DeactivateCellInternal(int row, int col)
+    {
+        var bPos = Bpc.Transform(row, col);
+        _bitmap.Set(ref bPos, false);
+    }
+
     private void ClearInternal()
     {
         Array.Clear(_cells, 0, _cells.Length);
@@ -175,7 +203,7 @@ public class CellEnvironment
                 var bPos = Bpc.Transform(r, c);
                 if (snapshot.Get(ref bPos))
                 {
-                    if (n < 2 || n > 3)
+                    if (n < 2 || n > 4)
                     {
                         _bitmap.Set(ref bPos, false);
                     }
