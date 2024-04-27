@@ -8,7 +8,7 @@ public class CellEnvironment
     private readonly int _rowCount;
 
     private readonly byte[] _cells;
-    private readonly IByteArrayBitOperator _bitmap;
+    private readonly IBitMap _bitmap;
 
     public IPositionConvert Bpc => _bitmap.Bpc;
 
@@ -17,12 +17,20 @@ public class CellEnvironment
 
     private readonly object _lock = new();
 
-    public CellEnvironment(IByteArrayBitOperator bitmap)
+    public CellEnvironment(IBitMap bitmap)
     {
         _bitmap = bitmap;
         _cells = bitmap.Bytes;
         _colWidth = bitmap.Bpc.Width;
         _rowCount = bitmap.Bpc.Height;
+    }
+
+    public void Lock(Action<IBitMap> action)
+    {
+        lock (_lock)
+        {
+            action(_bitmap);
+        }
     }
 
     public long Generation { get; private set; } = 0;
@@ -33,6 +41,38 @@ public class CellEnvironment
         lock (_lock)
         {
             ToggleCellInternal(row, col);
+        }
+    }
+
+    public bool IsAlive(int row, int col)
+    {
+        lock (_lock)
+        {
+            var bPos = Bpc.Transform(row, col);
+            return _bitmap.Get(ref bPos);
+        }
+    }
+
+    public IReadOnlyCollection<Point> GetRegionAliveCells(Rectangle rect)
+    {
+        lock (_lock)
+        {
+            var result = new List<Point>();
+            var bpc = Bpc;
+
+            for (int r = rect.Top; r < rect.Bottom; r++)
+            {
+                for (int c = rect.Left; c < rect.Right; c++)
+                {
+                    var bPos = bpc.Transform(r, c);
+                    if (_bitmap.Get(ref bPos))
+                    {
+                        result.Add(new Point(c, r));
+                    }
+                }
+            }
+
+            return result;
         }
     }
 
@@ -61,7 +101,7 @@ public class CellEnvironment
     }
 
 
-    public IByteArrayBitOperator CreateSnapshot()
+    public IBitMap CreateSnapshot()
     {
         lock (_lock)
         {
@@ -154,21 +194,21 @@ public class CellEnvironment
         Array.Clear(_cells, 0, _cells.Length);
         Generation = 0;
     }
-    private IByteArrayBitOperator CreateSnapshotInternal()
+    private IBitMap CreateSnapshotInternal()
     {
-        return _bitmap.Clone();
+        return _bitmap.CreateSnapshot();
     }
 
     private void EvolveInternal()
     {
         byte n;
-        var snapshot = _bitmap.Clone();
+        var snapshot = _bitmap.CreateSnapshot();
 
         for (int r = 0; r < _rowCount; r++)
         {
             for (int c = 0; c < _colWidth; c++)
             {
-                n = CountAliveNeighbors(snapshot, Bpc, r, c);
+                n = CountAliveNeighbors(snapshot, r, c);
 
                 var bPos = Bpc.Transform(r, c);
                 if (snapshot.Get(ref bPos))
@@ -189,7 +229,7 @@ public class CellEnvironment
         }
     }
 
-    private void EvolvePartialInternal(IByteArrayBitOperator sharedBitMap, Rectangle block)
+    private void EvolvePartialInternal(IBitMap sharedBitMap, Rectangle block)
     {
         byte n;
         var snapshot = sharedBitMap;
@@ -198,7 +238,7 @@ public class CellEnvironment
         {
             for (int c = block.Left; c < block.Right; c++)
             {
-                n = CountAliveNeighbors(snapshot, Bpc, r, c);
+                n = CountAliveNeighbors(snapshot, r, c);
 
                 var bPos = Bpc.Transform(r, c);
                 if (snapshot.Get(ref bPos))
@@ -219,9 +259,12 @@ public class CellEnvironment
         }
     }
 
-    private static byte CountAliveNeighbors(IByteArrayBitOperator src, IPositionConvert cvt, int row, int col)
+    private static byte CountAliveNeighbors(IBitMap src, int row, int col)
     {
         byte count = 0;
+        var cvt = src.Bpc;
+        var width = cvt.Width;
+        var height = cvt.Height;
 
         for (int r = row - 1; r <= row + 1; r++)
         {
@@ -232,7 +275,7 @@ public class CellEnvironment
                     continue;
                 }
 
-                if (r < 0 || r >= cvt.Height || c < 0 || c >= cvt.Width)
+                if (r < 0 || r >= height || c < 0 || c >= width)
                 {
                     continue;
                 }

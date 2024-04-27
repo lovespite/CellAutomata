@@ -37,20 +37,40 @@
             btnClear = new Button();
             btnSave = new Button();
             btnLoad = new Button();
+            menuStrip1 = new MenuStrip();
+            fileToolStripMenuItem = new ToolStripMenuItem();
+            loadFileToolStripMenuItem = new ToolStripMenuItem();
+            saveToToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator1 = new ToolStripSeparator();
+            exitToolStripMenuItem = new ToolStripMenuItem();
+            editToolStripMenuItem = new ToolStripMenuItem();
+            fillToolStripMenuItem = new ToolStripMenuItem();
+            clearCellsToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator3 = new ToolStripSeparator();
+            copyToolStripMenuItem = new ToolStripMenuItem();
+            cutToolStripMenuItem = new ToolStripMenuItem();
+            pasteToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator2 = new ToolStripSeparator();
+            clearSelectionToolStripMenuItem = new ToolStripMenuItem();
+            shrinkSelectionToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSize).BeginInit();
+            menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // pictureBox1
             // 
             pictureBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pictureBox1.BackColor = Color.Black;
-            pictureBox1.Location = new Point(12, 45);
+            pictureBox1.BorderStyle = BorderStyle.Fixed3D;
+            pictureBox1.Location = new Point(4, 52);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(838, 618);
+            pictureBox1.Size = new Size(848, 618);
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
+            pictureBox1.DragDrop += pictureBox1_DragDrop;
+            pictureBox1.DragEnter += pictureBox1_DragEnter;
             pictureBox1.Paint += pictureBox1_Paint;
             pictureBox1.MouseDown += pictureBox1_MouseDown;
             pictureBox1.MouseMove += pictureBox1_MouseMove;
@@ -59,7 +79,7 @@
             // inputSpeed
             // 
             inputSpeed.Increment = new decimal(new int[] { 20, 0, 0, 0 });
-            inputSpeed.Location = new Point(144, 11);
+            inputSpeed.Location = new Point(140, 26);
             inputSpeed.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
             inputSpeed.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             inputSpeed.Name = "inputSpeed";
@@ -70,7 +90,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(12, 13);
+            label1.Location = new Point(8, 28);
             label1.Name = "label1";
             label1.Size = new Size(126, 17);
             label1.TabIndex = 2;
@@ -79,7 +99,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(288, 15);
+            label2.Location = new Point(284, 30);
             label2.Name = "label2";
             label2.Size = new Size(90, 17);
             label2.TabIndex = 4;
@@ -88,7 +108,7 @@
             // inputSize
             // 
             inputSize.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-            inputSize.Location = new Point(384, 11);
+            inputSize.Location = new Point(380, 26);
             inputSize.Maximum = new decimal(new int[] { 11, 0, 0, 0 });
             inputSize.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             inputSize.Name = "inputSize";
@@ -141,6 +161,124 @@
             btnLoad.UseVisualStyleBackColor = true;
             btnLoad.Click += btnLoad_Click;
             // 
+            // menuStrip1
+            // 
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, editToolStripMenuItem });
+            menuStrip1.Location = new Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.RenderMode = ToolStripRenderMode.System;
+            menuStrip1.Size = new Size(943, 25);
+            menuStrip1.TabIndex = 8;
+            menuStrip1.Text = "menuStrip1";
+            // 
+            // fileToolStripMenuItem
+            // 
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadFileToolStripMenuItem, saveToToolStripMenuItem, toolStripSeparator1, exitToolStripMenuItem });
+            fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+            fileToolStripMenuItem.Size = new Size(39, 21);
+            fileToolStripMenuItem.Text = "&File";
+            // 
+            // loadFileToolStripMenuItem
+            // 
+            loadFileToolStripMenuItem.Name = "loadFileToolStripMenuItem";
+            loadFileToolStripMenuItem.ShortcutKeys = Keys.F1;
+            loadFileToolStripMenuItem.Size = new Size(166, 22);
+            loadFileToolStripMenuItem.Text = "&Load File";
+            loadFileToolStripMenuItem.Click += btnLoad_Click;
+            // 
+            // saveToToolStripMenuItem
+            // 
+            saveToToolStripMenuItem.Name = "saveToToolStripMenuItem";
+            saveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
+            saveToToolStripMenuItem.Size = new Size(166, 22);
+            saveToToolStripMenuItem.Text = "&Save To";
+            saveToToolStripMenuItem.Click += btnSave_Click;
+            // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(163, 6);
+            // 
+            // exitToolStripMenuItem
+            // 
+            exitToolStripMenuItem.Name = "exitToolStripMenuItem";
+            exitToolStripMenuItem.Size = new Size(166, 22);
+            exitToolStripMenuItem.Text = "Exit";
+            exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
+            // 
+            // editToolStripMenuItem
+            // 
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, toolStripSeparator2, clearSelectionToolStripMenuItem, shrinkSelectionToolStripMenuItem });
+            editToolStripMenuItem.Name = "editToolStripMenuItem";
+            editToolStripMenuItem.Size = new Size(42, 21);
+            editToolStripMenuItem.Text = "&Edit";
+            // 
+            // fillToolStripMenuItem
+            // 
+            fillToolStripMenuItem.Name = "fillToolStripMenuItem";
+            fillToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.F;
+            fillToolStripMenuItem.Size = new Size(240, 22);
+            fillToolStripMenuItem.Text = "&Fill";
+            fillToolStripMenuItem.Click += fillToolStripMenuItem_Click;
+            // 
+            // clearCellsToolStripMenuItem
+            // 
+            clearCellsToolStripMenuItem.Name = "clearCellsToolStripMenuItem";
+            clearCellsToolStripMenuItem.ShortcutKeys = Keys.Delete;
+            clearCellsToolStripMenuItem.Size = new Size(240, 22);
+            clearCellsToolStripMenuItem.Text = "&Clear selected cells";
+            clearCellsToolStripMenuItem.Click += clearSelectedCellsToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator3
+            // 
+            toolStripSeparator3.Name = "toolStripSeparator3";
+            toolStripSeparator3.Size = new Size(237, 6);
+            // 
+            // copyToolStripMenuItem
+            // 
+            copyToolStripMenuItem.Name = "copyToolStripMenuItem";
+            copyToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.C;
+            copyToolStripMenuItem.Size = new Size(240, 22);
+            copyToolStripMenuItem.Text = "C&opy";
+            copyToolStripMenuItem.Click += copyToolStripMenuItem_Click;
+            // 
+            // cutToolStripMenuItem
+            // 
+            cutToolStripMenuItem.Name = "cutToolStripMenuItem";
+            cutToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.X;
+            cutToolStripMenuItem.Size = new Size(240, 22);
+            cutToolStripMenuItem.Text = "C&ut";
+            cutToolStripMenuItem.Click += cutToolStripMenuItem_Click;
+            // 
+            // pasteToolStripMenuItem
+            // 
+            pasteToolStripMenuItem.Name = "pasteToolStripMenuItem";
+            pasteToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.V;
+            pasteToolStripMenuItem.Size = new Size(240, 22);
+            pasteToolStripMenuItem.Text = "&Paste";
+            pasteToolStripMenuItem.Click += pasteToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator2
+            // 
+            toolStripSeparator2.Name = "toolStripSeparator2";
+            toolStripSeparator2.Size = new Size(237, 6);
+            // 
+            // clearSelectionToolStripMenuItem
+            // 
+            clearSelectionToolStripMenuItem.Name = "clearSelectionToolStripMenuItem";
+            clearSelectionToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.A;
+            clearSelectionToolStripMenuItem.Size = new Size(240, 22);
+            clearSelectionToolStripMenuItem.Text = "Clear &selection";
+            clearSelectionToolStripMenuItem.Click += clearSelectionToolStripMenuItem_Click;
+            // 
+            // shrinkSelectionToolStripMenuItem
+            // 
+            shrinkSelectionToolStripMenuItem.Name = "shrinkSelectionToolStripMenuItem";
+            shrinkSelectionToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.A;
+            shrinkSelectionToolStripMenuItem.Size = new Size(240, 22);
+            shrinkSelectionToolStripMenuItem.Text = "S&hrink selection";
+            shrinkSelectionToolStripMenuItem.Click += shrinkSelectionToolStripMenuItem_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
@@ -155,6 +293,8 @@
             Controls.Add(label1);
             Controls.Add(inputSpeed);
             Controls.Add(pictureBox1);
+            Controls.Add(menuStrip1);
+            MainMenuStrip = menuStrip1;
             Name = "Form1";
             Text = "Cell Automata";
             FormClosed += Form1_FormClosed;
@@ -162,6 +302,8 @@
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).EndInit();
             ((System.ComponentModel.ISupportInitialize)inputSize).EndInit();
+            menuStrip1.ResumeLayout(false);
+            menuStrip1.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -177,5 +319,21 @@
         private Button btnClear;
         private Button btnSave;
         private Button btnLoad;
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem fileToolStripMenuItem;
+        private ToolStripMenuItem loadFileToolStripMenuItem;
+        private ToolStripMenuItem saveToToolStripMenuItem;
+        private ToolStripMenuItem editToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator1;
+        private ToolStripMenuItem exitToolStripMenuItem;
+        private ToolStripMenuItem clearCellsToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator3;
+        private ToolStripMenuItem copyToolStripMenuItem;
+        private ToolStripMenuItem cutToolStripMenuItem;
+        private ToolStripMenuItem pasteToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator2;
+        private ToolStripMenuItem clearSelectionToolStripMenuItem;
+        private ToolStripMenuItem shrinkSelectionToolStripMenuItem;
+        private ToolStripMenuItem fillToolStripMenuItem;
     }
 }

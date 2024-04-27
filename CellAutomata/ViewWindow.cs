@@ -8,6 +8,63 @@ public class ViewWindow
     private int _height;
     private int _cellSize;
 
+    private Point _selStart;
+    private Point _selEnd;
+
+    public Point SelectionStart => _selStart;
+    public Point SelectionEnd => _selEnd;
+
+    private int _selected = 0;
+    public bool IsSelected => _selected > 0;
+
+    public Rectangle GetSelection()
+    {
+        if (_selected == 0)
+        {
+            return Rectangle.Empty;
+        }
+
+        var ps = _selStart;
+        var pe = _selEnd;
+
+        var x = Math.Min(ps.X, pe.X);
+        var y = Math.Min(ps.Y, pe.Y);
+        var width = Math.Abs(ps.X - pe.X) + 1;
+        var height = Math.Abs(ps.Y - pe.Y) + 1;
+
+        return new Rectangle(x, y, width, height);
+    }
+
+    public void SetSelection(Point p1, Point p2)
+    {
+        p1.X = Math.Max(0, p1.X);
+        p1.Y = Math.Max(0, p1.Y);
+
+        p2.X = Math.Max(0, p2.X);
+        p2.Y = Math.Max(0, p2.Y);
+
+        p1.X = Math.Min(_cellEnvironment.Width - 1, p1.X);
+        p1.Y = Math.Min(_cellEnvironment.Height - 1, p1.Y);
+
+        p2.X = Math.Min(_cellEnvironment.Width - 1, p2.X);
+        p2.Y = Math.Min(_cellEnvironment.Height - 1, p2.Y);
+
+        _selStart = p1;
+        _selEnd = p2;
+
+        _selected = 1;
+
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ClearSelection()
+    {
+        _selected = 0;
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public event EventHandler? SelectionChanged;
+
     private readonly Font _font = new("Arial", 12);
 
     private int _left = 0;
@@ -77,11 +134,13 @@ public class ViewWindow
 
         graphics.Clear(Color.Black);
         DrawMainView(graphics, bitmap, bpc);
+        DrawGridLines(graphics);
+        DrawSelection(graphics);
         DrawGenerationText(graphics, genText);
         DrawThumbnail(graphics, bitmap, bpc, totalRows, totalColumns);
     }
 
-    private void DrawThumbnail(Graphics graphics, IByteArrayBitOperator bitmap, IPositionConvert bpc, int totalRows, int totalColumns)
+    private void DrawThumbnail(Graphics graphics, IBitMap bitmap, IPositionConvert bpc, int totalRows, int totalColumns)
     {
         var thumbWidth = ThumbnailWidth;
         var cellSize = 1;
@@ -143,7 +202,7 @@ public class ViewWindow
 
     }
 
-    private void DrawMainView(Graphics graphics, IByteArrayBitOperator bitmap, IPositionConvert bpc)
+    private void DrawMainView(Graphics graphics, IBitMap bitmap, IPositionConvert bpc)
     {
         var cellSize = _cellSize;
 
@@ -168,6 +227,42 @@ public class ViewWindow
                 graphics.FillRectangle(Brushes.White, calcX, calcY, cellSize, cellSize);
             }
         }
+    }
+
+    private readonly Pen _gridPen = new(Color.FromArgb(0x12, Color.White), 1);
+    private void DrawGridLines(Graphics graphics)
+    {
+        var cellSize = _cellSize;
+
+        for (int row = 0; row < _height; row++)
+        {
+            graphics.DrawLine(_gridPen, 0, row * cellSize, _width * cellSize, row * cellSize);
+        }
+
+        for (int col = 0; col < _width; col++)
+        {
+            graphics.DrawLine(_gridPen, col * cellSize, 0, col * cellSize, _height * cellSize);
+        }
+    }
+
+    private readonly Brush _selectionBrush = new SolidBrush(Color.FromArgb(0x45, Color.Blue));
+    private void DrawSelection(Graphics graphics)
+    {
+        var selection = GetSelection();
+
+        if (selection.IsEmpty)
+        {
+            return;
+        }
+
+        var rect = new Rectangle(
+            x: (selection.X - _left) * _cellSize,
+            y: (selection.Y - _top) * _cellSize,
+            width: selection.Width * _cellSize,
+            height: selection.Height * _cellSize);
+
+        graphics.FillRectangle(_selectionBrush, rect);
+        graphics.DrawRectangle(Pens.Blue, rect);
     }
 
     private void DrawGenerationText(Graphics graphics, string genText)
