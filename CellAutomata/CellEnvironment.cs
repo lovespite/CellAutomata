@@ -203,7 +203,7 @@ public class CellEnvironment
                 var bPos = Bpc.Transform(r, c);
                 if (snapshot.Get(ref bPos))
                 {
-                    if (n < 2 || n > 4)
+                    if (n < 2 || n > 3)
                     {
                         _bitmap.Set(ref bPos, false);
                     }
