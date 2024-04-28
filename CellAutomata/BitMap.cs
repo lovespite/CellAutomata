@@ -58,7 +58,7 @@ public class BitMap : IBitMap
         return clone;
     }
 
-    public void BlockCopy(IBitMap source, Rectangle sourceRect, Rectangle destRect)
+    public void BlockCopy(IBitMap source, Rectangle sourceRect, Rectangle destRect, CopyMode mode = CopyMode.Overwrite)
     {
         if (sourceRect.IsEmpty) throw new ArgumentException("Source rectangle is empty", nameof(sourceRect));
         if (destRect.IsEmpty) throw new ArgumentException("Destination rectangle is empty", nameof(destRect));
@@ -70,23 +70,41 @@ public class BitMap : IBitMap
                 var srcBPos = source.Bpc.Transform(sourceRect.Y + row, sourceRect.X + col);
                 var dstBPos = _bpc.Transform(destRect.Y + row, destRect.X + col);
 
-                Set(ref dstBPos, source.Get(ref srcBPos));
+                var dstVal = Get(ref dstBPos);
+                var srcVal = source.Get(ref srcBPos);
+                switch (mode)
+                {
+                    case CopyMode.Overwrite:
+                        Set(ref dstBPos, srcVal);
+                        break;
+                    case CopyMode.Or:
+                        Set(ref dstBPos, dstVal | srcVal);
+                        break;
+                    case CopyMode.And:
+                        Set(ref dstBPos, dstVal & srcVal);
+                        break;
+                    case CopyMode.Xor:
+                        Set(ref dstBPos, dstVal ^ srcVal);
+                        break;
+                }
             }
         }
     }
 
-    public void BlockCopy(IBitMap source, Point destLocation)
+    public void BlockCopy(IBitMap source, Point destLocation, CopyMode mode = CopyMode.Overwrite)
     {
         var sourceRect = new Rectangle(0, 0, source.Bpc.Width, source.Bpc.Height);
         var destRect = new Rectangle(destLocation, sourceRect.Size);
 
-        BlockCopy(source, sourceRect, destRect);
+        BlockCopy(source, sourceRect, destRect, mode);
     }
 
     public byte[] Bytes => _bytes;
 
     public bool Get(ref BitPosition bPos)
     {
+        if (bPos.ByteArrayIndex < 0 | bPos.ByteArrayIndex >= _bytes.Length) return false;
+
         byte mask = (byte)(1 << bPos.BitIndex);
 
         return (_bytes[bPos.ByteArrayIndex] & mask) != 0;
@@ -94,6 +112,7 @@ public class BitMap : IBitMap
 
     public void Set(ref BitPosition bPos, bool value)
     {
+        if (bPos.ByteArrayIndex < 0 | bPos.ByteArrayIndex >= _bytes.Length) return;
         byte mask = (byte)(1 << bPos.BitIndex);
 
         if (value)
@@ -173,7 +192,7 @@ public class FastBitMap : IBitMap
         return clone;
     }
 
-    public void BlockCopy(IBitMap source, Rectangle sourceRect, Rectangle destRect)
+    public void BlockCopy(IBitMap source, Rectangle sourceRect, Rectangle destRect, CopyMode mode = CopyMode.Overwrite)
     {
         if (sourceRect.IsEmpty) throw new ArgumentException("Source rectangle is empty", nameof(sourceRect));
         if (destRect.IsEmpty) throw new ArgumentException("Destination rectangle is empty", nameof(destRect));
@@ -187,18 +206,31 @@ public class FastBitMap : IBitMap
                 {
                     var srcBPos = source.Bpc.Transform(sourceRect.Y + row, sourceRect.X);
                     var dstBPos = _bpc.Transform(destRect.Y + row, destRect.X);
-                    Buffer.MemoryCopy(src + srcBPos.Index, dst + dstBPos.Index, sourceRect.Width, sourceRect.Width);
+
+                    switch (mode)
+                    {
+                        case CopyMode.Overwrite:
+                            Buffer.MemoryCopy(src + srcBPos.Index, dst + dstBPos.Index, sourceRect.Width, sourceRect.Width);
+                            break;
+                        case CopyMode.Or:
+                        case CopyMode.And:
+                        case CopyMode.Xor:
+                        default:
+                            throw new NotImplementedException();
+
+                    }
+
                 }
             }
         }
     }
 
-    public void BlockCopy(IBitMap source, Point destLocation)
+    public void BlockCopy(IBitMap source, Point destLocation, CopyMode mode = CopyMode.Overwrite)
     {
         var sourceRect = new Rectangle(0, 0, source.Bpc.Width, source.Bpc.Height);
         var destRect = new Rectangle(destLocation, sourceRect.Size);
 
-        BlockCopy(source, sourceRect, destRect);
+        BlockCopy(source, sourceRect, destRect, mode);
     }
 
     public byte[] Bytes => _bytes;

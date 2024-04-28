@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            pictureBox1 = new PictureBox();
+            canvas = new PictureBox();
             inputSpeed = new NumericUpDown();
             label1 = new Label();
             label2 = new Label();
@@ -46,6 +46,11 @@
             copyToolStripMenuItem = new ToolStripMenuItem();
             cutToolStripMenuItem = new ToolStripMenuItem();
             pasteToolStripMenuItem = new ToolStripMenuItem();
+            pasteMethodToolStripMenuItem = new ToolStripMenuItem();
+            pasteOverwrite = new ToolStripMenuItem();
+            pasteOr = new ToolStripMenuItem();
+            pasteAnd = new ToolStripMenuItem();
+            pasteXor = new ToolStripMenuItem();
             toolStripSeparator2 = new ToolStripSeparator();
             clearSelectionToolStripMenuItem = new ToolStripMenuItem();
             shrinkSelectionToolStripMenuItem = new ToolStripMenuItem();
@@ -53,27 +58,26 @@
             clearAllToolStripMenuItem = new ToolStripMenuItem();
             actionToolStripMenuItem = new ToolStripMenuItem();
             btnStartStop = new ToolStripMenuItem();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSize).BeginInit();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
-            // pictureBox1
+            // canvas
             // 
-            pictureBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            pictureBox1.BackColor = Color.Black;
-            pictureBox1.Location = new Point(4, 52);
-            pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(935, 619);
-            pictureBox1.TabIndex = 0;
-            pictureBox1.TabStop = false;
-            pictureBox1.DragDrop += pictureBox1_DragDrop;
-            pictureBox1.DragEnter += pictureBox1_DragEnter;
-            pictureBox1.Paint += pictureBox1_Paint;
-            pictureBox1.MouseDown += pictureBox1_MouseDown;
-            pictureBox1.MouseMove += pictureBox1_MouseMove;
-            pictureBox1.MouseUp += pictureBox1_MouseUp;
+            canvas.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            canvas.BackColor = Color.White;
+            canvas.Location = new Point(4, 52);
+            canvas.Name = "canvas";
+            canvas.Size = new Size(935, 619);
+            canvas.TabIndex = 0;
+            canvas.TabStop = false;
+            canvas.DragDrop += pictureBox1_DragDrop;
+            canvas.DragEnter += pictureBox1_DragEnter;
+            canvas.MouseDown += pictureBox1_MouseDown;
+            canvas.MouseMove += pictureBox1_MouseMove;
+            canvas.MouseUp += pictureBox1_MouseUp;
             // 
             // inputSpeed
             // 
@@ -163,7 +167,7 @@
             // 
             // editToolStripMenuItem
             // 
-            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, toolStripSeparator2, clearSelectionToolStripMenuItem, shrinkSelectionToolStripMenuItem, toolStripSeparator4, clearAllToolStripMenuItem });
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, pasteMethodToolStripMenuItem, toolStripSeparator2, clearSelectionToolStripMenuItem, shrinkSelectionToolStripMenuItem, toolStripSeparator4, clearAllToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(42, 21);
             editToolStripMenuItem.Text = "&Edit";
@@ -212,6 +216,43 @@
             pasteToolStripMenuItem.Size = new Size(240, 22);
             pasteToolStripMenuItem.Text = "&Paste";
             pasteToolStripMenuItem.Click += pasteToolStripMenuItem_Click;
+            // 
+            // pasteMethodToolStripMenuItem
+            // 
+            pasteMethodToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { pasteOverwrite, pasteOr, pasteAnd, pasteXor });
+            pasteMethodToolStripMenuItem.Name = "pasteMethodToolStripMenuItem";
+            pasteMethodToolStripMenuItem.Size = new Size(240, 22);
+            pasteMethodToolStripMenuItem.Text = "Paste method";
+            // 
+            // pasteOverwrite
+            // 
+            pasteOverwrite.Checked = true;
+            pasteOverwrite.CheckState = CheckState.Checked;
+            pasteOverwrite.Name = "pasteOverwrite";
+            pasteOverwrite.Size = new Size(180, 22);
+            pasteOverwrite.Text = "Overwrite";
+            pasteOverwrite.Click += pasteMethods_Click;
+            // 
+            // pasteOr
+            // 
+            pasteOr.Name = "pasteOr";
+            pasteOr.Size = new Size(180, 22);
+            pasteOr.Text = "Or";
+            pasteOr.Click += pasteMethods_Click;
+            // 
+            // pasteAnd
+            // 
+            pasteAnd.Name = "pasteAnd";
+            pasteAnd.Size = new Size(180, 22);
+            pasteAnd.Text = "And";
+            pasteAnd.Click += pasteMethods_Click;
+            // 
+            // pasteXor
+            // 
+            pasteXor.Name = "pasteXor";
+            pasteXor.Size = new Size(180, 22);
+            pasteXor.Text = "Xor";
+            pasteXor.Click += pasteMethods_Click;
             // 
             // toolStripSeparator2
             // 
@@ -271,14 +312,15 @@
             Controls.Add(inputSize);
             Controls.Add(label1);
             Controls.Add(inputSpeed);
-            Controls.Add(pictureBox1);
+            Controls.Add(canvas);
             Controls.Add(menuStrip1);
+            DoubleBuffered = true;
             MainMenuStrip = menuStrip1;
             Name = "Form1";
             Text = "Cell Automata";
             FormClosed += Form1_FormClosed;
             Load += Form1_Load;
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)canvas).EndInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).EndInit();
             ((System.ComponentModel.ISupportInitialize)inputSize).EndInit();
             menuStrip1.ResumeLayout(false);
@@ -289,7 +331,7 @@
 
         #endregion
 
-        private PictureBox pictureBox1;
+        private PictureBox canvas;
         private NumericUpDown inputSpeed;
         private Label label1;
         private Label label2;
@@ -314,5 +356,10 @@
         private ToolStripMenuItem clearAllToolStripMenuItem;
         private ToolStripMenuItem actionToolStripMenuItem;
         private ToolStripMenuItem btnStartStop;
+        private ToolStripMenuItem pasteMethodToolStripMenuItem;
+        private ToolStripMenuItem pasteOverwrite;
+        private ToolStripMenuItem pasteOr;
+        private ToolStripMenuItem pasteAnd;
+        private ToolStripMenuItem pasteXor;
     }
 }

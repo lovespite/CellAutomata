@@ -1,152 +1,39 @@
-﻿namespace CellAutomata;
+﻿
+using System.Diagnostics;
 
-public class ViewWindow
+namespace CellAutomata;
+
+public class ViewWindow : ViewWindowBase
 {
-    private readonly CellEnvironment _cellEnvironment;
-
-    private int _width;
-    private int _height;
-    private int _cellSize;
-
-    private Point _selStart;
-    private Point _selEnd;
-
-    public Point SelectionStart => _selStart;
-    public Point SelectionEnd => _selEnd;
-
-    private int _selected = 0;
-    public bool IsSelected => _selected > 0;
-
-    public Rectangle GetSelection()
-    {
-        if (_selected == 0)
-        {
-            return Rectangle.Empty;
-        }
-
-        var ps = _selStart;
-        var pe = _selEnd;
-
-        var x = Math.Min(ps.X, pe.X);
-        var y = Math.Min(ps.Y, pe.Y);
-        var width = Math.Abs(ps.X - pe.X) + 1;
-        var height = Math.Abs(ps.Y - pe.Y) + 1;
-
-        return new Rectangle(x, y, width, height);
+    public ViewWindow(CellEnvironment cellEnvironment, int width, int height, int cellSize) : base(cellEnvironment, width, height, cellSize)
+    { 
     }
 
-    public void SetSelection(Point p1, Point p2)
+    public int Frames { get; private set; } = 0;
+     
+    public override void Draw(Graphics? graphics)
     {
-        p1.X = Math.Max(0, p1.X);
-        p1.Y = Math.Max(0, p1.Y);
+        if (graphics is null) return;
 
-        p2.X = Math.Max(0, p2.X);
-        p2.Y = Math.Max(0, p2.Y);
-
-        p1.X = Math.Min(_cellEnvironment.Width - 1, p1.X);
-        p1.Y = Math.Min(_cellEnvironment.Height - 1, p1.Y);
-
-        p2.X = Math.Min(_cellEnvironment.Width - 1, p2.X);
-        p2.Y = Math.Min(_cellEnvironment.Height - 1, p2.Y);
-
-        _selStart = p1;
-        _selEnd = p2;
-
-        _selected = 1;
-
-        SelectionChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    public void ClearSelection()
-    {
-        _selected = 0;
-        SelectionChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    public event EventHandler? SelectionChanged;
-
-    private readonly Font _font = new("Arial", 9);
-
-    private int _left = 0;
-    private int _top = 0;
-
-    public int Left => _left;
-    public int Top => _top;
-    public Point Location => new(_left, _top);
-
-    public int ThumbnailWidth { get; set; } = 120;
-
-    public void Resize(int width, int height, int cellSize)
-    {
-        _width = width;
-        _height = height;
-        _cellSize = cellSize;
-
-        if (_left + _width > _cellEnvironment.Width)
-        {
-            _left = _cellEnvironment.Width - _width;
-        }
-
-        if (_top + _height > _cellEnvironment.Height)
-        {
-            _top = _cellEnvironment.Height - _height;
-        }
-    }
-
-    public void MoveTo(int left, int top)
-    {
-        _left = left;
-        _top = top;
-
-        if (_left > _cellEnvironment.Width - _width)
-        {
-            _left = _cellEnvironment.Width - _width;
-        }
-
-        if (_top > _cellEnvironment.Height - _height)
-        {
-            _top = _cellEnvironment.Height - _height;
-        }
-
-        if (_left < 0)
-        {
-            _left = 0;
-        }
-
-        if (_top < 0)
-        {
-            _top = 0;
-        }
-
-    }
-
-    public ViewWindow(CellEnvironment cellEnvironment, int width, int height, int cellSize)
-    {
-        _cellEnvironment = cellEnvironment;
-        _width = width;
-        _height = height;
-        _cellSize = cellSize;
-    }
-
-    public void Draw(Graphics graphics)
-    {
-        var bpc = _cellEnvironment.Bpc;
         var totalRows = _cellEnvironment.Height;
         var totalColumns = _cellEnvironment.Width;
 
-        using var bitmap = _cellEnvironment.CreateSnapshot();
-        var genText = $"Generation: {_cellEnvironment.Generation}, Calc: {_cellEnvironment.MsTimeUsed} ms/gen";
+        using var bitmap = _cellEnvironment.CreateSnapshot(); 
+        var genText = $"Gen.: {_cellEnvironment.Generation}, Calc.: {_cellEnvironment.MsCPUTime} ms/gen, Fps: {Frames}";
 
         graphics.Clear(Color.Black);
-        DrawMainView(graphics, bitmap, bpc);
+        DrawMainView(graphics, bitmap);
         DrawGridLines(graphics);
         DrawSelection(graphics);
         DrawGenerationText(graphics, genText);
-        DrawThumbnail(graphics, bitmap, bpc, totalRows, totalColumns);
+        DrawThumbnail(graphics, bitmap, totalRows, totalColumns);
+         
     }
 
-    private void DrawThumbnail(Graphics graphics, IBitMap bitmap, IPositionConvert bpc, int totalRows, int totalColumns)
+    protected void DrawThumbnail(Graphics? graphics, IBitMap bitmap, int totalRows, int totalColumns)
     {
+        if (graphics is null) return;
+
         var thumbWidth = ThumbnailWidth;
         var cellSize = 1;
         var thumbHeight = totalRows * thumbWidth / totalColumns;
@@ -172,7 +59,7 @@ public class ViewWindow
         {
             for (int col = 0; col < totalColumns; col++)
             {
-                var bPos = bpc.Transform(row, col);
+                var bPos = bitmap.Bpc.Transform(row, col);
                 var cell = bitmap.Get(ref bPos);
 
                 if (!cell) continue;
@@ -207,8 +94,10 @@ public class ViewWindow
 
     }
 
-    private void DrawMainView(Graphics graphics, IBitMap bitmap, IPositionConvert bpc)
+    protected void DrawMainView(Graphics? graphics, IBitMap bitmap)
     {
+        if (graphics is null) return;
+
         var cellSize = _cellSize;
 
         for (int row = _top; row < _top + _height; row++)
@@ -221,7 +110,7 @@ public class ViewWindow
                     continue;
                 }
 
-                var bPos = bpc.Transform(row, col);
+                var bPos = bitmap.Bpc.Transform(row, col);
                 var cell = bitmap.Get(ref bPos);
 
                 if (!cell) continue;
@@ -235,8 +124,10 @@ public class ViewWindow
     }
 
     private readonly Pen _gridPen = new(Color.FromArgb(0x12, Color.White), 1);
-    private void DrawGridLines(Graphics graphics)
+    protected void DrawGridLines(Graphics? graphics)
     {
+        if (graphics is null) return;
+
         var cellSize = _cellSize;
 
         for (int row = 0; row < _height; row++)
@@ -251,8 +142,10 @@ public class ViewWindow
     }
 
     private readonly Brush _selectionBrush = new SolidBrush(Color.FromArgb(0x45, Color.Blue));
-    private void DrawSelection(Graphics graphics)
+    protected void DrawSelection(Graphics? graphics)
     {
+        if (graphics is null) return;
+
         var selection = GetSelection();
 
         if (selection.IsEmpty)
@@ -270,8 +163,10 @@ public class ViewWindow
         graphics.DrawRectangle(Pens.Blue, rect);
     }
 
-    private void DrawGenerationText(Graphics graphics, string genText)
+    protected void DrawGenerationText(Graphics? graphics, string genText)
     {
+        if (graphics is null) return;
+
         var size = graphics.MeasureString(genText, _font);
         var rect = new RectangleF(15, 0, size.Width, size.Height);
         graphics.FillRectangle(Brushes.Black, rect);

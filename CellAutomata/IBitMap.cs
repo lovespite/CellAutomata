@@ -1,19 +1,26 @@
-﻿namespace CellAutomata
+﻿namespace CellAutomata;
+
+public enum CopyMode
 {
-    public interface IBitMap : IDisposable
-    {
-        byte[] Bytes { get; }
-        IPositionConvert Bpc { get; }
+    Overwrite,
+    Or,
+    And,
+    Xor
+}
 
-        bool Get(ref BitPosition bPos);
-        void Set(ref BitPosition bPos, bool value);
-        void Toggle(ref BitPosition bPos);
+public interface IBitMap : IDisposable
+{
+    byte[] Bytes { get; }
+    IPositionConvert Bpc { get; }
 
-        IBitMap CreateSnapshot();
+    bool Get(ref BitPosition bPos);
+    void Set(ref BitPosition bPos, bool value);
+    void Toggle(ref BitPosition bPos);
 
-        IBitMap CreateRegionSnapshot(Rectangle rect);
+    IBitMap CreateSnapshot();
 
-        void BlockCopy(IBitMap source, Rectangle sourceRect, Rectangle destRect);
-        void BlockCopy(IBitMap source, Point destLocation);
-    }
+    IBitMap CreateRegionSnapshot(Rectangle rect);
+
+    void BlockCopy(IBitMap source, Rectangle sourceRect, Rectangle destRect, CopyMode mode = CopyMode.Overwrite);
+    void BlockCopy(IBitMap source, Point destLocation, CopyMode mode = CopyMode.Overwrite);
 }
