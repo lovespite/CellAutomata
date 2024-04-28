@@ -20,10 +20,4 @@
     <PackageReference Include="SharpDX.DXGI" Version="4.2.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Conways\Queen bee shuttle.bbm">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

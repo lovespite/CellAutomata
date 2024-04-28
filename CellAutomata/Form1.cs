@@ -81,7 +81,7 @@ public partial class Form1 : Form
         Resize += Form1_Resize;
         canvas.AllowDrop = true;
 
-        _env = new CellEnvironment(new BitMap(EnvWidth, EnvWidth));
+        _env = new CellEnvironment(new FastBitMap(EnvWidth, EnvWidth));
         _painting = new Thread(Render);
 
         g = canvas.CreateGraphics();
@@ -168,8 +168,18 @@ public partial class Form1 : Form
 
     private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
     {
-        // select cell [Right Mouse]
-        if (e.Button == MouseButtons.Right)
+        // drag view [Ctrl + Left Mouse]
+        if (e.Button == MouseButtons.Left && ModifierKeys.HasFlag(Keys.Control))
+        {
+            _dragStartPos = e.Location;
+            _dragStartViewPos = _view.Location;
+            canvas.Cursor = Cursors.SizeAll;
+
+            return;
+        }
+
+        // select cell [Left Mouse]
+        if (e.Button == MouseButtons.Left)
         {
             var col = e.X / CellSize + _view.Left;
             var row = e.Y / CellSize + _view.Top;
@@ -189,52 +199,47 @@ public partial class Form1 : Form
             return;
         }
 
-        if (e.Button == MouseButtons.Left && ModifierKeys.HasFlag(Keys.Control))
-        {
-            _dragStartPos = e.Location;
-            _dragStartViewPos = _view.Location;
-            canvas.Cursor = Cursors.SizeAll;
-
-            return;
-        }
     }
 
     private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
     {
         if (e.Button == MouseButtons.Left)
         {
-            // drag view [Ctrl + Left Mouse]
-            if (ModifierKeys.HasFlag(Keys.Control))
+            var col = e.X / CellSize + _view.Left;
+            var row = e.Y / CellSize + _view.Top;
+
+            if (col < 0 || row < 0)
             {
+                return;
+            }
+            if (col >= _env.Width || row >= _env.Height)
+            {
+                return;
+            }
+
+            if (ModifierKeys.HasFlag(Keys.Shift))
+            {
+                // ???, [Shift + Left Mouse]
+            }
+            else if (ModifierKeys.HasFlag(Keys.Control))
+            {
+                // drag view [Ctrl + Left Mouse] 
                 HandleMoveView(e);
             }
             else
             {
-                var col = e.X / CellSize + _view.Left;
-                var row = e.Y / CellSize + _view.Top;
-
-                if (col < 0 || row < 0)
-                {
-                    return;
-                }
-                if (col >= _env.Width || row >= _env.Height)
+                // drag selection,  [Left Mouse] 
+                if (col < 0 || row < 0
+                                   || col >= _env.Width || row >= _env.Height) // out of bounds
                 {
                     return;
                 }
 
-                if (ModifierKeys.HasFlag(Keys.Shift))
-                {
-                    // deactivate cells , [Shift + Left Mouse]
-                    _env.DeactivateCell(row, col);
-                }
-                else
-                {
-                    // activate cells, [Left Mouse]
-                    _env.ActivateCell(row, col);
-                }
+                var ps = _view.SelectionStart;
+                var pe = new Point(col, row);
+
+                _view.SetSelection(ps, pe);
             }
-
-            RePaint();
             return;
         }
 
@@ -250,23 +255,7 @@ public partial class Form1 : Form
             }
             else
             {
-                // drag selection, [Right Mouse]
-                var col = e.X / CellSize + _view.Left;
-                var row = e.Y / CellSize + _view.Top;
-
-                if (col < 0 || row < 0
-                                   || col >= _env.Width || row >= _env.Height) // out of bounds
-                {
-                    return;
-                }
-
-                var ps = _view.SelectionStart;
-                var pe = new Point(col, row);
-
-                _view.SetSelection(ps, pe);
             }
-
-            RePaint();
             return;
         }
     }
@@ -388,6 +377,9 @@ public partial class Form1 : Form
             await _env.LoadFrom(path);
             RePaint();
         }
+
+        await Task.Delay(10);
+        _view.ClearSelection();
     }
 
     private async void btnSave_Click(object sender, EventArgs e)
@@ -567,5 +559,24 @@ public partial class Form1 : Form
             }
         }
 
+    }
+
+    private void locateFirstCellToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        for (var row = 0; row < _env.Height; row++)
+        {
+            for (var col = 0; col < _env.Width; col++)
+            {
+                if (_env.IsAlive(row, col))
+                {
+                    _view.MoveTo(
+                        col - _view.Width / 2,
+                        row - _view.Height / 2
+                        );
+                    ;
+                    return;
+                }
+            }
+        }
     }
 }

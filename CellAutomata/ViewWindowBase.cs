@@ -132,8 +132,7 @@ namespace CellAutomata
 
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
-
-        private ulong _frames = 0;
+         
         private readonly Stopwatch _sw = Stopwatch.StartNew();
 
         public abstract void Draw(Graphics? graphics); 

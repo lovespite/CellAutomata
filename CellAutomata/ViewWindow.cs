@@ -9,8 +9,11 @@ public class ViewWindow : ViewWindowBase
     { 
     }
 
-    public int Frames { get; private set; } = 0;
-     
+    private ulong _frames = 0;
+    private readonly Stopwatch _sw = Stopwatch.StartNew();
+
+    private float _fps;
+
     public override void Draw(Graphics? graphics)
     {
         if (graphics is null) return;
@@ -19,7 +22,10 @@ public class ViewWindow : ViewWindowBase
         var totalColumns = _cellEnvironment.Width;
 
         using var bitmap = _cellEnvironment.CreateSnapshot(); 
-        var genText = $"Gen.: {_cellEnvironment.Generation}, Calc.: {_cellEnvironment.MsCPUTime} ms/gen, Fps: {Frames}";
+        var genText = 
+            $"Generation: {_cellEnvironment.Generation}, " +
+            $"CPU Time: {_cellEnvironment.MsCPUTime} ms, " +
+            $"FPS: {_fps:0.0}";
 
         graphics.Clear(Color.Black);
         DrawMainView(graphics, bitmap);
@@ -27,7 +33,14 @@ public class ViewWindow : ViewWindowBase
         DrawSelection(graphics);
         DrawGenerationText(graphics, genText);
         DrawThumbnail(graphics, bitmap, totalRows, totalColumns);
-         
+
+        if (_sw.ElapsedMilliseconds > 1000)
+        {
+            _fps = (float)(_frames / _sw.Elapsed.TotalSeconds);
+            _frames = 0;
+            _sw.Restart();
+        }
+        ++_frames;
     }
 
     protected void DrawThumbnail(Graphics? graphics, IBitMap bitmap, int totalRows, int totalColumns)
@@ -55,21 +68,21 @@ public class ViewWindow : ViewWindowBase
         graphics.DrawRectangle(Pens.White, rect);
 
         // draw thumbnail cells
-        for (int row = 0; row < totalRows; row++)
-        {
-            for (int col = 0; col < totalColumns; col++)
-            {
-                var bPos = bitmap.Bpc.Transform(row, col);
-                var cell = bitmap.Get(ref bPos);
+        //for (int row = 0; row < totalRows; row++)
+        //{
+        //    for (int col = 0; col < totalColumns; col++)
+        //    {
+        //        var bPos = bitmap.Bpc.Transform(row, col);
+        //        var cell = bitmap.Get(ref bPos);
 
-                if (!cell) continue;
+        //        if (!cell) continue;
 
-                var calcX = thumbLeft + ((col / (float)totalColumns) * thumbWidth);
-                var calcY = thumbTop + ((row / (float)totalRows) * thumbHeight);
+        //        var calcX = thumbLeft + ((col / (float)totalColumns) * thumbWidth);
+        //        var calcY = thumbTop + ((row / (float)totalRows) * thumbHeight);
 
-                graphics.FillRectangle(Brushes.White, calcX, calcY, cellSize, cellSize);
-            }
-        }
+        //        graphics.FillRectangle(Brushes.White, calcX, calcY, cellSize, cellSize);
+        //    }
+        //}
 
 
         // draw thumbnail view window

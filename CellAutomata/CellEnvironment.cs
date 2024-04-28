@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace CellAutomata;
 
@@ -91,21 +92,46 @@ public class CellEnvironment
 
     public async Task SaveTo(string file)
     {
-        var snapshot = CreateSnapshot();
+        var cells = GetRegionAliveCells(new Rectangle(0, 0, _colWidth, _rowCount)).ToArray();
         using var fs = File.Create(file);
-        await fs.WriteAsync(snapshot.Bytes);
+        using var bw = new BinaryWriter(fs);
+
+        var buffer = new byte[cells.Length * Marshal.SizeOf<int>() * 2];
+        unsafe
+        {
+            fixed (byte* ptr = buffer)
+            {
+                var p = (int*)ptr;
+                for (int i = 0; i < cells.Length; i++)
+                {
+                    var cell = cells[i];
+                    p[i * 2] = cell.X;
+                    p[i * 2 + 1] = cell.Y;
+                }
+            }
+        }
+
+        await fs.WriteAsync(buffer);
     }
 
     public async Task LoadFrom(string file)
     {
-        var buffer = new byte[_cells.Length];
+        var buffer = new byte[Marshal.SizeOf<int>() * 2];
         using var fs = File.OpenRead(file);
-        await fs.ReadAsync(buffer);
+        using var br = new BinaryReader(fs);
 
-        lock (_lock)
+        while (fs.Position < fs.Length)
         {
-            Buffer.BlockCopy(buffer, 0, _cells, 0, buffer.Length);
-            Generation = 0;
+            await fs.ReadAsync(buffer);
+            unsafe
+            {
+                fixed (byte* ptr = buffer)
+                {
+                    var p = (int*)ptr;
+
+                    ActivateCell( p[1], p[0]);
+                }
+            }
         }
     }
 

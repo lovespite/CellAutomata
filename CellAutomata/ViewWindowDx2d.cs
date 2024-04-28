@@ -39,7 +39,7 @@ public class ViewWindowDx2d : ViewWindow
         _textRender = new TextRenderer();
         _ctx = ctx;
 
-        _textForamt = new TextFormat(_textFactory, "Arial", 9);
+        _textForamt = new TextFormat(_textFactory, "Trebuchet MS", 11f);
 
         CreateBrushes();
     }
@@ -97,19 +97,18 @@ public class ViewWindowDx2d : ViewWindow
 
         renderer.BeginDraw();
 
-        renderer.Clear(_deadColor); // black 
-
+        renderer.Clear(_deadColor); // black  
         DrawMainView(bitmap);
-
         DrawGridLines();
-
         DrawSelection();
-
         DrawThumbnail(bitmap, totalRows, totalColumns);
 
-        DrawGenerationText($"Generation: {_cellEnvironment.Generation}, " +
+        var genText =
+            $"Generation: {_cellEnvironment.Generation}, " +
             $"CPU Time: {_cellEnvironment.MsCPUTime} ms, " +
-            $"FPS: {_fps:0.0}");
+            $"FPS: {_fps:0.0}";
+
+        DrawGenerationText(genText);
 
         renderer.EndDraw();
 

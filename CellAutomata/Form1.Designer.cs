@@ -58,6 +58,7 @@
             clearAllToolStripMenuItem = new ToolStripMenuItem();
             actionToolStripMenuItem = new ToolStripMenuItem();
             btnStartStop = new ToolStripMenuItem();
+            locateFirstCellToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSize).BeginInit();
@@ -68,9 +69,9 @@
             // 
             canvas.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             canvas.BackColor = Color.White;
-            canvas.Location = new Point(4, 52);
+            canvas.Location = new Point(4, 55);
             canvas.Name = "canvas";
-            canvas.Size = new Size(935, 619);
+            canvas.Size = new Size(935, 655);
             canvas.TabIndex = 0;
             canvas.TabStop = false;
             canvas.DragDrop += pictureBox1_DragDrop;
@@ -82,40 +83,40 @@
             // inputSpeed
             // 
             inputSpeed.Increment = new decimal(new int[] { 20, 0, 0, 0 });
-            inputSpeed.Location = new Point(140, 26);
+            inputSpeed.Location = new Point(140, 28);
             inputSpeed.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
             inputSpeed.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             inputSpeed.Name = "inputSpeed";
-            inputSpeed.Size = new Size(126, 23);
+            inputSpeed.Size = new Size(126, 21);
             inputSpeed.TabIndex = 1;
             inputSpeed.Value = new decimal(new int[] { 100, 0, 0, 0 });
             // 
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(8, 28);
+            label1.Location = new Point(8, 30);
             label1.Name = "label1";
-            label1.Size = new Size(126, 17);
+            label1.Size = new Size(119, 18);
             label1.TabIndex = 2;
             label1.Text = "Iteration speed (ms)";
             // 
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(284, 30);
+            label2.Location = new Point(284, 32);
             label2.Name = "label2";
-            label2.Size = new Size(90, 17);
+            label2.Size = new Size(86, 18);
             label2.TabIndex = 4;
             label2.Text = "Cell size(pixel)";
             // 
             // inputSize
             // 
             inputSize.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-            inputSize.Location = new Point(380, 26);
+            inputSize.Location = new Point(380, 28);
             inputSize.Maximum = new decimal(new int[] { 21, 0, 0, 0 });
             inputSize.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             inputSize.Name = "inputSize";
-            inputSize.Size = new Size(126, 23);
+            inputSize.Size = new Size(126, 21);
             inputSize.TabIndex = 3;
             inputSize.Value = new decimal(new int[] { 10, 0, 0, 0 });
             inputSize.ValueChanged += inputSize_ValueChanged;
@@ -141,27 +142,27 @@
             // 
             loadFileToolStripMenuItem.Name = "loadFileToolStripMenuItem";
             loadFileToolStripMenuItem.ShortcutKeys = Keys.F1;
-            loadFileToolStripMenuItem.Size = new Size(166, 22);
-            loadFileToolStripMenuItem.Text = "&Load File";
+            loadFileToolStripMenuItem.Size = new Size(163, 22);
+            loadFileToolStripMenuItem.Text = "&Load file";
             loadFileToolStripMenuItem.Click += btnLoad_Click;
             // 
             // saveToToolStripMenuItem
             // 
             saveToToolStripMenuItem.Name = "saveToToolStripMenuItem";
             saveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
-            saveToToolStripMenuItem.Size = new Size(166, 22);
-            saveToToolStripMenuItem.Text = "&Save To";
+            saveToToolStripMenuItem.Size = new Size(163, 22);
+            saveToToolStripMenuItem.Text = "&Save to";
             saveToToolStripMenuItem.Click += btnSave_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(163, 6);
+            toolStripSeparator1.Size = new Size(160, 6);
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(166, 22);
+            exitToolStripMenuItem.Size = new Size(163, 22);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
@@ -229,28 +230,28 @@
             pasteOverwrite.Checked = true;
             pasteOverwrite.CheckState = CheckState.Checked;
             pasteOverwrite.Name = "pasteOverwrite";
-            pasteOverwrite.Size = new Size(180, 22);
+            pasteOverwrite.Size = new Size(132, 22);
             pasteOverwrite.Text = "Overwrite";
             pasteOverwrite.Click += pasteMethods_Click;
             // 
             // pasteOr
             // 
             pasteOr.Name = "pasteOr";
-            pasteOr.Size = new Size(180, 22);
+            pasteOr.Size = new Size(132, 22);
             pasteOr.Text = "Or";
             pasteOr.Click += pasteMethods_Click;
             // 
             // pasteAnd
             // 
             pasteAnd.Name = "pasteAnd";
-            pasteAnd.Size = new Size(180, 22);
+            pasteAnd.Size = new Size(132, 22);
             pasteAnd.Text = "And";
             pasteAnd.Click += pasteMethods_Click;
             // 
             // pasteXor
             // 
             pasteXor.Name = "pasteXor";
-            pasteXor.Size = new Size(180, 22);
+            pasteXor.Size = new Size(132, 22);
             pasteXor.Text = "Xor";
             pasteXor.Click += pasteMethods_Click;
             // 
@@ -290,7 +291,7 @@
             // 
             // actionToolStripMenuItem
             // 
-            actionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnStartStop });
+            actionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnStartStop, locateFirstCellToolStripMenuItem });
             actionToolStripMenuItem.Name = "actionToolStripMenuItem";
             actionToolStripMenuItem.Size = new Size(56, 21);
             actionToolStripMenuItem.Text = "&Action";
@@ -299,15 +300,23 @@
             // 
             btnStartStop.Name = "btnStartStop";
             btnStartStop.ShortcutKeys = Keys.F5;
-            btnStartStop.Size = new Size(124, 22);
+            btnStartStop.Size = new Size(184, 22);
             btnStartStop.Text = "&Start";
             btnStartStop.Click += btnStartStop_Click;
             // 
+            // locateFirstCellToolStripMenuItem
+            // 
+            locateFirstCellToolStripMenuItem.Name = "locateFirstCellToolStripMenuItem";
+            locateFirstCellToolStripMenuItem.ShortcutKeys = Keys.F3;
+            locateFirstCellToolStripMenuItem.Size = new Size(184, 22);
+            locateFirstCellToolStripMenuItem.Text = "Locate first cell";
+            locateFirstCellToolStripMenuItem.Click += locateFirstCellToolStripMenuItem_Click;
+            // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(7F, 17F);
+            AutoScaleDimensions = new SizeF(7F, 18F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(943, 675);
+            ClientSize = new Size(943, 715);
             Controls.Add(label2);
             Controls.Add(inputSize);
             Controls.Add(label1);
@@ -315,6 +324,7 @@
             Controls.Add(canvas);
             Controls.Add(menuStrip1);
             DoubleBuffered = true;
+            Font = new Font("Trebuchet MS", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             MainMenuStrip = menuStrip1;
             Name = "Form1";
             Text = "Cell Automata";
@@ -361,5 +371,6 @@
         private ToolStripMenuItem pasteOr;
         private ToolStripMenuItem pasteAnd;
         private ToolStripMenuItem pasteXor;
+        private ToolStripMenuItem locateFirstCellToolStripMenuItem;
     }
 }
