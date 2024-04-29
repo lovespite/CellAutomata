@@ -15,7 +15,14 @@ public interface IBitMap : IDisposable
 
     bool Get(ref BitPosition bPos);
     void Set(ref BitPosition bPos, bool value);
-    void Toggle(ref BitPosition bPos);
+
+    bool Get(int row, int col);
+    void Set(int row, int col, bool value);
+
+    bool Get(ref Point point);
+    void Set(ref Point point, bool value);
+
+    void Clear();
 
     IBitMap CreateSnapshot();
 
@@ -23,4 +30,7 @@ public interface IBitMap : IDisposable
 
     void BlockCopy(IBitMap source, Rectangle sourceRect, Rectangle destRect, CopyMode mode = CopyMode.Overwrite);
     void BlockCopy(IBitMap source, Point destLocation, CopyMode mode = CopyMode.Overwrite);
+
+    Point[] QueryRegion(bool val, Rectangle rect);
+    long QueryRegionCount(bool val, Rectangle rect);
 }

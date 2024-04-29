@@ -63,3 +63,28 @@ public class FastBitPositionConvert : IPositionConvert
         return bitPosition;
     }
 }
+
+public class ArrayPositionConvert : IPositionConvert
+{
+    public int Width { get; }
+    public int Height { get; }
+    public long Length { get; }
+
+    public ArrayPositionConvert(int width, int height)
+    {
+        Width = width;
+        Height = height;
+        Length = width * height;
+    }
+
+    public BitPosition Transform(int row, int column)
+    {
+        return new BitPosition()
+        {
+            Location = new Point(column, row),
+            Index = row * Width + column,
+            ByteArrayIndex = row * Width + column,
+            BitIndex = 0
+        };
+    }
+}

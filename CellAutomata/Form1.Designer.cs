@@ -59,6 +59,7 @@
             actionToolStripMenuItem = new ToolStripMenuItem();
             btnStartStop = new ToolStripMenuItem();
             locateFirstCellToolStripMenuItem = new ToolStripMenuItem();
+            nextGenerationToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSize).BeginInit();
@@ -291,7 +292,7 @@
             // 
             // actionToolStripMenuItem
             // 
-            actionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnStartStop, locateFirstCellToolStripMenuItem });
+            actionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnStartStop, locateFirstCellToolStripMenuItem, nextGenerationToolStripMenuItem });
             actionToolStripMenuItem.Name = "actionToolStripMenuItem";
             actionToolStripMenuItem.Size = new Size(56, 21);
             actionToolStripMenuItem.Text = "&Action";
@@ -300,7 +301,7 @@
             // 
             btnStartStop.Name = "btnStartStop";
             btnStartStop.ShortcutKeys = Keys.F5;
-            btnStartStop.Size = new Size(184, 22);
+            btnStartStop.Size = new Size(191, 22);
             btnStartStop.Text = "&Start";
             btnStartStop.Click += btnStartStop_Click;
             // 
@@ -308,9 +309,17 @@
             // 
             locateFirstCellToolStripMenuItem.Name = "locateFirstCellToolStripMenuItem";
             locateFirstCellToolStripMenuItem.ShortcutKeys = Keys.F3;
-            locateFirstCellToolStripMenuItem.Size = new Size(184, 22);
+            locateFirstCellToolStripMenuItem.Size = new Size(191, 22);
             locateFirstCellToolStripMenuItem.Text = "Locate first cell";
             locateFirstCellToolStripMenuItem.Click += locateFirstCellToolStripMenuItem_Click;
+            // 
+            // nextGenerationToolStripMenuItem
+            // 
+            nextGenerationToolStripMenuItem.Name = "nextGenerationToolStripMenuItem";
+            nextGenerationToolStripMenuItem.ShortcutKeys = Keys.F8;
+            nextGenerationToolStripMenuItem.Size = new Size(191, 22);
+            nextGenerationToolStripMenuItem.Text = "Next generation";
+            nextGenerationToolStripMenuItem.Click += nextGenerationToolStripMenuItem_Click;
             // 
             // Form1
             // 
@@ -372,5 +381,6 @@
         private ToolStripMenuItem pasteAnd;
         private ToolStripMenuItem pasteXor;
         private ToolStripMenuItem locateFirstCellToolStripMenuItem;
+        private ToolStripMenuItem nextGenerationToolStripMenuItem;
     }
 }

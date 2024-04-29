@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Drawing.Printing;
 using System.Runtime.InteropServices;
 
 namespace CellAutomata;
@@ -8,7 +9,6 @@ public class CellEnvironment
     private readonly int _colWidth;
     private readonly int _rowCount;
 
-    private readonly byte[] _cells;
     private readonly IBitMap _bitmap;
 
     public IBitMap BitMap => _bitmap;
@@ -22,7 +22,6 @@ public class CellEnvironment
     public CellEnvironment(IBitMap bitmap)
     {
         _bitmap = bitmap;
-        _cells = bitmap.Bytes;
         _colWidth = bitmap.Bpc.Width;
         _rowCount = bitmap.Bpc.Height;
     }
@@ -35,7 +34,7 @@ public class CellEnvironment
         }
     }
 
-    public long Population { get; private set; } = 0;
+    public long Population => _bitmap.QueryRegionCount(true, new Rectangle(0, 0, _colWidth, _rowCount));
     public long Generation { get; private set; } = 0;
 
     public int MsCPUTime { get; private set; } = 0; // milliseconds
@@ -129,33 +128,41 @@ public class CellEnvironment
                 {
                     var p = (int*)ptr;
 
-                    ActivateCell( p[1], p[0]);
+                    ActivateCell(p[1], p[0]);
                 }
             }
         }
     }
 
+    private Rectangle[]? _blocks;
     public void EvolveMultiThread(int threadCount)
     {
-        var ws = Stopwatch.StartNew();
-
-        var blocks = new List<Rectangle>();
-        var blockHeight = _rowCount / threadCount;
-        for (int i = 0; i < threadCount; i++)
+        if (_blocks is null || _blocks.Length != threadCount)
         {
-            var block = new Rectangle(0, i * blockHeight, _colWidth, blockHeight);
-            if (i == threadCount - 1)
+            // create blocks
+
+            var blocks = new List<Rectangle>();
+            var blockHeight = _rowCount / threadCount;
+            for (int i = 0; i < threadCount; i++)
             {
-                // last block, adjust height to the end
-                block.Height = _rowCount - block.Top;
+                var block = new Rectangle(0, i * blockHeight, _colWidth, blockHeight);
+                if (i == threadCount - 1)
+                {
+                    // last block, adjust height to the end
+                    block.Height = _rowCount - block.Top;
+                }
+                blocks.Add(block);
             }
-            blocks.Add(block);
+
+            _blocks = [.. blocks];
         }
 
+        var ws = Stopwatch.StartNew();
+
         using var sharedBitmap = CreateSnapshot();
-        Parallel.ForEach(blocks, block =>
+        Parallel.ForEach(_blocks, block =>
         {
-            EvolvePartialInternal(sharedBitmap, block);
+            EvolvePartialInternal2(sharedBitmap, block);
         });
 
         ws.Stop();
@@ -179,7 +186,7 @@ public class CellEnvironment
 
     private void ClearInternal()
     {
-        Array.Clear(_cells, 0, _cells.Length);
+        _bitmap.Clear();
         Generation = 0;
     }
     private IBitMap CreateSnapshotInternal()
@@ -249,24 +256,92 @@ public class CellEnvironment
         return count;
     }
 
-    private static IReadOnlyCollection<Point> GetRegionAliveCells(IBitMap src, Rectangle rect)
+    private void EvolvePartialInternal2(IBitMap sharedBitMap, Rectangle block)
     {
-        var list = new List<Point>();
-        var cvt = src.Bpc;
+        byte n;
+        var snapshot = sharedBitMap;
 
-        for (int r = rect.Top; r < rect.Bottom; r++)
+        var locations = sharedBitMap.QueryRegion(true, block);
+        var nCollector = new HashSet<Point>(locations.Length);
+
+        foreach (var loc in locations)
         {
-            for (int c = rect.Left; c < rect.Right; c++)
+            n = CountAliveNeighbors2(snapshot, loc.Y, loc.X, nCollector);
+
+            var bPos = Bpc.Transform(loc.Y, loc.X);
+            if (snapshot.Get(ref bPos))
             {
-                var bPos = cvt.Transform(r, c);
-                if (src.Get(ref bPos))
+                if (n < 2 || n > 3)
                 {
-                    list.Add(new Point(c, r));
+                    _bitmap.Set(ref bPos, false);
+                }
+            }
+            else
+            {
+                if (n == 3)
+                {
+                    _bitmap.Set(ref bPos, true);
                 }
             }
         }
 
-        return list;
+        foreach (var loc in nCollector)
+        {
+            n = CountAliveNeighbors2(snapshot, loc.Y, loc.X, null);
+
+            var bPos = Bpc.Transform(loc.Y, loc.X);
+            if (snapshot.Get(ref bPos))
+            {
+                if (n < 2 || n > 3)
+                {
+                    _bitmap.Set(ref bPos, false);
+                }
+            }
+            else
+            {
+                if (n == 3)
+                {
+                    _bitmap.Set(ref bPos, true);
+                }
+            }
+        }
+    }
+
+    private static byte CountAliveNeighbors2(IBitMap src, int row, int col, HashSet<Point>? nCollector)
+    {
+        byte n = 0;
+        for (int r = row - 1; r <= row + 1; r++)
+        {
+            for (int c = col - 1; c <= col + 1; c++)
+            {
+                if (r == row && c == col)
+                {
+                    continue;
+                }
+
+                if (r < 0 || r >= src.Bpc.Height || c < 0 || c >= src.Bpc.Width)
+                {
+                    continue;
+                }
+
+                var p = new Point(c, r);
+                if (src.Get(ref p))
+                {
+                    n++;
+                }
+                else
+                {
+                    nCollector?.Add(p);
+                }
+            }
+        }
+
+        return n;
+    }
+
+    private static IReadOnlyCollection<Point> GetRegionAliveCells(IBitMap src, Rectangle rect)
+    {
+        return src.QueryRegion(true, rect);
     }
 
     #endregion

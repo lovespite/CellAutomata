@@ -98,14 +98,15 @@ public class ViewWindowDx2d : ViewWindow
         renderer.BeginDraw();
 
         renderer.Clear(_deadColor); // black  
-        DrawMainView(bitmap);
+        DrawMainView2(bitmap);
         DrawGridLines();
         DrawSelection();
         DrawThumbnail(bitmap, totalRows, totalColumns);
 
         var genText =
-            $"Generation: {_cellEnvironment.Generation}, " +
-            $"CPU Time: {_cellEnvironment.MsCPUTime} ms, " +
+            $"Generation: {_cellEnvironment.Generation:#,0}; " +
+            $"Population: {_cellEnvironment.Population:#,0}; " +
+            $"CPU Time: {_cellEnvironment.MsCPUTime:#,0} ms; " +
             $"FPS: {_fps:0.0}";
 
         DrawGenerationText(genText);
@@ -135,27 +136,61 @@ public class ViewWindowDx2d : ViewWindow
         layout.Draw(_textRender, 15, 0);
     }
 
+    private void DrawMainView2(IBitMap bitmap)
+    {
+        var viewRect = new Rectangle(
+             x: _left,
+             y: _top,
+              width: _width,
+              height: _height);
+
+            var points = bitmap.QueryRegion(true, viewRect);
+
+        var renderer = _ctx.GetRenderer();
+
+        foreach (var point in points)
+        {
+            var x = (point.X - _left) * _cellSize;
+            var y = (point.Y - _top) * _cellSize;
+
+            var rect = new RawRectangleF(
+                left: x,
+                top: y,
+                right: x + _cellSize,
+                bottom: y + _cellSize);
+
+            renderer.FillRectangle(rect, _aliveBrush);
+        }
+
+    }
+
     private void DrawMainView(IBitMap bitmap)
     {
         var renderer = _ctx.GetRenderer();
         var cellSize = _cellSize;
 
+        RawRectangleF lineRect;
         for (int row = _top; row < _top + _height; row++)
         {
+            var top = (row - _top) * cellSize;
+            int lineContunuesWidth = 0;
+
+            lineRect.Left = 0;
+            lineRect.Right = 0;
+            lineRect.Top = top;
+            lineRect.Bottom = top + cellSize;
+
             for (int col = _left; col < _left + _width; col++)
             {
-                var left = (col - _left) * cellSize;
-                var top = (row - _top) * cellSize;
-
-                var rect = new RawRectangleF(
-                    left: left,
-                    top: top,
-                    right: cellSize + left,
-                    bottom: cellSize + top
-                    );
 
                 if (row >= _cellEnvironment.Height || col >= _cellEnvironment.Width)
                 {
+                    var rect = new RawRectangleF(
+                        left: (col - _left) * cellSize,
+                        top: (row - _top) * cellSize,
+                        right: (col - _left + 1) * cellSize,
+                        bottom: (row - _top + 1) * cellSize
+                    );
                     renderer.FillRectangle(rect, _idleBrush);
                     continue;
                 }
@@ -163,9 +198,33 @@ public class ViewWindowDx2d : ViewWindow
                 var bPos = bitmap.Bpc.Transform(row, col);
                 var cell = bitmap.Get(ref bPos);
 
-                if (!cell) continue;
+                if (cell)
+                {
+                    // alive
+                    lineContunuesWidth += cellSize;
+                    continue;
+                }
 
-                renderer.FillRectangle(rect, _aliveBrush);
+                // dead
+
+                if (lineContunuesWidth > 0)
+                {
+                    lineRect.Right = lineRect.Left + lineContunuesWidth;
+                    renderer.FillRectangle(lineRect, _aliveBrush);
+
+                    lineContunuesWidth = 0;
+                    lineRect.Left = lineRect.Right + cellSize;
+                }
+                else
+                {
+                    lineRect.Left += cellSize;
+                }
+            }
+
+            if (lineContunuesWidth > 0)
+            {
+                lineRect.Right = lineRect.Left + lineContunuesWidth;
+                renderer.FillRectangle(lineRect, _aliveBrush);
             }
         }
     }

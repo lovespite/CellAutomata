@@ -13,6 +13,7 @@ public partial class Form1 : Form
     private readonly Thread _painting;
 
     public const int EnvWidth = 10_000;
+    public const int ThreadCount = 16;
 
     #region Properties
     public int CellSize
@@ -81,7 +82,7 @@ public partial class Form1 : Form
         Resize += Form1_Resize;
         canvas.AllowDrop = true;
 
-        _env = new CellEnvironment(new FastBitMap(EnvWidth, EnvWidth));
+        _env = new CellEnvironment(new ArrayBitMap(EnvWidth, EnvWidth));
         _painting = new Thread(Render);
 
         g = canvas.CreateGraphics();
@@ -166,14 +167,21 @@ public partial class Form1 : Form
     private Point _dragStartPos;
     private Point _dragStartViewPos;
 
+    private bool _isSelecting = false;
+    private bool _isDraggingView = false;
+
     private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
     {
         // drag view [Ctrl + Left Mouse]
         if (e.Button == MouseButtons.Left && ModifierKeys.HasFlag(Keys.Control))
         {
+            if (_isSelecting) return;
+            _isDraggingView = true;
+
             _dragStartPos = e.Location;
             _dragStartViewPos = _view.Location;
             canvas.Cursor = Cursors.SizeAll;
+
 
             return;
         }
@@ -181,6 +189,9 @@ public partial class Form1 : Form
         // select cell [Left Mouse]
         if (e.Button == MouseButtons.Left)
         {
+            if (_isDraggingView) return;
+            _isSelecting = true;
+
             var col = e.X / CellSize + _view.Left;
             var row = e.Y / CellSize + _view.Top;
 
@@ -224,21 +235,27 @@ public partial class Form1 : Form
             else if (ModifierKeys.HasFlag(Keys.Control))
             {
                 // drag view [Ctrl + Left Mouse] 
-                HandleMoveView(e);
+                if (_isDraggingView)
+                {
+                    HandleMoveView(e);
+                }
             }
             else
             {
-                // drag selection,  [Left Mouse] 
-                if (col < 0 || row < 0
-                                   || col >= _env.Width || row >= _env.Height) // out of bounds
+                if (_isSelecting)
                 {
-                    return;
+                    // drag selection,  [Left Mouse] 
+                    if (col < 0 || row < 0
+                                   || col >= _env.Width || row >= _env.Height) // out of bounds
+                    {
+                        return;
+                    }
+
+                    var ps = _view.SelectionStart;
+                    var pe = new Point(col, row);
+
+                    _view.SetSelection(ps, pe);
                 }
-
-                var ps = _view.SelectionStart;
-                var pe = new Point(col, row);
-
-                _view.SetSelection(ps, pe);
             }
             return;
         }
@@ -282,6 +299,8 @@ public partial class Form1 : Form
     private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
     {
         canvas.Cursor = Cursors.Default;
+        _isSelecting = false;
+        _isDraggingView = false;
     }
 
     private void inputSize_ValueChanged(object sender, EventArgs e)
@@ -308,7 +327,7 @@ public partial class Form1 : Form
         while (_cts is not null && !_cts.IsCancellationRequested)
         {
             // _env.Evolve();
-            _env.EvolveMultiThread(16);
+            _env.EvolveMultiThread(ThreadCount);
 
             Thread.Sleep(Speed);
         }
@@ -447,9 +466,8 @@ public partial class Form1 : Form
         try
         {
             var selection = _view.GetSelection();
-            var snapshot = _env.CreateSnapshot();
 
-            var bitmap = snapshot.CreateRegionSnapshot(selection);
+            var bitmap = _env.BitMap.CreateRegionSnapshot(selection);
             _clipboard = bitmap;
         }
         catch (Exception ex)
@@ -549,7 +567,7 @@ public partial class Form1 : Form
         var text = item.Text;
         if (text == null) return;
 
-        if (!Enum.TryParse<CopyMode>(text, out _mode)) return;
+        if (!Enum.TryParse(text, out _mode)) return;
 
         foreach (var menu in pasteMethodToolStripMenuItem.DropDownItems)
         {
@@ -578,5 +596,16 @@ public partial class Form1 : Form
                 }
             }
         }
+    }
+
+    private void nextGenerationToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        if (_cts is not null)
+        {
+            // thread running...
+            return;
+        }
+
+        _env.EvolveMultiThread(ThreadCount);
     }
 }
