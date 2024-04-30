@@ -31,8 +31,6 @@
             canvas = new PictureBox();
             inputSpeed = new NumericUpDown();
             label1 = new Label();
-            label2 = new Label();
-            inputSize = new NumericUpDown();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             loadFileToolStripMenuItem = new ToolStripMenuItem();
@@ -58,11 +56,11 @@
             clearAllToolStripMenuItem = new ToolStripMenuItem();
             actionToolStripMenuItem = new ToolStripMenuItem();
             btnStartStop = new ToolStripMenuItem();
-            locateFirstCellToolStripMenuItem = new ToolStripMenuItem();
             nextGenerationToolStripMenuItem = new ToolStripMenuItem();
+            viewToolStripMenuItem = new ToolStripMenuItem();
+            homeToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)inputSize).BeginInit();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -78,6 +76,7 @@
             canvas.DragDrop += pictureBox1_DragDrop;
             canvas.DragEnter += pictureBox1_DragEnter;
             canvas.MouseDown += pictureBox1_MouseDown;
+            canvas.MouseLeave += canvas_MouseLeave;
             canvas.MouseMove += pictureBox1_MouseMove;
             canvas.MouseUp += pictureBox1_MouseUp;
             // 
@@ -101,30 +100,9 @@
             label1.TabIndex = 2;
             label1.Text = "Iteration speed (ms)";
             // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(284, 32);
-            label2.Name = "label2";
-            label2.Size = new Size(86, 18);
-            label2.TabIndex = 4;
-            label2.Text = "Cell size(pixel)";
-            // 
-            // inputSize
-            // 
-            inputSize.Increment = new decimal(new int[] { 2, 0, 0, 0 });
-            inputSize.Location = new Point(380, 28);
-            inputSize.Maximum = new decimal(new int[] { 21, 0, 0, 0 });
-            inputSize.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            inputSize.Name = "inputSize";
-            inputSize.Size = new Size(126, 21);
-            inputSize.TabIndex = 3;
-            inputSize.Value = new decimal(new int[] { 10, 0, 0, 0 });
-            inputSize.ValueChanged += inputSize_ValueChanged;
-            // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, editToolStripMenuItem, actionToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, editToolStripMenuItem, actionToolStripMenuItem, viewToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.RenderMode = ToolStripRenderMode.System;
@@ -292,7 +270,7 @@
             // 
             // actionToolStripMenuItem
             // 
-            actionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnStartStop, locateFirstCellToolStripMenuItem, nextGenerationToolStripMenuItem });
+            actionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnStartStop, nextGenerationToolStripMenuItem });
             actionToolStripMenuItem.Name = "actionToolStripMenuItem";
             actionToolStripMenuItem.Size = new Size(56, 21);
             actionToolStripMenuItem.Text = "&Action";
@@ -305,14 +283,6 @@
             btnStartStop.Text = "&Start";
             btnStartStop.Click += btnStartStop_Click;
             // 
-            // locateFirstCellToolStripMenuItem
-            // 
-            locateFirstCellToolStripMenuItem.Name = "locateFirstCellToolStripMenuItem";
-            locateFirstCellToolStripMenuItem.ShortcutKeys = Keys.F3;
-            locateFirstCellToolStripMenuItem.Size = new Size(191, 22);
-            locateFirstCellToolStripMenuItem.Text = "Locate first cell";
-            locateFirstCellToolStripMenuItem.Click += locateFirstCellToolStripMenuItem_Click;
-            // 
             // nextGenerationToolStripMenuItem
             // 
             nextGenerationToolStripMenuItem.Name = "nextGenerationToolStripMenuItem";
@@ -321,13 +291,27 @@
             nextGenerationToolStripMenuItem.Text = "Next generation";
             nextGenerationToolStripMenuItem.Click += nextGenerationToolStripMenuItem_Click;
             // 
+            // viewToolStripMenuItem
+            // 
+            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { homeToolStripMenuItem });
+            viewToolStripMenuItem.Name = "viewToolStripMenuItem";
+            viewToolStripMenuItem.Size = new Size(47, 21);
+            viewToolStripMenuItem.Text = "&View";
+            // 
+            // homeToolStripMenuItem
+            // 
+            homeToolStripMenuItem.Name = "homeToolStripMenuItem";
+            homeToolStripMenuItem.ShortcutKeyDisplayString = "";
+            homeToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Space;
+            homeToolStripMenuItem.Size = new Size(183, 22);
+            homeToolStripMenuItem.Text = "Home";
+            homeToolStripMenuItem.Click += homeToolStripMenuItem_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 18F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(943, 715);
-            Controls.Add(label2);
-            Controls.Add(inputSize);
             Controls.Add(label1);
             Controls.Add(inputSpeed);
             Controls.Add(canvas);
@@ -341,7 +325,6 @@
             Load += Form1_Load;
             ((System.ComponentModel.ISupportInitialize)canvas).EndInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).EndInit();
-            ((System.ComponentModel.ISupportInitialize)inputSize).EndInit();
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             ResumeLayout(false);
@@ -353,8 +336,6 @@
         private PictureBox canvas;
         private NumericUpDown inputSpeed;
         private Label label1;
-        private Label label2;
-        private NumericUpDown inputSize;
         private MenuStrip menuStrip1;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem loadFileToolStripMenuItem;
@@ -380,7 +361,8 @@
         private ToolStripMenuItem pasteOr;
         private ToolStripMenuItem pasteAnd;
         private ToolStripMenuItem pasteXor;
-        private ToolStripMenuItem locateFirstCellToolStripMenuItem;
         private ToolStripMenuItem nextGenerationToolStripMenuItem;
+        private ToolStripMenuItem viewToolStripMenuItem;
+        private ToolStripMenuItem homeToolStripMenuItem;
     }
 }

@@ -8,10 +8,16 @@ public enum CopyMode
     Xor
 }
 
-public interface IBitMap : IDisposable
+public interface ILifeMap : IDisposable
 {
+    int ThreadCount { get; set; }
     byte[] Bytes { get; }
-    IPositionConvert Bpc { get; }
+
+    long MsGenerationTime { get; }
+    long MsMemoryCopyTime { get; }
+    long MsCPUTime { get; }
+    long Generation { get; }
+    long Population { get; }
 
     bool Get(ref BitPosition bPos);
     void Set(ref BitPosition bPos, bool value);
@@ -24,13 +30,16 @@ public interface IBitMap : IDisposable
 
     void Clear();
 
-    IBitMap CreateSnapshot();
+    ILifeMap CreateSnapshot();
 
-    IBitMap CreateRegionSnapshot(Rectangle rect);
+    ILifeMap CreateRegionSnapshot(Rectangle rect);
 
-    void BlockCopy(IBitMap source, Rectangle sourceRect, Rectangle destRect, CopyMode mode = CopyMode.Overwrite);
-    void BlockCopy(IBitMap source, Point destLocation, CopyMode mode = CopyMode.Overwrite);
+    void BlockCopy(ILifeMap source, Size srcSize, Point dstLocation, CopyMode mode = CopyMode.Overwrite);
 
     Point[] QueryRegion(bool val, Rectangle rect);
     long QueryRegionCount(bool val, Rectangle rect);
+
+    Point[] GetLocations(bool val);
+
+    void NextGeneration();
 }

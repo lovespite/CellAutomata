@@ -12,19 +12,14 @@ public partial class Form1 : Form
 
     private readonly Thread _painting;
 
-    public const int EnvWidth = 10_000;
     public const int ThreadCount = 16;
 
     #region Properties
-    public int CellSize
+    public float CellSize
     {
         get
         {
-            return (int)inputSize.Value;
-        }
-        set
-        {
-            inputSize.Value = value;
+            return _view.CellSize;
         }
     }
 
@@ -40,38 +35,6 @@ public partial class Form1 : Form
         }
     }
 
-    public int ViewRealWidth
-    {
-        get
-        {
-            return canvas.Width;
-        }
-    }
-
-    public int ViewWidth
-    {
-        get
-        {
-            return (int)Math.Ceiling((decimal)canvas.Width / (decimal)CellSize);
-        }
-    }
-
-    public int ViewRealHeight
-    {
-        get
-        {
-            return canvas.Height;
-        }
-    }
-
-    public int ViewHeight
-    {
-        get
-        {
-            return (int)Math.Ceiling((decimal)canvas.Height / (decimal)CellSize);
-        }
-    }
-
     #endregion
 
     private readonly Graphics g;
@@ -79,10 +42,15 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent();
-        Resize += Form1_Resize;
         canvas.AllowDrop = true;
 
-        _env = new CellEnvironment(new ArrayBitMap(EnvWidth, EnvWidth));
+        canvas.Resize += Form1_Resize;
+
+        _env = new CellEnvironment(new Array2LifeMap())
+        {
+            ThreadCount = ThreadCount
+        };
+
         _painting = new Thread(Render);
 
         g = canvas.CreateGraphics();
@@ -111,25 +79,20 @@ public partial class Form1 : Form
 
     public void RePaint()
     {
-        // _view.Draw(null);
     }
 
     private void Form1_Resize(object? sender, EventArgs e)
     {
-        _view.Resize(ViewWidth, ViewHeight, CellSize);
-        RePaint();
+        _view.Resize(canvas.Width, canvas.Height);
     }
 
     private void Form1_Load(object sender, EventArgs e)
     {
-        var vw = ViewWidth;
-        var vh = ViewHeight;
-        var initLeft = EnvWidth / 2 - vw / 2;
-        var initTop = EnvWidth / 2 - vh / 2;
+        var vw = canvas.Width;
+        var vh = canvas.Height;
 
-        _view = new ViewWindowDx2d(_env, new D2dWindowContext(canvas.Width, canvas.Height, canvas.Handle), vw, vh, CellSize);
-        _view.MoveTo(initLeft, initTop);
-
+        var renderContext = new D2dWindowContext(vw, vh, canvas.Handle);
+        _view = new ViewWindowDx2d(_env, renderContext, vw, vh, 10f);
         MouseWheel += Form1_MouseWheel;
 
         _painting.Start();
@@ -138,30 +101,15 @@ public partial class Form1 : Form
     private void Form1_MouseWheel(object? sender, MouseEventArgs e)
     {
         var delta = e.Delta;
-        var cellSize = CellSize;
 
         if (delta > 0)
         {
-            cellSize += 1;
+            _view.ZoomIn();
         }
         else
         {
-            cellSize -= 1;
+            _view.ZoomOut();
         }
-
-        if (cellSize < inputSize.Minimum)
-        {
-            cellSize = (int)inputSize.Minimum;
-        }
-        else if (cellSize > inputSize.Maximum)
-        {
-            cellSize = (int)inputSize.Maximum;
-        }
-
-        CellSize = cellSize;
-        _view.Resize(ViewWidth, ViewHeight, CellSize);
-
-        RePaint();
     }
 
     private Point _dragStartPos;
@@ -172,6 +120,7 @@ public partial class Form1 : Form
 
     private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
     {
+        _view.MousePoint = e.Location;
         // drag view [Ctrl + Left Mouse]
         if (e.Button == MouseButtons.Left && ModifierKeys.HasFlag(Keys.Control))
         {
@@ -182,7 +131,6 @@ public partial class Form1 : Form
             _dragStartViewPos = _view.Location;
             canvas.Cursor = Cursors.SizeAll;
 
-
             return;
         }
 
@@ -192,17 +140,10 @@ public partial class Form1 : Form
             if (_isDraggingView) return;
             _isSelecting = true;
 
-            var col = e.X / CellSize + _view.Left;
-            var row = e.Y / CellSize + _view.Top;
+            //var col = e.X / CellSize + _view.Left;
+            //var row = e.Y / CellSize + _view.Top;
 
-            if (col < 0 || row < 0
-                || col >= _env.Width || row >= _env.Height) // out of bounds
-            {
-                _view.ClearSelection();
-                return;
-            }
-
-            var p = new Point(col, row);
+            var p = _view.MouseCellPoint;
 
             _view.SetSelection(p, p);
 
@@ -214,20 +155,9 @@ public partial class Form1 : Form
 
     private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
     {
+        _view.MousePoint = e.Location;
         if (e.Button == MouseButtons.Left)
         {
-            var col = e.X / CellSize + _view.Left;
-            var row = e.Y / CellSize + _view.Top;
-
-            if (col < 0 || row < 0)
-            {
-                return;
-            }
-            if (col >= _env.Width || row >= _env.Height)
-            {
-                return;
-            }
-
             if (ModifierKeys.HasFlag(Keys.Shift))
             {
                 // ???, [Shift + Left Mouse]
@@ -237,22 +167,31 @@ public partial class Form1 : Form
                 // drag view [Ctrl + Left Mouse] 
                 if (_isDraggingView)
                 {
-                    HandleMoveView(e);
+                    var cellSize = CellSize;
+
+                    var deltaX = _dragStartPos.X - e.X;
+                    var deltaY = _dragStartPos.Y - e.Y;
+
+                    var directionX = Math.Sign(deltaX);
+                    var directionY = Math.Sign(deltaY);
+
+                    var absDeltaX = Math.Max(Math.Abs(deltaX) / cellSize, 1);
+                    var absDeltaY = Math.Max(Math.Abs(deltaY) / cellSize, 1);
+
+                    var curX = _dragStartViewPos.X + directionX * absDeltaX;
+                    var curY = _dragStartViewPos.Y + directionY * absDeltaY;
+
+                    _view.MoveTo((int)curX, (int)curY);
                 }
             }
             else
             {
                 if (_isSelecting)
                 {
-                    // drag selection,  [Left Mouse] 
-                    if (col < 0 || row < 0
-                                   || col >= _env.Width || row >= _env.Height) // out of bounds
-                    {
-                        return;
-                    }
+                    // drag selection,  [Left Mouse]  
 
                     var ps = _view.SelectionStart;
-                    var pe = new Point(col, row);
+                    var pe = _view.MouseCellPoint;
 
                     _view.SetSelection(ps, pe);
                 }
@@ -277,24 +216,6 @@ public partial class Form1 : Form
         }
     }
 
-    private void HandleMoveView(MouseEventArgs e)
-    {
-        var cellSize = CellSize;
-
-        var deltaX = _dragStartPos.X - e.X;
-        var deltaY = _dragStartPos.Y - e.Y;
-
-        var directionX = Math.Sign(deltaX);
-        var directionY = Math.Sign(deltaY);
-
-        var absDeltaX = Math.Max(Math.Abs(deltaX) / cellSize, 1);
-        var absDeltaY = Math.Max(Math.Abs(deltaY) / cellSize, 1);
-
-        var curX = _dragStartViewPos.X + directionX * absDeltaX;
-        var curY = _dragStartViewPos.Y + directionY * absDeltaY;
-
-        _view.MoveTo(curX, curY);
-    }
 
     private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
     {
@@ -305,29 +226,26 @@ public partial class Form1 : Form
 
     private void inputSize_ValueChanged(object sender, EventArgs e)
     {
-        var curLeft = _view.Left;
-        var curTop = _view.Top;
-        var curWidth = _view.Width;
-        var curHeight = _view.Height;
-
-        var vw = ViewWidth;
-        var vh = ViewHeight;
-
-        curLeft += (curWidth - vw) / 2;
-        curTop += (curHeight - vh) / 2;
-
-        _view.Resize(vw, vh, CellSize);
-        _view.MoveTo(curLeft, curTop);
-
-        RePaint();
     }
 
     private void EvolutionThread()
     {
+        var gens = 0ul;
+        var sw = Stopwatch.StartNew();
+
         while (_cts is not null && !_cts.IsCancellationRequested)
         {
-            // _env.Evolve();
-            _env.EvolveMultiThread(ThreadCount);
+            _env.NextGeneration();
+            ++gens;
+
+            if (sw.ElapsedMilliseconds > 1000)
+            {
+                var genPerSec = gens / (float)sw.Elapsed.TotalSeconds;
+
+                gens = 0;
+                sw.Restart();
+                _view.Gps = genPerSec;
+            }
 
             Thread.Sleep(Speed);
         }
@@ -458,7 +376,7 @@ public partial class Form1 : Form
         RePaint();
     }
 
-    private IBitMap? _clipboard;
+    private (ILifeMap, Size)? _clipboard;
     private void copyToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (!_view.IsSelected) return;
@@ -468,7 +386,7 @@ public partial class Form1 : Form
             var selection = _view.GetSelection();
 
             var bitmap = _env.BitMap.CreateRegionSnapshot(selection);
-            _clipboard = bitmap;
+            _clipboard = (bitmap, selection.Size);
         }
         catch (Exception ex)
         {
@@ -485,8 +403,12 @@ public partial class Form1 : Form
     private void pasteToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (!_view.IsSelected) return;
+        if (_clipboard is null) return;
 
-        var data = _clipboard;
+        ILifeMap data;
+        Size size;
+
+        (data, size) = _clipboard.Value;
         if (data is null) return;
 
         var bitmap = data;
@@ -495,10 +417,10 @@ public partial class Form1 : Form
 
         _env.Lock(b =>
         {
-            b.BlockCopy(bitmap!, p, _mode);
+            b.BlockCopy(data, size, p, _mode);
         });
 
-        _view.SetSelection(p, new Point(p.X + bitmap.Bpc.Width - 1, p.Y + bitmap.Bpc.Height - 1));
+        _view.SetSelection(p, new Point(p.X + size.Width - 1, p.Y + size.Height - 1));
 
         RePaint();
 
@@ -579,25 +501,6 @@ public partial class Form1 : Form
 
     }
 
-    private void locateFirstCellToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-        for (var row = 0; row < _env.Height; row++)
-        {
-            for (var col = 0; col < _env.Width; col++)
-            {
-                if (_env.IsAlive(row, col))
-                {
-                    _view.MoveTo(
-                        col - _view.Width / 2,
-                        row - _view.Height / 2
-                        );
-                    ;
-                    return;
-                }
-            }
-        }
-    }
-
     private void nextGenerationToolStripMenuItem_Click(object sender, EventArgs e)
     {
         if (_cts is not null)
@@ -606,6 +509,16 @@ public partial class Form1 : Form
             return;
         }
 
-        _env.EvolveMultiThread(ThreadCount);
+        _env.NextGeneration();
+    }
+
+    private void homeToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        _view.MoveTo(0, 0);
+    }
+
+    private void canvas_MouseLeave(object sender, EventArgs e)
+    {
+        _view.MousePoint = new Point(-1, -1);
     }
 }

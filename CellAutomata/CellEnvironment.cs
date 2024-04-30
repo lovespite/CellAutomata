@@ -6,27 +6,18 @@ namespace CellAutomata;
 
 public class CellEnvironment
 {
-    private readonly int _colWidth;
-    private readonly int _rowCount;
+    private readonly ILifeMap _bitmap;
 
-    private readonly IBitMap _bitmap;
-
-    public IBitMap BitMap => _bitmap;
-    public IPositionConvert Bpc => _bitmap.Bpc;
-
-    public int Width => _colWidth;
-    public int Height => _rowCount;
+    public ILifeMap BitMap => _bitmap;
 
     private readonly object _lock = new();
 
-    public CellEnvironment(IBitMap bitmap)
+    public CellEnvironment(ILifeMap bitmap)
     {
         _bitmap = bitmap;
-        _colWidth = bitmap.Bpc.Width;
-        _rowCount = bitmap.Bpc.Height;
     }
 
-    public void Lock(Action<IBitMap> action)
+    public void Lock(Action<ILifeMap> action)
     {
         lock (_lock)
         {
@@ -34,17 +25,35 @@ public class CellEnvironment
         }
     }
 
-    public long Population => _bitmap.QueryRegionCount(true, new Rectangle(0, 0, _colWidth, _rowCount));
-    public long Generation { get; private set; } = 0;
+    public long Population => _bitmap.Population;
+    public long Generation
+    {
+        get => _bitmap.Generation;
+    }
 
-    public int MsCPUTime { get; private set; } = 0; // milliseconds
+    public int ThreadCount
+    {
+        get => _bitmap.ThreadCount;
+        set => _bitmap.ThreadCount = value;
+    }
+
+    public long MsCPUTime => _bitmap.MsCPUTime; // milliseconds
+    public long MsMemoryCopyTime => _bitmap.MsMemoryCopyTime; // milliseconds
+    public long MsGenerationTime => _bitmap.MsGenerationTime; // milliseconds
 
     public bool IsAlive(int row, int col)
     {
         lock (_lock)
         {
-            var bPos = Bpc.Transform(row, col);
-            return _bitmap.Get(ref bPos);
+            return _bitmap.Get(row, col);
+        }
+    }
+
+    public void NextGeneration()
+    {
+        lock (_lock)
+        {
+            _bitmap.NextGeneration();
         }
     }
 
@@ -52,7 +61,7 @@ public class CellEnvironment
     {
         lock (_lock)
         {
-            return GetRegionAliveCells(_bitmap, rect);
+            return _bitmap.QueryRegion(true, rect);
         }
     }
 
@@ -81,7 +90,7 @@ public class CellEnvironment
     }
 
 
-    public IBitMap CreateSnapshot()
+    public ILifeMap CreateSnapshot()
     {
         lock (_lock)
         {
@@ -91,9 +100,8 @@ public class CellEnvironment
 
     public async Task SaveTo(string file)
     {
-        var cells = GetRegionAliveCells(new Rectangle(0, 0, _colWidth, _rowCount)).ToArray();
+        var cells = _bitmap.GetLocations(true);
         using var fs = File.Create(file);
-        using var bw = new BinaryWriter(fs);
 
         var buffer = new byte[cells.Length * Marshal.SizeOf<int>() * 2];
         unsafe
@@ -134,214 +142,26 @@ public class CellEnvironment
         }
     }
 
-    private Rectangle[]? _blocks;
-    public void EvolveMultiThread(int threadCount)
-    {
-        if (_blocks is null || _blocks.Length != threadCount)
-        {
-            // create blocks
-
-            var blocks = new List<Rectangle>();
-            var blockHeight = _rowCount / threadCount;
-            for (int i = 0; i < threadCount; i++)
-            {
-                var block = new Rectangle(0, i * blockHeight, _colWidth, blockHeight);
-                if (i == threadCount - 1)
-                {
-                    // last block, adjust height to the end
-                    block.Height = _rowCount - block.Top;
-                }
-                blocks.Add(block);
-            }
-
-            _blocks = [.. blocks];
-        }
-
-        var ws = Stopwatch.StartNew();
-
-        using var sharedBitmap = CreateSnapshot();
-        Parallel.ForEach(_blocks, block =>
-        {
-            EvolvePartialInternal2(sharedBitmap, block);
-        });
-
-        ws.Stop();
-        MsCPUTime = (int)ws.ElapsedMilliseconds;
-        Generation++;
-    }
-
     #region Internal Methods 
 
     private void ActivateCellInternal(int row, int col)
     {
-        var bPos = Bpc.Transform(row, col);
-        _bitmap.Set(ref bPos, true);
+        _bitmap.Set(row, col, true);
     }
 
     private void DeactivateCellInternal(int row, int col)
     {
-        var bPos = Bpc.Transform(row, col);
-        _bitmap.Set(ref bPos, false);
+        _bitmap.Set(row, col, false);
     }
 
     private void ClearInternal()
     {
         _bitmap.Clear();
-        Generation = 0;
     }
-    private IBitMap CreateSnapshotInternal()
+
+    private ILifeMap CreateSnapshotInternal()
     {
         return _bitmap.CreateSnapshot();
-    }
-
-    private void EvolvePartialInternal(IBitMap sharedBitMap, Rectangle block)
-    {
-        byte n;
-        var snapshot = sharedBitMap;
-
-        for (int r = block.Top; r < block.Bottom; r++)
-        {
-            for (int c = block.Left; c < block.Right; c++)
-            {
-                n = CountAliveNeighbors(snapshot, r, c);
-
-                var bPos = Bpc.Transform(r, c);
-                if (snapshot.Get(ref bPos))
-                {
-                    if (n < 2 || n > 3)
-                    {
-                        _bitmap.Set(ref bPos, false);
-                    }
-                }
-                else
-                {
-                    if (n == 3)
-                    {
-                        _bitmap.Set(ref bPos, true);
-                    }
-                }
-            }
-        }
-    }
-
-    private static byte CountAliveNeighbors(IBitMap src, int row, int col)
-    {
-        byte count = 0;
-        var cvt = src.Bpc;
-        var width = cvt.Width;
-        var height = cvt.Height;
-
-        for (int r = row - 1; r <= row + 1; r++)
-        {
-            for (int c = col - 1; c <= col + 1; c++)
-            {
-                if (r == row && c == col)
-                {
-                    continue;
-                }
-
-                if (r < 0 || r >= height || c < 0 || c >= width)
-                {
-                    continue;
-                }
-
-                var bPos = cvt.Transform(r, c);
-                if (src.Get(ref bPos))
-                {
-                    count++;
-                }
-            }
-        }
-
-        return count;
-    }
-
-    private void EvolvePartialInternal2(IBitMap sharedBitMap, Rectangle block)
-    {
-        byte n;
-        var snapshot = sharedBitMap;
-
-        var locations = sharedBitMap.QueryRegion(true, block);
-        var nCollector = new HashSet<Point>(locations.Length);
-
-        foreach (var loc in locations)
-        {
-            n = CountAliveNeighbors2(snapshot, loc.Y, loc.X, nCollector);
-
-            var bPos = Bpc.Transform(loc.Y, loc.X);
-            if (snapshot.Get(ref bPos))
-            {
-                if (n < 2 || n > 3)
-                {
-                    _bitmap.Set(ref bPos, false);
-                }
-            }
-            else
-            {
-                if (n == 3)
-                {
-                    _bitmap.Set(ref bPos, true);
-                }
-            }
-        }
-
-        foreach (var loc in nCollector)
-        {
-            n = CountAliveNeighbors2(snapshot, loc.Y, loc.X, null);
-
-            var bPos = Bpc.Transform(loc.Y, loc.X);
-            if (snapshot.Get(ref bPos))
-            {
-                if (n < 2 || n > 3)
-                {
-                    _bitmap.Set(ref bPos, false);
-                }
-            }
-            else
-            {
-                if (n == 3)
-                {
-                    _bitmap.Set(ref bPos, true);
-                }
-            }
-        }
-    }
-
-    private static byte CountAliveNeighbors2(IBitMap src, int row, int col, HashSet<Point>? nCollector)
-    {
-        byte n = 0;
-        for (int r = row - 1; r <= row + 1; r++)
-        {
-            for (int c = col - 1; c <= col + 1; c++)
-            {
-                if (r == row && c == col)
-                {
-                    continue;
-                }
-
-                if (r < 0 || r >= src.Bpc.Height || c < 0 || c >= src.Bpc.Width)
-                {
-                    continue;
-                }
-
-                var p = new Point(c, r);
-                if (src.Get(ref p))
-                {
-                    n++;
-                }
-                else
-                {
-                    nCollector?.Add(p);
-                }
-            }
-        }
-
-        return n;
-    }
-
-    private static IReadOnlyCollection<Point> GetRegionAliveCells(IBitMap src, Rectangle rect)
-    {
-        return src.QueryRegion(true, rect);
     }
 
     #endregion

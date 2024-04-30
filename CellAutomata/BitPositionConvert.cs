@@ -70,21 +70,18 @@ public class ArrayPositionConvert : IPositionConvert
     public int Height { get; }
     public long Length { get; }
 
-    public ArrayPositionConvert(int width, int height)
+    public ArrayPositionConvert( )
     {
-        Width = width;
-        Height = height;
-        Length = width * height;
+        Width = 0;
+        Height = 0;
+        Length = 0;
     }
 
     public BitPosition Transform(int row, int column)
     {
         return new BitPosition()
         {
-            Location = new Point(column, row),
-            Index = row * Width + column,
-            ByteArrayIndex = row * Width + column,
-            BitIndex = 0
+            Location = new Point(column, row)
         };
     }
 }

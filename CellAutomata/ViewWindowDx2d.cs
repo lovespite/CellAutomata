@@ -7,7 +7,7 @@ using System.Drawing;
 
 namespace CellAutomata;
 
-public class ViewWindowDx2d : ViewWindow
+public class ViewWindowDx2d : ViewWindowBase
 {
     private readonly ID2dContext _ctx;
 
@@ -16,8 +16,8 @@ public class ViewWindowDx2d : ViewWindow
     private readonly RawColor4 _idleColor = new(0.5f, 0.5f, 0.5f, 1); // gray
     private readonly RawColor4 _gridLineColor = new(0.2f, 0.2f, 0.2f, 1); // dark gray
     private readonly RawColor4 _thumbnailViewWindowColor = new(1, 0, 0, 1); // red
-    private readonly RawColor4 _selectionColor = new(0, 0, 1, 0.45f); // light blue
-    private readonly RawColor4 _selectionBorderColor = new(0, 0, 1, 1); // blue
+    private readonly RawColor4 _selectionColor = new(0xb2 / 255f, 0xd2 / 255f, 0x35 / 255f, 0.45f); // light blue
+    private readonly RawColor4 _selectionBorderColor = new(0xb2 / 255f, 0xd2 / 255f, 0x35 / 255f, 1);
     private readonly RawColor4 _textColor = new(0, 1, 0, 1); // green
 
     private SolidColorBrush _aliveBrush = null!;
@@ -33,8 +33,8 @@ public class ViewWindowDx2d : ViewWindow
     private readonly TextFormat _textForamt;
     private readonly TextRenderer _textRender;
 
-    public ViewWindowDx2d(CellEnvironment cellEnvironment, ID2dContext ctx, int width, int height, int cellSize)
-        : base(cellEnvironment, width, height, cellSize)
+    public ViewWindowDx2d(CellEnvironment cellEnvironment, ID2dContext ctx, int pixelViewWidth, int pixelViewHeight, float cellSize)
+        : base(cellEnvironment, pixelViewWidth, pixelViewHeight, cellSize)
     {
         _textRender = new TextRenderer();
         _ctx = ctx;
@@ -43,6 +43,13 @@ public class ViewWindowDx2d : ViewWindow
 
         CreateBrushes();
     }
+
+    public override void MoveTo(int left, int top)
+    {
+        _centerX = left;
+        _centerY = top;
+    }
+
 
     private void CreateBrushes()
     {
@@ -69,45 +76,41 @@ public class ViewWindowDx2d : ViewWindow
         _textBrush.Dispose();
     }
 
-    public override void Resize(int width, int height, int cellSize)
+    public override void Resize(int pixelViewWidth, int pixelViewHeight)
     {
         _ctx.Resize(
-           width: width * cellSize,
-           height: height * cellSize
+           width: pixelViewWidth,
+           height: pixelViewHeight
         );
 
         DisposeBrushes();
         CreateBrushes();
 
-        base.Resize(width, height, cellSize);
+        base.Resize(pixelViewWidth, pixelViewHeight);
     }
 
     private ulong _frames = 0;
     private readonly Stopwatch _sw = Stopwatch.StartNew();
 
-    private float _fps;
+    private float _fps; // frames per second 
 
     public override void Draw(Graphics? g)
     {
         var renderer = _ctx.GetRenderer();
-        var totalRows = _cellEnvironment.Height;
-        var totalColumns = _cellEnvironment.Width;
 
         var bitmap = _cellEnvironment.BitMap;
+        var genText =
+            $"Generation: {_cellEnvironment.Generation:#,0} Population: {_cellEnvironment.Population:#,0}\n" +
+            $"Position: {MouseCellPoint}\n" +
+            $"CPU Time: {_cellEnvironment.MsCPUTime:#,0}\n" +
+            $"GPS: {_gps:0.0} FPS: {_fps:0.0}\n";
 
         renderer.BeginDraw();
 
         renderer.Clear(_deadColor); // black  
         DrawMainView2(bitmap);
         DrawGridLines();
-        DrawSelection();
-        DrawThumbnail(bitmap, totalRows, totalColumns);
-
-        var genText =
-            $"Generation: {_cellEnvironment.Generation:#,0}; " +
-            $"Population: {_cellEnvironment.Population:#,0}; " +
-            $"CPU Time: {_cellEnvironment.MsCPUTime:#,0} ms; " +
-            $"FPS: {_fps:0.0}";
+        DrawSelection(); 
 
         DrawGenerationText(genText);
 
@@ -127,129 +130,63 @@ public class ViewWindowDx2d : ViewWindow
         var renderer = _ctx.GetRenderer();
         _textRender.AssignResources(renderer, _aliveBrush);
 
-        var layout = new TextLayout(_textFactory, text, _textForamt, _width * _cellSize, _height * _cellSize);
+        var layout = new TextLayout(_textFactory, text, _textForamt, _pxViewWidth, _pxViewHeight);
         layout.SetDrawingEffect(_textBrush, new TextRange(0, text.Length));
-        var metrics = layout.HitTestTextRange(0, text.Length, 15, 0);
-        var rect = new RawRectangleF(15, 0, metrics[0].Width + 15, metrics[0].Height);
 
-        renderer.FillRectangle(rect, _deadBrush);
+        var metrics = layout.HitTestTextRange(0, text.Length, 15, 0);
+
+        for (int i = 0; i < metrics.Length; i++)
+        {
+            var m = metrics[i];
+
+            var rect = new RawRectangleF(
+                left: m.Left,
+                top: m.Top,
+                right: m.Left + m.Width,
+                bottom: m.Top + m.Height);
+
+            renderer.FillRectangle(rect, _deadBrush);
+        }
+
         layout.Draw(_textRender, 15, 0);
     }
 
-    private void DrawMainView2(IBitMap bitmap)
+    private void DrawMainView2(ILifeMap bitmap)
     {
-        var viewRect = new Rectangle(
-             x: _left,
-             y: _top,
-              width: _width,
-              height: _height);
+        var viewCX = _pxViewWidth * 0.5F;
+        var viewCY = _pxViewHeight * 0.5F;
 
-            var points = bitmap.QueryRegion(true, viewRect);
+        var columns = Math.Max(2, (int)Math.Ceiling(_pxViewWidth / _cellSize)); // at least 2 columns
+        var rows = Math.Max(2, (int)Math.Ceiling(_pxViewHeight / _cellSize)); // at least 2 rows
+
+        var viewRect = new Rectangle(
+            x: _centerX - columns / 2,
+            y: _centerY - rows / 2,
+            width: columns,
+            height: rows);
+
+        var points = bitmap.QueryRegion(true, viewRect);
 
         var renderer = _ctx.GetRenderer();
 
-        foreach (var point in points)
+        RawRectangleF rect;
+        for (int i = 0; i < points.Length; i++)
         {
-            var x = (point.X - _left) * _cellSize;
-            var y = (point.Y - _top) * _cellSize;
+            var p = points[i];
 
-            var rect = new RawRectangleF(
-                left: x,
-                top: y,
-                right: x + _cellSize,
-                bottom: y + _cellSize);
+            rect.Left = viewCX + (p.X - _centerX) * _cellSize;
+            rect.Top = viewCY + (p.Y - _centerY) * _cellSize;
+            rect.Right = rect.Left + Math.Max(1, _cellSize);
+            rect.Bottom = rect.Top + Math.Max(1, _cellSize);
 
             renderer.FillRectangle(rect, _aliveBrush);
-        }
-
-    }
-
-    private void DrawMainView(IBitMap bitmap)
-    {
-        var renderer = _ctx.GetRenderer();
-        var cellSize = _cellSize;
-
-        RawRectangleF lineRect;
-        for (int row = _top; row < _top + _height; row++)
-        {
-            var top = (row - _top) * cellSize;
-            int lineContunuesWidth = 0;
-
-            lineRect.Left = 0;
-            lineRect.Right = 0;
-            lineRect.Top = top;
-            lineRect.Bottom = top + cellSize;
-
-            for (int col = _left; col < _left + _width; col++)
-            {
-
-                if (row >= _cellEnvironment.Height || col >= _cellEnvironment.Width)
-                {
-                    var rect = new RawRectangleF(
-                        left: (col - _left) * cellSize,
-                        top: (row - _top) * cellSize,
-                        right: (col - _left + 1) * cellSize,
-                        bottom: (row - _top + 1) * cellSize
-                    );
-                    renderer.FillRectangle(rect, _idleBrush);
-                    continue;
-                }
-
-                var bPos = bitmap.Bpc.Transform(row, col);
-                var cell = bitmap.Get(ref bPos);
-
-                if (cell)
-                {
-                    // alive
-                    lineContunuesWidth += cellSize;
-                    continue;
-                }
-
-                // dead
-
-                if (lineContunuesWidth > 0)
-                {
-                    lineRect.Right = lineRect.Left + lineContunuesWidth;
-                    renderer.FillRectangle(lineRect, _aliveBrush);
-
-                    lineContunuesWidth = 0;
-                    lineRect.Left = lineRect.Right + cellSize;
-                }
-                else
-                {
-                    lineRect.Left += cellSize;
-                }
-            }
-
-            if (lineContunuesWidth > 0)
-            {
-                lineRect.Right = lineRect.Left + lineContunuesWidth;
-                renderer.FillRectangle(lineRect, _aliveBrush);
-            }
-        }
-    }
-
-    private void DrawGridLines()
-    {
-        if (_cellSize < 10) return;
-        var renderer = _ctx.GetRenderer();
-        var cellSize = _cellSize;
-
-        for (int row = 0; row < _height; row++)
-        {
-            var y = row * cellSize;
-            renderer.DrawLine(new RawVector2(0, y), new RawVector2(_width * cellSize, y), _gridLineBrush);
-        }
-
-        for (int col = 0; col < _width; col++)
-        {
-            var x = col * cellSize;
-            renderer.DrawLine(new RawVector2(x, 0), new RawVector2(x, _height * cellSize), _gridLineBrush);
         }
     }
 
     private void DrawSelection()
     {
+        var viewCX = _pxViewWidth * 0.5F;
+        var viewCY = _pxViewHeight * 0.5F;
         var renderer = _ctx.GetRenderer();
         var selection = GetSelection();
 
@@ -258,8 +195,8 @@ public class ViewWindowDx2d : ViewWindow
             return;
         }
 
-        var left = (selection.X - _left) * _cellSize;
-        var top = (selection.Y - _top) * _cellSize;
+        var left = (selection.X - _centerX) * _cellSize + viewCX;
+        var top = (selection.Y - _centerY) * _cellSize + viewCY;
 
         var rect = new RawRectangleF(
             left: left,
@@ -268,75 +205,46 @@ public class ViewWindowDx2d : ViewWindow
             bottom: top + selection.Height * _cellSize);
 
         renderer.FillRectangle(rect, _selectionBrush);
-        renderer.DrawRectangle(rect, _selectionBorderBrush);
+        // renderer.DrawRectangle(rect, _selectionBorderBrush);
     }
 
-    private void DrawThumbnail(IBitMap bitmap, int totalRows, int totalColumns)
+    private void DrawGridLines()
     {
+        if (_cellSize < 10) return;
+
         var renderer = _ctx.GetRenderer();
-        var thumbWidth = ThumbnailWidth;
-        var cellSize = 1;
-        var thumbHeight = totalRows * thumbWidth / totalColumns;
 
-        // top right corner
-        var thumbLeft = 15;
-        var thumbTop = 15;
+        var cellSize = _cellSize;
+        var viewCX = _pxViewWidth * 0.5F;
+        var viewCY = _pxViewHeight * 0.5F;
 
-        var rect = new RawRectangleF(
-            left: thumbLeft,
-            top: thumbTop,
-            right: thumbLeft + thumbWidth,
-            bottom: thumbTop + thumbHeight);
 
-        // draw thumbnail background
-        renderer.FillRectangle(rect, _deadBrush);
+        RawVector2 p1;
+        RawVector2 p2;
 
-        // draw thumbnail border
-        renderer.DrawRectangle(rect, _aliveBrush);
+        for (int x = (int)viewCX, i = 0; x < _pxViewWidth; x += (int)cellSize, i++)
+        {
+            p1 = new RawVector2(x, 0);
+            p2 = new RawVector2(x, _pxViewHeight);
+            renderer.DrawLine(p1, p2, _gridLineBrush, 1);
 
-        // draw thumbnail cells
-        //for (int row = 0; row < totalRows; row += 10)
-        //{
-        //    for (int col = 0; col < totalColumns; col += 10)
-        //    {
-        //        var bPos = bitmap.Bpc.Transform(row, col);
-        //        var cell = bitmap.Get(ref bPos);
+            if (i == 0) continue;
+            p1 = new RawVector2(_pxViewWidth - x, 0);
+            p2 = new RawVector2(_pxViewWidth - x, _pxViewHeight);
+            renderer.DrawLine(p1, p2, _gridLineBrush, 1);
+        }
 
-        //        if (!cell) continue;
+        for (int y = (int)viewCY, i = 0; y < _pxViewHeight; y += (int)cellSize, i++)
+        {
+            p1 = new RawVector2(0, y);
+            p2 = new RawVector2(_pxViewWidth, y);
+            renderer.DrawLine(p1, p2, _gridLineBrush, 1);
 
-        //        var calcX = thumbLeft + ((col / (float)totalColumns) * thumbWidth);
-        //        var calcY = thumbTop + ((row / (float)totalRows) * thumbHeight);
-
-        //        var rect2 = new RawRectangleF(
-        //            left: calcX,
-        //            top: calcY,
-        //            right: cellSize + calcX,
-        //            bottom: cellSize + calcY
-        //            );
-
-        //        renderer.FillRectangle(rect2, _aliveBrush);
-        //    }
-        //}
-
-        // draw thumbnail view window
-        var thumbViewWidth = Math.Min(thumbWidth, _width / (float)totalColumns * thumbWidth);
-        var thumbViewHeight = Math.Min(thumbHeight, _height / (float)totalRows * thumbHeight);
-        var thumbViewLeft = thumbLeft + (_left / (float)totalColumns * thumbWidth);
-        var thumbViewTop = thumbTop + (_top / (float)totalRows * thumbHeight);
-
-        // adjust thumbViewWidth 
-        thumbViewWidth = Math.Min(thumbViewWidth, thumbLeft + thumbWidth - thumbViewLeft);
-
-        // adjust thumbViewHeight
-        thumbViewHeight = Math.Min(thumbViewHeight, thumbViewTop + thumbHeight - thumbViewTop);
-
-        var thumbViewRect = new RawRectangleF(
-            left: thumbViewLeft,
-            top: thumbViewTop,
-            right: thumbViewLeft + thumbViewWidth,
-            bottom: thumbViewTop + thumbViewHeight);
-
-        renderer.DrawRectangle(thumbViewRect, _thumbnailViewWindowBrush);
+            if (i == 0) continue;
+            p1 = new RawVector2(0, _pxViewHeight - y);
+            p2 = new RawVector2(_pxViewWidth, _pxViewHeight - y);
+            renderer.DrawLine(p1, p2, _gridLineBrush, 1);
+        }
     }
 
     public void Dispose()
