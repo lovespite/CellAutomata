@@ -68,7 +68,6 @@ public class Array2LifeMap : ILifeMap
                 }
             }
         }
-
     }
 
     public void Clear()
