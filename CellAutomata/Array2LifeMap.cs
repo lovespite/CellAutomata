@@ -100,11 +100,7 @@ public class Array2LifeMap : ILifeMap
     {
         var p = new Point(col, row);
         return _cellFactory.IsAlive(ref p);
-    }
-    public bool Get(ref BitPosition bPos)
-    {
-        return _cellFactory.IsAlive(ref bPos.Location);
-    }
+    } 
     public bool Get(ref Point point)
     {
         return _cellFactory.IsAlive(ref point);
@@ -114,11 +110,7 @@ public class Array2LifeMap : ILifeMap
     {
         var p = new Point(col, row);
         Set(ref p, value);
-    }
-    public void Set(ref BitPosition bPos, bool value)
-    {
-        Set(ref bPos.Location, value);
-    }
+    } 
     public void Set(ref Point point, bool value)
     {
         if (value)
