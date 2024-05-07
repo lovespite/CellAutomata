@@ -100,7 +100,7 @@ public class Array2LifeMap : ILifeMap
     {
         var p = new Point(col, row);
         return _cellFactory.IsAlive(ref p);
-    } 
+    }
     public bool Get(ref Point point)
     {
         return _cellFactory.IsAlive(ref point);
@@ -110,7 +110,7 @@ public class Array2LifeMap : ILifeMap
     {
         var p = new Point(col, row);
         Set(ref p, value);
-    } 
+    }
     public void Set(ref Point point, bool value)
     {
         if (value)
@@ -357,5 +357,45 @@ public class Array2LifeMap : ILifeMap
         }
 
         return n;
+    }
+
+    public void SaveRle(Stream stream)
+    {
+        var locations = _cellFactory.GetLocations();
+        var minX = locations.Min(p => p.X);
+        var minY = locations.Min(p => p.Y);
+
+        var maxX = locations.Max(p => p.X);
+        var maxY = locations.Max(p => p.Y);
+
+        var width = maxX - minX + 1;
+        var height = maxY - minY + 1;
+
+        var writer = new StreamWriter(stream);
+        writer.WriteLine($"x = {width}, y = {height}, rule = B3/S23");
+
+
+
+    }
+
+    public RectangleL GetBounds()
+    {
+        var locs = _cellFactory.GetLocations();
+        if (locs.Length == 0)
+        {
+            return new RectangleL(0, 0, 0, 0);
+        }
+
+        var minX = locs.Min(p => p.X);
+        var minY = locs.Min(p => p.Y);
+        var maxX = locs.Max(p => p.X);
+        var maxY = locs.Max(p => p.Y);
+
+        return new RectangleL(minY, minX, maxY, maxX);
+    }
+
+    public void ReadRle(Stream stream)
+    {
+        throw new NotImplementedException();
     }
 }

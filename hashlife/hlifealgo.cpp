@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
+#include <vector> 
 using namespace std;
 long long setmaxmem;
 /*
@@ -1571,6 +1572,7 @@ const BIGINT hlifealgo::getPopulation() {
     }
     return population;
 }
+
 /*
  *   Finally, we get to run the pattern.  We first ensure that all
  *   clearspace nodes and the input pattern is never garbage

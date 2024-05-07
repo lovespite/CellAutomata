@@ -1,7 +1,7 @@
 #ifndef LIFEALGO_H
 #define LIFEALGO_H
 #include "util.h"
-
+#include "bigint.h" 
 
 typedef unsigned long long BIGINT;
 
@@ -15,8 +15,10 @@ public:
     virtual void clearcell(int x, int y) = 0;
     virtual BIGINT getpopulation() = 0;
     virtual void swap() = 0;
+    virtual void findedges(bigint* t, bigint* l, bigint* b, bigint* r) = 0;
     virtual BIGINT nextstep(int i, int n, int needpop) = 0;
     virtual void setinc(int inc) { increment = inc; }
+    virtual void lowerRightPixel(bigint& x, bigint& y, int mag) = 0;
     virtual BIGINT nextstep() {
         for (int i = 1; i < increment; i++) {
             nextstep(0, 1, 0);

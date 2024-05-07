@@ -82,14 +82,14 @@
             // 
             // inputSpeed
             // 
-            inputSpeed.Increment = new decimal(new int[] { 20, 0, 0, 0 });
+            inputSpeed.Increment = new decimal(new int[] { 10, 0, 0, 0 });
             inputSpeed.Location = new Point(140, 28);
             inputSpeed.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
             inputSpeed.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             inputSpeed.Name = "inputSpeed";
-            inputSpeed.Size = new Size(126, 21);
+            inputSpeed.Size = new Size(66, 21);
             inputSpeed.TabIndex = 1;
-            inputSpeed.Value = new decimal(new int[] { 100, 0, 0, 0 });
+            inputSpeed.Value = new decimal(new int[] { 10, 0, 0, 0 });
             // 
             // label1
             // 
@@ -121,7 +121,7 @@
             // 
             loadFileToolStripMenuItem.Name = "loadFileToolStripMenuItem";
             loadFileToolStripMenuItem.ShortcutKeys = Keys.F2;
-            loadFileToolStripMenuItem.Size = new Size(180, 22);
+            loadFileToolStripMenuItem.Size = new Size(163, 22);
             loadFileToolStripMenuItem.Text = "&Load file";
             loadFileToolStripMenuItem.Click += btnLoad_Click;
             // 
@@ -129,19 +129,19 @@
             // 
             saveToToolStripMenuItem.Name = "saveToToolStripMenuItem";
             saveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
-            saveToToolStripMenuItem.Size = new Size(180, 22);
+            saveToToolStripMenuItem.Size = new Size(163, 22);
             saveToToolStripMenuItem.Text = "&Save to";
             saveToToolStripMenuItem.Click += btnSave_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(177, 6);
+            toolStripSeparator1.Size = new Size(160, 6);
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(180, 22);
+            exitToolStripMenuItem.Size = new Size(163, 22);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
@@ -303,7 +303,7 @@
             homeToolStripMenuItem.Name = "homeToolStripMenuItem";
             homeToolStripMenuItem.ShortcutKeyDisplayString = "";
             homeToolStripMenuItem.ShortcutKeys = Keys.F1;
-            homeToolStripMenuItem.Size = new Size(180, 22);
+            homeToolStripMenuItem.Size = new Size(132, 22);
             homeToolStripMenuItem.Text = "Home";
             homeToolStripMenuItem.Click += homeToolStripMenuItem_Click;
             // 

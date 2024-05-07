@@ -32,7 +32,7 @@ public partial class HashLifeMap : ILifeMap
     internal static partial void GetPopulation(ref ulong pop);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void GetRegion(int x, int y, int w, int h, [In, Out] byte[] buffer, int bufferSize);
+    internal static partial ulong GetRegion(int x, int y, int w, int h, [In, Out] byte[] buffer, int bufferSize);
 
     [LibraryImport(HashLifeLib)]
     internal static partial void SetRegion(int x, int y, int w, int h, [In] byte[] buffer, int bufferSize);
@@ -40,6 +40,8 @@ public partial class HashLifeMap : ILifeMap
     [LibraryImport(HashLifeLib)]
     internal static partial void Version([In, Out] byte[] buffer, int bufferSize);
 
+    [LibraryImport(HashLifeLib)]
+    internal static partial void FindEdges(ref Int64 top, ref Int64 left, ref Int64 bottom, ref Int64 right);
 
     private static readonly string _version;
     static HashLifeMap()
@@ -120,7 +122,17 @@ public partial class HashLifeMap : ILifeMap
 
     public ILifeMap CreateSnapshot()
     {
-        throw new NotSupportedException();
+        var bounds = GetBounds();
+
+        return CreateRegionSnapshot(bounds);
+    }
+
+    public RectangleL GetBounds()
+    {
+        Int64 top = 0, left = 0, bottom = 0, right = 0;
+        FindEdges(ref top, ref left, ref bottom, ref right);
+
+        return new RectangleL(top, left, bottom, right);
     }
 
 
@@ -132,7 +144,7 @@ public partial class HashLifeMap : ILifeMap
         {
             for (int col = rect.Left; col < rect.Right; col++)
             {
-                snapshot.Set(row, col, Get(row, col));
+                snapshot.Set(row - rect.Top, col - rect.Left, Get(row, col));
             }
         }
 
@@ -178,41 +190,77 @@ public partial class HashLifeMap : ILifeMap
 
         if (bufferLen == 0)
         {
-            return Array.Empty<Point>();
+            return [];
         }
 
-        List<Point> points = [];
-        int byteIndex = 0;
-        int bitIndex = 0;
+        List<Point> points = new(Math.Min(10_000, bufferLen)); // initial capacity   
 
         var buffer = ArrayPool<byte>.Shared.Rent(bufferLen);
         try
         {
+            var sw = Stopwatch.StartNew();
             GetRegion(rect.Left, rect.Top, rect.Width, rect.Height, buffer, buffer.Length);
+            var msGetRegion = sw.ElapsedMilliseconds;
 
-            for (int row = 0; row < rect.Height; row++)
-            {
-                for (int col = 0; col < rect.Width; col++)
-                {
-                    if (val == ((buffer[byteIndex] & (1 << bitIndex)) != 0))
-                    {
-                        points.Add(new Point(col + rect.Left, row + rect.Top));
-                    }
+            sw.Restart();
+            // CollectBitMap(rect, points, buffer); 
+            CollectBitMap2(rect, points, buffer, bufferLen);
+            var msCollect = sw.ElapsedMilliseconds;
 
-                    if (++bitIndex == 8)
-                    {
-                        bitIndex = 0;
-                        ++byteIndex;
-                    }
-                }
-            }
+            sw.Stop();
+            Debug.WriteLine($"> GetRegion: {msGetRegion} ms, Collect: {msCollect} ms");
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
         }
 
+
         return [.. points];
+    }
+
+    private static void CollectBitMap(Rectangle rect, List<Point> points, byte[] buffer)
+    {
+        int byteIndex = 0;
+        int bitIndex = 0;
+        for (int row = 0; row < rect.Height; row++)
+        {
+            for (int col = 0; col < rect.Width; col++)
+            {
+                if (buffer[byteIndex] != 0)
+                {
+                    if ((buffer[byteIndex] & (1 << bitIndex)) != 0)
+                    {
+                        points.Add(new Point(col + rect.Left, row + rect.Top));
+                    }
+                }
+
+                if (++bitIndex == 8)
+                {
+                    bitIndex = 0;
+                    ++byteIndex;
+                }
+            }
+        }
+    }
+
+    private static void CollectBitMap2(Rectangle rect, List<Point> points, byte[] buffer, int bufferLen)
+    {
+        int byteIndex;
+        int bitIndex;
+        for (byteIndex = 0; byteIndex < bufferLen; byteIndex++)
+        {
+            byte b = buffer[byteIndex];
+            if (b == 0) continue;
+
+            for (bitIndex = 0; bitIndex < 8; bitIndex++)
+            {
+                if ((b & (1 << bitIndex)) != 0)
+                {
+                    points.Add(new Point((byteIndex * 8 + bitIndex) % rect.Width + rect.Left, (byteIndex * 8 + bitIndex) / rect.Width + rect.Top));
+                }
+            }
+        }
     }
 
     public long QueryRegionCount(bool val, Rectangle rect)
@@ -233,7 +281,10 @@ public partial class HashLifeMap : ILifeMap
 
     public Point[] GetLocations(bool val)
     {
-        throw new NotSupportedException();
+        var snapshot = CreateSnapshot();
+        var bounds = snapshot.GetBounds();
+
+        return snapshot.QueryRegion(val, bounds);
     }
 
     private readonly Stopwatch _sw = new();
@@ -251,6 +302,16 @@ public partial class HashLifeMap : ILifeMap
     public void Dispose()
     {
         GC.SuppressFinalize(this);
+    }
+
+    public void SaveRle(Stream stream)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ReadRle(Stream stream)
+    {
+        throw new NotImplementedException();
     }
 }
 

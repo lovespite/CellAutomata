@@ -147,19 +147,22 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="bigint.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="hlifealgo.h" />
     <ClInclude Include="lifealgo.h" />
+    <ClInclude Include="liferender.h" />
     <ClInclude Include="liferules.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="pthread.h" />
-    <ClInclude Include="sched.h" />
-    <ClInclude Include="semaphore.h" />
     <ClInclude Include="util.h" />
+    <ClInclude Include="viewport.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="bigint.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="hlifealgo.cpp" />
+    <ClCompile Include="hlifedraw.cpp" />
+    <ClCompile Include="liferender.cpp" />
     <ClCompile Include="liferules.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -168,6 +171,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="util.cpp" />
+    <ClCompile Include="viewport.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="runtest.cmd">

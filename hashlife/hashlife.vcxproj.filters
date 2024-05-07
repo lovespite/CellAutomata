@@ -33,16 +33,16 @@
     <ClInclude Include="lifealgo.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pthread.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="sched.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="semaphore.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="liferules.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="bigint.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="liferender.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="viewport.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -60,6 +60,18 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="liferules.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="bigint.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="hlifedraw.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="liferender.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="viewport.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

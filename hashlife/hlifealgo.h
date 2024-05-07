@@ -5,8 +5,10 @@
 #define HLIFEALGO_H
 // #include "lifealgo.h"
 #include "liferules.h"
-#include "util.h"
-typedef long long G_INT64;
+#include "util.h" 
+#include "viewport.h"
+#include "liferender.h"
+
 typedef unsigned long long g_uintptr_t;
 const long long G_MAX = 0x7fffffffffffffffLL;
 #define lifefatal error
@@ -188,6 +190,7 @@ public:
     void endofpattern();
     void setIncrement(int inc);
     const BIGINT getPopulation();
+    void findedges(bigint* t, bigint* l, bigint* b, bigint* r);
     int isEmpty();
     int hyperCapable() { return 1; }
     void setMaxMemory(int m);
@@ -246,6 +249,12 @@ private:
      *   When rendering we store the relevant bits here rather than
      *   passing them deep into recursive subroutines.
      */
+
+    liferender* renderer;
+    viewport* view;
+    int uviewh, uvieww, viewh, vieww, mag, pmag;
+
+
     int llbits, llsize;
     char* llxb, * llyb;
     int hashed;
@@ -305,10 +314,16 @@ private:
     void new_ngens(int newval);
     int log2(unsigned int n);
     node* runpattern();
+    void clearrect(int minx, int miny, int w, int h);
     void renderbm(int x, int y);
     void fill_ll(int d);
+    void draw(viewport& viewarg, liferender& rendererarg);
     void drawnode(node* n, int llx, int lly, int depth, node* z);
     void ensure_hashed();
+
+    void fit(viewport& view, int force);
+
+    void lowerRightPixel(bigint& x, bigint& y, int mag);
     g_uintptr_t writecell_2p1(node* root, int depth);
     void unpack8x8(unsigned short nw, unsigned short ne,
         unsigned short sw, unsigned short se,

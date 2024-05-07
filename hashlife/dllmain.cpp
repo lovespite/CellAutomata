@@ -12,6 +12,9 @@ std::string _version = "alpha1.0";
 
 static int threadcount = 1;
 static lifealgo* algo = nullptr;
+static viewport* view = nullptr;
+static bitmaprender render;
+
 BIGINT population = 0;
 
 extern "C" __declspec(dllexport) void Version(char* versionBuffer, int bufferSize)
@@ -36,6 +39,36 @@ extern "C" __declspec(dllexport) void CreateNewUniverse(const char* rule)
     algo->init(0, 0);
     algo->setrule(rule);
     algo->setinc(1);
+}
+
+extern "C" __declspec(dllexport) void CreateViewPort(int width, int height)
+{
+    if (view != nullptr)
+    {
+        delete view;
+    }
+
+    view = new viewport(width, height);
+}
+
+extern "C" __declspec(dllexport) void MoveView(int x, int y, int w, int h)
+{
+    if (view == nullptr)
+    {
+        return;
+    }
+
+    view->move(x, y);
+}
+
+extern "C" __declspec(dllexport) void ResizeView(int w, int h)
+{
+    if (view == nullptr)
+    {
+        return;
+    }
+
+    view->resize(w, h);
 }
 
 extern "C" __declspec(dllexport) void SetCell(int x, int y, bool alive)
@@ -96,7 +129,7 @@ extern "C" __declspec(dllexport) void DestroyUniverse()
     }
 }
 
-extern "C" __declspec(dllexport) int GetRegion(int x, int y, int w, int h, BYTE * buffer, long bufferLen)
+extern "C" __declspec(dllexport) BIGINT GetRegion(int x, int y, int w, int h, BYTE * buffer, long bufferLen)
 {
     if (algo == nullptr)
     {
@@ -112,7 +145,7 @@ extern "C" __declspec(dllexport) int GetRegion(int x, int y, int w, int h, BYTE 
     int byteIndex = 0;
     int bitIndex = 0;
 
-    memset(buffer, 0, bufferLen); // clear buffer
+    // memset(buffer, 0, bufferLen); // clear buffer
     BIGINT pop = 0;
 
     for (int i = 0; i < h; i++)
@@ -178,6 +211,24 @@ extern "C" __declspec(dllexport) void SetRegion(int x, int y, int w, int h, BYTE
             }
         }
     }
+}
+
+typedef long long BigInt;
+
+extern "C" __declspec(dllexport) void FindEdges(BigInt * t, BigInt * l, BigInt * b, BigInt * r)
+{
+    if (algo == nullptr)
+    {
+        return;
+    }
+
+    bigint top, left, bottom, right;
+    algo->findedges(&top, &left, &bottom, &right);
+
+    *t = top.toint64();
+    *l = left.toint64();
+    *b = bottom.toint64();
+    *r = right.toint64();
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule,
