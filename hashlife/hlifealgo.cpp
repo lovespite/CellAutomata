@@ -28,7 +28,7 @@
 #include <string.h>
 #include <iostream>
 using namespace std;
-extern long long setmaxmem;
+long long setmaxmem;
 /*
  *   Power of two hash sizes work fine.
  */
@@ -1099,7 +1099,7 @@ int hlifealgo::setcell(int x, int y, int newstate) {
         okaytogc = 0;
     }
     return 0;
-} 
+}
 /*
  *   Our nonrecurse top-level bit getting routine.
  */

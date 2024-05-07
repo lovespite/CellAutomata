@@ -155,7 +155,7 @@ class hlifealgo : public lifealgo {
 public:
     hlifealgo();
     virtual void init(int, int) {
-        setrule("B3S23");
+        // setrule("B3S23");
     }
     virtual BIGINT getpopulation() {
         if (inGC)

@@ -8,6 +8,7 @@ typedef unsigned long long BIGINT;
 class lifealgo {
 public:
     lifealgo() { increment = 1; }
+    virtual const char* setrule(const char* s) = 0;
     virtual void init(int w, int h) = 0;
     virtual void setcell(int x, int y) = 0;
     virtual int getcell(int x, int y) = 0;
@@ -27,11 +28,4 @@ public:
     }
     int increment;
 };
-
- class lifealgofactory {
- public:
-     virtual lifealgo* createInstance() = 0;
- };
- extern void registerAlgo(const char* name, lifealgofactory* laf);
-// extern void readrle(const char* filename, lifealgo* la, int startx, int starty);
 #endif

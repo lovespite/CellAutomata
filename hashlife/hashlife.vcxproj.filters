@@ -33,9 +33,6 @@
     <ClInclude Include="lifealgo.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="thread.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="pthread.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -62,25 +59,11 @@
     <ClCompile Include="util.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="lifealgo.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="thread.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="liferules.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libpthreadGC2.a" />
-    <Library Include="pthreadVC2.lib" />
-  </ItemGroup>
-  <ItemGroup>
     <CopyFileToFolders Include="runtest.cmd" />
-    <CopyFileToFolders Include="pthreadGC2.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="pthreadVC2.dll" />
   </ItemGroup>
 </Project>

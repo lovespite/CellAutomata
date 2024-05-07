@@ -120,8 +120,8 @@
             // loadFileToolStripMenuItem
             // 
             loadFileToolStripMenuItem.Name = "loadFileToolStripMenuItem";
-            loadFileToolStripMenuItem.ShortcutKeys = Keys.F1;
-            loadFileToolStripMenuItem.Size = new Size(163, 22);
+            loadFileToolStripMenuItem.ShortcutKeys = Keys.F2;
+            loadFileToolStripMenuItem.Size = new Size(180, 22);
             loadFileToolStripMenuItem.Text = "&Load file";
             loadFileToolStripMenuItem.Click += btnLoad_Click;
             // 
@@ -129,19 +129,19 @@
             // 
             saveToToolStripMenuItem.Name = "saveToToolStripMenuItem";
             saveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
-            saveToToolStripMenuItem.Size = new Size(163, 22);
+            saveToToolStripMenuItem.Size = new Size(180, 22);
             saveToToolStripMenuItem.Text = "&Save to";
             saveToToolStripMenuItem.Click += btnSave_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(160, 6);
+            toolStripSeparator1.Size = new Size(177, 6);
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(163, 22);
+            exitToolStripMenuItem.Size = new Size(180, 22);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
@@ -302,8 +302,8 @@
             // 
             homeToolStripMenuItem.Name = "homeToolStripMenuItem";
             homeToolStripMenuItem.ShortcutKeyDisplayString = "";
-            homeToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Space;
-            homeToolStripMenuItem.Size = new Size(183, 22);
+            homeToolStripMenuItem.ShortcutKeys = Keys.F1;
+            homeToolStripMenuItem.Size = new Size(180, 22);
             homeToolStripMenuItem.Text = "Home";
             homeToolStripMenuItem.Click += homeToolStripMenuItem_Click;
             // 

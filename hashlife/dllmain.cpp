@@ -7,10 +7,24 @@
 #include <Windows.h>
 #include <string>
 
+
+std::string _version = "alpha1.0";
+
+static int threadcount = 1;
 static lifealgo* algo = nullptr;
 BIGINT population = 0;
 
-extern "C" __declspec(dllexport) void CreateNewUniverse(int width, int height)
+extern "C" __declspec(dllexport) void Version(char* versionBuffer, int bufferSize)
+{
+    memcpy_s(versionBuffer, bufferSize, _version.c_str(), _version.size());
+}
+
+extern "C" __declspec(dllexport) void SetThreadCount(int count)
+{
+    threadcount = count;
+}
+
+extern "C" __declspec(dllexport) void CreateNewUniverse(const char* rule)
 {
     if (algo != nullptr)
     {
@@ -20,6 +34,7 @@ extern "C" __declspec(dllexport) void CreateNewUniverse(int width, int height)
 
     algo = new hlifealgo();
     algo->init(0, 0);
+    algo->setrule(rule);
     algo->setinc(1);
 }
 
@@ -40,7 +55,17 @@ extern "C" __declspec(dllexport) void SetCell(int x, int y, bool alive)
     }
 }
 
-extern "C" __declspec(dllexport) void NextStep()
+extern "C" __declspec(dllexport) int GetCell(int x, int y)
+{
+    if (algo == nullptr)
+    {
+        return -1;
+    }
+
+    return algo->getcell(x, y);
+}
+
+extern "C" __declspec(dllexport) void NextStep(BIGINT * pop)
 {
     if (algo == nullptr)
     {
@@ -48,6 +73,7 @@ extern "C" __declspec(dllexport) void NextStep()
     }
 
     population = algo->nextstep();
+    *pop = population;
 }
 
 extern "C" __declspec(dllexport) void GetPopulation(BIGINT * pop)
@@ -57,7 +83,7 @@ extern "C" __declspec(dllexport) void GetPopulation(BIGINT * pop)
         return;
     }
 
-    *pop = population;
+    *pop = algo->getpopulation();
 }
 
 extern "C" __declspec(dllexport) void DestroyUniverse()
@@ -103,16 +129,55 @@ extern "C" __declspec(dllexport) int GetRegion(int x, int y, int w, int h, BYTE 
                 buffer[byteIndex] &= ~(1 << bitIndex);
             }
 
-            bitIndex++;
+            ++bitIndex;
             if (bitIndex == 8)
             {
                 bitIndex = 0;
-                byteIndex++;
+                ++byteIndex;
             }
         }
     }
 
     return pop;
+}
+
+extern "C" __declspec(dllexport) void SetRegion(int x, int y, int w, int h, BYTE * buffer, long bufferLen)
+{
+    if (algo == nullptr)
+    {
+        return;
+    }
+
+    if (bufferLen < w * h / 8)
+    {
+        // buffer is too small
+        return;
+    }
+
+    int byteIndex = 0;
+    int bitIndex = 0;
+
+    for (int i = 0; i < h; i++)
+    {
+        for (int j = 0; j < w; j++)
+        {
+            if (buffer[byteIndex] & (1 << bitIndex))
+            {
+                algo->setcell(x + j, y + i);
+            }
+            else
+            {
+                algo->clearcell(x + j, y + i);
+            }
+
+            ++bitIndex;
+            if (bitIndex == 8)
+            {
+                bitIndex = 0;
+                ++byteIndex;
+            }
+        }
+    }
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule,

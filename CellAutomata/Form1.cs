@@ -46,7 +46,8 @@ public partial class Form1 : Form
 
         canvas.Resize += Form1_Resize;
 
-        _env = new CellEnvironment(new HashLifeMap())
+        var lifemap = new HashLifeMap();
+        _env = new CellEnvironment(lifemap)
         {
             ThreadCount = ThreadCount
         };
