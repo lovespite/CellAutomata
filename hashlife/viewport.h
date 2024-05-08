@@ -59,6 +59,7 @@ public:
     pair<int, int> screenPosOf(bigint x, bigint y, lifealgo* algo);
     void resize(int newwidth, int newheight);
     void move(int dx, int dy);   // dx and dy are given in pixels
+    void moveto(int x, int y);   // x and y are given in pixels
     int getmag() const { return mag; }
     void setmag(int magarg) { mag = magarg; reposition(); }
     void setpositionmag(const bigint& xarg, const bigint& yarg, int magarg);

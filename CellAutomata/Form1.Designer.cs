@@ -50,8 +50,9 @@
             pasteAnd = new ToolStripMenuItem();
             pasteXor = new ToolStripMenuItem();
             toolStripSeparator2 = new ToolStripSeparator();
-            clearSelectionToolStripMenuItem = new ToolStripMenuItem();
+            selectAllToolStripMenuItem = new ToolStripMenuItem();
             shrinkSelectionToolStripMenuItem = new ToolStripMenuItem();
+            clearSelectionToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator4 = new ToolStripSeparator();
             clearAllToolStripMenuItem = new ToolStripMenuItem();
             actionToolStripMenuItem = new ToolStripMenuItem();
@@ -87,6 +88,7 @@
             inputSpeed.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
             inputSpeed.Minimum = new decimal(new int[] { 10, 0, 0, 0 });
             inputSpeed.Name = "inputSpeed";
+            inputSpeed.ReadOnly = true;
             inputSpeed.Size = new Size(66, 21);
             inputSpeed.TabIndex = 1;
             inputSpeed.Value = new decimal(new int[] { 10, 0, 0, 0 });
@@ -147,7 +149,7 @@
             // 
             // editToolStripMenuItem
             // 
-            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, pasteMethodToolStripMenuItem, toolStripSeparator2, clearSelectionToolStripMenuItem, shrinkSelectionToolStripMenuItem, toolStripSeparator4, clearAllToolStripMenuItem });
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, pasteMethodToolStripMenuItem, toolStripSeparator2, selectAllToolStripMenuItem, shrinkSelectionToolStripMenuItem, clearSelectionToolStripMenuItem, toolStripSeparator4, clearAllToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(42, 21);
             editToolStripMenuItem.Text = "&Edit";
@@ -239,6 +241,22 @@
             toolStripSeparator2.Name = "toolStripSeparator2";
             toolStripSeparator2.Size = new Size(237, 6);
             // 
+            // selectAllToolStripMenuItem
+            // 
+            selectAllToolStripMenuItem.Name = "selectAllToolStripMenuItem";
+            selectAllToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.A;
+            selectAllToolStripMenuItem.Size = new Size(240, 22);
+            selectAllToolStripMenuItem.Text = "Select all";
+            selectAllToolStripMenuItem.Click += selectAllToolStripMenuItem_Click;
+            // 
+            // shrinkSelectionToolStripMenuItem
+            // 
+            shrinkSelectionToolStripMenuItem.Name = "shrinkSelectionToolStripMenuItem";
+            shrinkSelectionToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.A;
+            shrinkSelectionToolStripMenuItem.Size = new Size(240, 22);
+            shrinkSelectionToolStripMenuItem.Text = "S&hrink selection";
+            shrinkSelectionToolStripMenuItem.Click += shrinkSelectionToolStripMenuItem_Click;
+            // 
             // clearSelectionToolStripMenuItem
             // 
             clearSelectionToolStripMenuItem.Name = "clearSelectionToolStripMenuItem";
@@ -246,14 +264,6 @@
             clearSelectionToolStripMenuItem.Size = new Size(240, 22);
             clearSelectionToolStripMenuItem.Text = "Clear &selection";
             clearSelectionToolStripMenuItem.Click += clearSelectionToolStripMenuItem_Click;
-            // 
-            // shrinkSelectionToolStripMenuItem
-            // 
-            shrinkSelectionToolStripMenuItem.Name = "shrinkSelectionToolStripMenuItem";
-            shrinkSelectionToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.A;
-            shrinkSelectionToolStripMenuItem.Size = new Size(240, 22);
-            shrinkSelectionToolStripMenuItem.Text = "S&hrink selection";
-            shrinkSelectionToolStripMenuItem.Click += shrinkSelectionToolStripMenuItem_Click;
             // 
             // toolStripSeparator4
             // 
@@ -364,5 +374,6 @@
         private ToolStripMenuItem nextGenerationToolStripMenuItem;
         private ToolStripMenuItem viewToolStripMenuItem;
         private ToolStripMenuItem homeToolStripMenuItem;
+        private ToolStripMenuItem selectAllToolStripMenuItem;
     }
 }

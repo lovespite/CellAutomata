@@ -18,6 +18,11 @@ public struct SizeL
         Width = width;
         Height = height;
     }
+
+    public static implicit operator Size(SizeL size)
+    {
+        return new Size((int)size.Width, (int)size.Height);
+    }
 }
 
 public struct PointL
@@ -30,11 +35,18 @@ public struct PointL
         X = x;
         Y = y;
     }
+
+    public static implicit operator Point(PointL point)
+    {
+        return new Point((int)point.X, (int)point.Y);
+    }
 }
 public struct RectangleL
 {
     public SizeL Size;
     public PointL Location;
+
+    public readonly PointL Location2 => new(Location.X + Size.Width - 1, Location.Y + Size.Height - 1);
 
     public long Top
     {
@@ -170,5 +182,8 @@ public interface ILifeMap : IDisposable
 
     void SaveRle(Stream stream);
     void ReadRle(Stream stream);
+
+    Bitmap DrawRegionBitmap(Rectangle rectangle);
+    byte[] DrawRegionBitmapBGRA(Rectangle rectangle);
 }
 

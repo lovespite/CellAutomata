@@ -1,78 +1,44 @@
 ﻿// dllmain.cpp : 定义 DLL 应用程序的入口点。
 #include "pch.h"
-#include "hlifealgo.h"
-#include <iostream>
-#include <fstream>
+#include "hlifealgo.h" 
 
 #include <Windows.h>
 #include <string>
-
+#include <algorithm>
+#include <vector>
 
 std::string _version = "alpha1.0";
 
-static int threadcount = 1;
-static lifealgo* algo = nullptr;
-static viewport* view = nullptr;
-static bitmaprender render;
-
-BIGINT population = 0;
+static std::vector<lifealgo*> algos;
 
 extern "C" __declspec(dllexport) void Version(char* versionBuffer, int bufferSize)
 {
     memcpy_s(versionBuffer, bufferSize, _version.c_str(), _version.size());
 }
 
-extern "C" __declspec(dllexport) void SetThreadCount(int count)
+extern "C" __declspec(dllexport) int CreateNewUniverse(const char* rule)
 {
-    threadcount = count;
-}
 
-extern "C" __declspec(dllexport) void CreateNewUniverse(const char* rule)
-{
-    if (algo != nullptr)
-    {
-        population = 0;
-        delete algo;
-    }
-
-    algo = new hlifealgo();
+    auto algo = new hlifealgo();
     algo->init(0, 0);
     algo->setrule(rule);
     algo->setinc(1);
+
+    auto index = algos.size();
+    algos.push_back(algo);
+
+    return index;
 }
 
-extern "C" __declspec(dllexport) void CreateViewPort(int width, int height)
+extern "C" __declspec(dllexport) void SetCell(int index, int x, int y, bool alive)
 {
-    if (view != nullptr)
-    {
-        delete view;
-    }
-
-    view = new viewport(width, height);
-}
-
-extern "C" __declspec(dllexport) void MoveView(int x, int y, int w, int h)
-{
-    if (view == nullptr)
+    if (index < 0 || index >= algos.size())
     {
         return;
     }
 
-    view->move(x, y);
-}
+    auto algo = algos[index];
 
-extern "C" __declspec(dllexport) void ResizeView(int w, int h)
-{
-    if (view == nullptr)
-    {
-        return;
-    }
-
-    view->resize(w, h);
-}
-
-extern "C" __declspec(dllexport) void SetCell(int x, int y, bool alive)
-{
     if (algo == nullptr)
     {
         return;
@@ -88,8 +54,15 @@ extern "C" __declspec(dllexport) void SetCell(int x, int y, bool alive)
     }
 }
 
-extern "C" __declspec(dllexport) int GetCell(int x, int y)
+extern "C" __declspec(dllexport) int GetCell(int index, int x, int y)
 {
+    if (index < 0 || index >= algos.size())
+    {
+        return -2;
+    }
+
+    auto algo = algos[index];
+
     if (algo == nullptr)
     {
         return -1;
@@ -98,19 +71,32 @@ extern "C" __declspec(dllexport) int GetCell(int x, int y)
     return algo->getcell(x, y);
 }
 
-extern "C" __declspec(dllexport) void NextStep(BIGINT * pop)
+extern "C" __declspec(dllexport) void NextStep(int index, BIGINT * pop)
 {
+    if (index < 0 || index >= algos.size())
+    {
+        return;
+    }
+
+    auto algo = algos[index];
+
     if (algo == nullptr)
     {
         return;
     }
 
-    population = algo->nextstep();
-    *pop = population;
+    *pop = algo->nextstep();
 }
 
-extern "C" __declspec(dllexport) void GetPopulation(BIGINT * pop)
+extern "C" __declspec(dllexport) void GetPopulation(int index, BIGINT * pop)
 {
+    if (index < 0 || index >= algos.size())
+    {
+        return;
+    }
+
+    auto algo = algos[index];
+
     if (algo == nullptr)
     {
         return;
@@ -119,18 +105,33 @@ extern "C" __declspec(dllexport) void GetPopulation(BIGINT * pop)
     *pop = algo->getpopulation();
 }
 
-extern "C" __declspec(dllexport) void DestroyUniverse()
+extern "C" __declspec(dllexport) void DestroyUniverse(int index)
 {
+    if (index < 0 || index >= algos.size())
+    {
+        return;
+    }
+
+    auto algo = algos[index];
+
     if (algo != nullptr)
     {
         delete algo;
+
+        algos[index] = nullptr;
         algo = nullptr;
-        population = 0;
     }
 }
 
-extern "C" __declspec(dllexport) BIGINT GetRegion(int x, int y, int w, int h, BYTE * buffer, long bufferLen)
+extern "C" __declspec(dllexport) BIGINT GetRegion(int index, int x, int y, int w, int h, BYTE * buffer, long bufferLen)
 {
+    if (index < 0 || index >= algos.size())
+    {
+        return -3;
+    }
+
+    auto algo = algos[index];
+
     if (algo == nullptr)
     {
         return -1;
@@ -174,8 +175,15 @@ extern "C" __declspec(dllexport) BIGINT GetRegion(int x, int y, int w, int h, BY
     return pop;
 }
 
-extern "C" __declspec(dllexport) void SetRegion(int x, int y, int w, int h, BYTE * buffer, long bufferLen)
+extern "C" __declspec(dllexport) void SetRegion(int index, int x, int y, int w, int h, BYTE * buffer, long bufferLen)
 {
+    if (index < 0 || index >= algos.size())
+    {
+        return;
+    }
+
+    auto algo = algos[index];
+
     if (algo == nullptr)
     {
         return;
@@ -215,8 +223,15 @@ extern "C" __declspec(dllexport) void SetRegion(int x, int y, int w, int h, BYTE
 
 typedef long long BigInt;
 
-extern "C" __declspec(dllexport) void FindEdges(BigInt * t, BigInt * l, BigInt * b, BigInt * r)
+extern "C" __declspec(dllexport) void FindEdges(int index, BigInt * t, BigInt * l, BigInt * b, BigInt * r)
 {
+    if (index < 0 || index >= algos.size())
+    {
+        return;
+    }
+
+    auto algo = algos[index];
+
     if (algo == nullptr)
     {
         return;
@@ -230,6 +245,126 @@ extern "C" __declspec(dllexport) void FindEdges(BigInt * t, BigInt * l, BigInt *
     *b = bottom.toint64();
     *r = right.toint64();
 }
+
+// 定义导出函数接口
+extern "C" __declspec(dllexport) void DrawRegionBitmap(int index, BYTE * bitmapBuffer, long stride, int x, int y, int w, int h)
+{
+    // 检查生命游戏实例索引是否有效
+
+    if (index < 0 || index >= algos.size())
+    {
+        return;
+    }
+
+    // 获取生命游戏实例
+    auto algo = algos[index];
+
+    // 检查生命游戏算法实例是否存在
+    if (algo == nullptr)
+    {
+        return;
+    }
+
+    // 从底部开始填充（Bitmap像素数据通常是倒置的，即从底部开始到顶部）
+    for (int row = 0; row < h; ++row)
+    {
+        // 获取当前位图行的偏移量
+        int rowOffset = (h - 1 - row) * stride;
+
+        // 遍历每一列
+        for (int col = 0; col < w; ++col)
+        {
+            // 确定当前位图缓冲区的位置
+            int pixelByte = rowOffset + col / 8;
+            int pixelBit = 7 - col % 8;
+
+            // 检查当前生命游戏的细胞是否活跃
+            if (algo->getcell(x + col, y + row))
+            {
+                bitmapBuffer[pixelByte] |= (1 << pixelBit); // 设置位
+            }
+            else
+            {
+                bitmapBuffer[pixelByte] &= ~(1 << pixelBit); // 清除位
+            }
+        }
+    }
+}
+
+extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(
+    int index,
+    uint8_t * bitmapBuffer, int stride,
+    int x, int y, int w, int h)
+{
+    // 检查生命游戏实例索引是否有效
+    if (index < 0 || index >= algos.size())
+    {
+        return;
+    }
+
+    // 获取生命游戏实例
+    auto algo = algos[index];
+
+    if (algo == nullptr)
+    {
+        return;
+    }
+
+    // 从顶部开始填充（正常的位图绘制顺序）
+    for (int row = 0; row < h; ++row)
+    {
+        int rowOffset = row * stride;
+
+        for (int col = 0; col < w; ++col)
+        {
+            int pixelOffset = rowOffset + col * 4; // BGRA，每个像素占4个字节
+
+            if (algo->getcell(x + col, y + row))
+            {
+                bitmapBuffer[pixelOffset] = 255;     // B
+                bitmapBuffer[pixelOffset + 1] = 255; // G
+                bitmapBuffer[pixelOffset + 2] = 255; // R
+                bitmapBuffer[pixelOffset + 3] = 255; // A
+            }
+            else
+            {
+                bitmapBuffer[pixelOffset] = 0;     // B
+                bitmapBuffer[pixelOffset + 1] = 0; // G
+                bitmapBuffer[pixelOffset + 2] = 0; // R
+                bitmapBuffer[pixelOffset + 3] = 255; // A
+            }
+        }
+    }
+}
+
+extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA2(
+    int index,
+    uint8_t * bitmapBuffer, int stride,
+    int x, int y, int w, int h, int cellSize)
+{
+    // 检查生命游戏实例索引是否有效
+    if (index < 0 || index >= algos.size())
+    {
+        return;
+    }
+
+    // 获取生命游戏实例
+    auto algo = algos[index];
+
+    if (algo == nullptr)
+    {
+        return;
+    }
+
+    bitmaprender render(w, h, bitmapBuffer, stride);
+    viewport vp(w, h);
+
+    vp.setmag(cellSize);
+    vp.moveto(0, 0);
+
+    algo->draw(vp, render);
+}
+
 
 BOOL APIENTRY DllMain(HMODULE hModule,
     DWORD  ul_reason_for_call,

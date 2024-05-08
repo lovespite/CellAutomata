@@ -64,12 +64,34 @@ public:
     virtual void getcolors(unsigned char** r, unsigned char** g, unsigned char** b) = 0;
 };
 
+const unsigned char colors[] = {
+    0, 255, // r: dead, alive 
+    0, 255, // g: dead, alive
+    0, 255  // b: dead, alive
+};
+
 class bitmaprender : public liferender {
 public:
-    bitmaprender() {}
+    BYTE* bitmapdataBGRA = 0;
+    int stride;
+    int currwd, currht;              // current width and height of viewport  
+    
+    bitmaprender(int w, int h, BYTE* dataBmpBGRA, int bmpstride) {
+        currwd = w;
+        currht = h;
+        bitmapdataBGRA = dataBmpBGRA;
+        stride = bmpstride;
+    }
+
     virtual ~bitmaprender();
     virtual void killrect(int x, int y, int w, int h);
     virtual void pixblit(int x, int y, int w, int h, char* pmdata, int pmscale);
-    virtual void getcolors(unsigned char** r, unsigned char** g, unsigned char** b);
+
+    virtual void getcolors(unsigned char** r, unsigned char** g, unsigned char** b)
+    {
+        *r = (unsigned char*)colors;
+        *g = (unsigned char*)colors + 2;
+        *b = (unsigned char*)colors + 4;
+    }
 };
 #endif

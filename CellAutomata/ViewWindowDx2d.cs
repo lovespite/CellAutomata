@@ -1,7 +1,9 @@
 ﻿using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
+using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
+using System.Buffers;
 using System.Diagnostics;
 using System.Drawing;
 
@@ -108,9 +110,14 @@ public class ViewWindowDx2d : ViewWindowBase
         renderer.BeginDraw();
 
         renderer.Clear(_deadColor); // black  
-        DrawMainView2(bitmap);
+
+        if (_cellSize <= 1)
+            DrawMainView3(bitmap);
+        else
+            DrawMainView2(bitmap);
+
         DrawGridLines();
-        DrawSelection(); 
+        DrawSelection();
 
         DrawGenerationText(genText);
 
@@ -150,12 +157,8 @@ public class ViewWindowDx2d : ViewWindowBase
 
         layout.Draw(_textRender, 15, 0);
     }
-
-    private void DrawMainView2(ILifeMap bitmap)
+    private Rectangle GetViewRect()
     {
-        var viewCX = _pxViewWidth * 0.5F;
-        var viewCY = _pxViewHeight * 0.5F;
-
         var columns = Math.Max(2, (int)Math.Ceiling(_pxViewWidth / _cellSize)); // at least 2 columns
         var rows = Math.Max(2, (int)Math.Ceiling(_pxViewHeight / _cellSize)); // at least 2 rows
 
@@ -164,7 +167,16 @@ public class ViewWindowDx2d : ViewWindowBase
             y: _centerY - rows / 2,
             width: columns,
             height: rows);
+        return viewRect;
+    }
 
+
+    private void DrawMainView2(ILifeMap bitmap)
+    {
+        var viewCX = _pxViewWidth * 0.5F;
+        var viewCY = _pxViewHeight * 0.5F;
+
+        var viewRect = GetViewRect();
         var points = bitmap.QueryRegion(true, viewRect);
 
         var renderer = _ctx.GetRenderer();
@@ -181,6 +193,43 @@ public class ViewWindowDx2d : ViewWindowBase
 
             renderer.FillRectangle(rect, _aliveBrush);
         }
+    }
+
+    private readonly BitmapProperties bmpProps = new(new SharpDX.Direct2D1.PixelFormat(SharpDX.DXGI.Format.B8G8R8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Ignore));
+    private void DrawMainView3(ILifeMap bitmap)
+    {
+        var renderer = _ctx.GetRenderer();
+        // var viewCX = _pxViewWidth * 0.5F;
+        // var viewCY = _pxViewHeight * 0.5F;
+
+        Rectangle viewRect = GetViewRect();
+
+        var bmpData = bitmap.DrawRegionBitmapBGRA(viewRect);
+        using SharpDX.Direct2D1.Bitmap direct2DBitmap = new(renderer, new Size2(viewRect.Width, viewRect.Height), bmpProps);
+        var stride = viewRect.Width * 4; // 4 bytes per pixel (BGRA)
+        direct2DBitmap.CopyFromMemory(bmpData, stride);
+
+        renderer.DrawBitmap(direct2DBitmap, new RawRectangleF(0, 0, _pxViewWidth, _pxViewHeight), 1, BitmapInterpolationMode.Linear);
+
+        ArrayPool<byte>.Shared.Return(bmpData);
+    }
+
+    private void DrawMainView4(ILifeMap bitmap)
+    {
+        var renderer = _ctx.GetRenderer();
+        var viewRect = GetViewRect();
+
+        if (!(bitmap is HashLifeMap hlm)) return;
+
+        var bmpData = hlm.DrawRegionBitmapBGRA(viewRect, (int)_cellSize, _pxViewWidth, _pxViewHeight);
+        using SharpDX.Direct2D1.Bitmap direct2DBitmap = new(renderer, new Size2(viewRect.Width, viewRect.Height), bmpProps);
+        var stride = viewRect.Width * 4; // 4 bytes per pixel (BGRA)
+        direct2DBitmap.CopyFromMemory(bmpData, stride);
+
+        renderer.DrawBitmap(direct2DBitmap, new RawRectangleF(0, 0, _pxViewWidth, _pxViewHeight), 1, BitmapInterpolationMode.Linear);
+
+        ArrayPool<byte>.Shared.Return(bmpData);
+
     }
 
     private void DrawSelection()

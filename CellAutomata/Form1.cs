@@ -522,4 +522,10 @@ public partial class Form1 : Form
     {
         _view.MousePoint = new Point(-1, -1);
     }
+
+    private void selectAllToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        var bounds = _env.BitMap.GetBounds();
+        _view.SetSelection(bounds.Location, bounds.Location2);
+    }
 }

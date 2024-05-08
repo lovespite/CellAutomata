@@ -1,5 +1,8 @@
-﻿using System.Buffers;
+﻿using SharpDX.Direct2D1;
+using SharpDX;
+using System.Buffers;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -11,39 +14,133 @@ public partial class HashLifeMap : ILifeMap
     const string HashLifeLib = "Hashlifelib/hashlife.dll";
 
     [LibraryImport(HashLifeLib, StringMarshalling = StringMarshalling.Utf8)]
-    internal static partial void CreateNewUniverse(string rule);
+    internal static partial int CreateNewUniverse(string rule);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void DestroyUniverse();
+    internal static partial void DestroyUniverse(int index);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void SetCell(int x, int y, [MarshalAs(UnmanagedType.Bool)] bool value);
+    internal static partial void SetCell(int index, int x, int y, [MarshalAs(UnmanagedType.Bool)] bool value);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial int GetCell(int x, int y);
+    internal static partial int GetCell(int index, int x, int y);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void NextStep(ref ulong pop);
+    internal static partial void NextStep(int index, ref ulong pop);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void SetThreadCount(int count);
+    internal static partial void SetThreadCount(int index, int count);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void GetPopulation(ref ulong pop);
+    internal static partial void GetPopulation(int index, ref ulong pop);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial ulong GetRegion(int x, int y, int w, int h, [In, Out] byte[] buffer, int bufferSize);
+    internal static partial ulong GetRegion(int index, int x, int y, int w, int h, [In, Out] byte[] buffer, int bufferSize);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void SetRegion(int x, int y, int w, int h, [In] byte[] buffer, int bufferSize);
+    internal static partial void SetRegion(int index, int x, int y, int w, int h, [In] byte[] buffer, int bufferSize);
 
     [LibraryImport(HashLifeLib)]
     internal static partial void Version([In, Out] byte[] buffer, int bufferSize);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void FindEdges(ref Int64 top, ref Int64 left, ref Int64 bottom, ref Int64 right);
+    internal static partial void FindEdges(int index, ref Int64 top, ref Int64 left, ref Int64 bottom, ref Int64 right);
+
+    [LibraryImport(HashLifeLib)]
+    internal static partial void DrawRegionBitmap(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
+
+    [LibraryImport(HashLifeLib)]
+    internal static partial void DrawRegionBitmapBGRA(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
+
+    [LibraryImport(HashLifeLib)]
+    internal static partial void DrawRegionBitmapBGRA2(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h, int cellSize);
+
+    public System.Drawing.Bitmap DrawRegionBitmap(Rectangle rect)
+    {
+        System.Drawing.Bitmap bitmap = new(rect.Width, rect.Height, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+
+        // 锁定位图的像素数据
+        BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                                             ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+
+        // 获取位图缓冲区的指针
+        IntPtr bitmapPtr = bmpData.Scan0;
+
+        // 获取每行字节跨度
+        long stride = bmpData.Stride;
+
+        // 调用C++ DLL函数
+        DrawRegionBitmap(_index, bitmapPtr, stride, rect.X, rect.Y, rect.Width, rect.Height);
+
+        // 解锁位图
+        bitmap.UnlockBits(bmpData);
+
+        // 设置1bpp位图的调色板（黑白）
+        ColorPalette palette = bitmap.Palette;
+        palette.Entries[0] = Color.Black;
+        palette.Entries[1] = Color.White;
+        bitmap.Palette = palette;
+
+        return bitmap;
+    }
+
+    public byte[] DrawRegionBitmapBGRA(Rectangle rect)
+    {
+        // 1. 创建BGRA的位图缓冲区
+        int width = rect.Width;
+        int height = rect.Height;
+        int stride = width * 4;
+        byte[] bitmapData = ArrayPool<byte>.Shared.Rent(stride * height);
+
+        // 2. 创建Bitmap对象并锁定位图数据
+        GCHandle handle = GCHandle.Alloc(bitmapData, GCHandleType.Pinned);
+        IntPtr bitmapPtr = handle.AddrOfPinnedObject();
+
+        // 3. 调用C++ DLL函数
+        DrawRegionBitmapBGRA(_index, bitmapPtr, stride, rect.X, rect.Y, width, height);
+
+        // 4. 释放数据指针
+        handle.Free();
+
+        // 5. 创建Direct2D1的Compatible Bitmap 
+        // SharpDX.Direct2D1.Bitmap direct2DBitmap = new SharpDX.Direct2D1.Bitmap(renderTarget, new Size2(width, height), bmpProps);
+
+        // 6. 使用 CopyFromMemory 方法直接拷贝数据
+        // direct2DBitmap.CopyFromMemory(bitmapData, stride);
+
+        return bitmapData;
+    }
+
+    public byte[] DrawRegionBitmapBGRA(Rectangle rect, int cellSize, int vw, int vh)
+    {
+
+        // 1. 创建BGRA的位图缓冲区
+        int stride = vw * 4;
+        byte[] bitmapData = ArrayPool<byte>.Shared.Rent(stride * vh);
+
+        // 2. 创建Bitmap对象并锁定位图数据
+        GCHandle handle = GCHandle.Alloc(bitmapData, GCHandleType.Pinned);
+        IntPtr bitmapPtr = handle.AddrOfPinnedObject();
+
+        // 3. 调用C++ DLL函数
+        DrawRegionBitmapBGRA2(_index, bitmapPtr, stride, rect.X, rect.Y, vw, vh, cellSize);
+
+        // 4. 释放数据指针
+        handle.Free();
+
+        // 5. 创建Direct2D1的Compatible Bitmap 
+        // SharpDX.Direct2D1.Bitmap direct2DBitmap = new SharpDX.Direct2D1.Bitmap(renderTarget, new Size2(width, height), bmpProps);
+
+        // 6. 使用 CopyFromMemory 方法直接拷贝数据
+        // direct2DBitmap.CopyFromMemory(bitmapData, stride);
+
+        return bitmapData;
+    }
 
     private static readonly string _version;
+    private int _index = int.MinValue;
+    public int AlgoIndex => _index;
+
     static HashLifeMap()
     {
         var buffer = new byte[256];
@@ -56,12 +153,16 @@ public partial class HashLifeMap : ILifeMap
     public HashLifeMap(string rule = "B3/S23")
     {
         Rule = rule;
-        CreateNewUniverse(rule);
+        _index = CreateNewUniverse(rule);
+        if (_index < 0)
+        {
+            throw new InvalidOperationException($"Failed to create HashLife universe: {rule}, code: {_index}");
+        }
     }
 
     ~HashLifeMap()
     {
-        DestroyUniverse();
+        DestroyUniverse(_index);
     }
 
 
@@ -81,7 +182,7 @@ public partial class HashLifeMap : ILifeMap
         {
             if (_isPopulationDirty)
             {
-                GetPopulation(ref _population);
+                GetPopulation(_index, ref _population);
                 _isPopulationDirty = false;
             }
 
@@ -93,12 +194,12 @@ public partial class HashLifeMap : ILifeMap
 
     public bool Get(int row, int col)
     {
-        return GetCell(col, row) != 0;
+        return GetCell(_index, col, row) != 0;
     }
 
     public void Set(int row, int col, bool value)
     {
-        SetCell(col, row, value);
+        SetCell(_index, col, row, value);
         _isPopulationDirty = true;
     }
 
@@ -114,8 +215,8 @@ public partial class HashLifeMap : ILifeMap
 
     public void Clear()
     {
-        DestroyUniverse();
-        CreateNewUniverse(Rule);
+        DestroyUniverse(_index);
+        _index = CreateNewUniverse(Rule);
         _population = 0;
         Generation = 0;
     }
@@ -130,7 +231,7 @@ public partial class HashLifeMap : ILifeMap
     public RectangleL GetBounds()
     {
         Int64 top = 0, left = 0, bottom = 0, right = 0;
-        FindEdges(ref top, ref left, ref bottom, ref right);
+        FindEdges(_index, ref top, ref left, ref bottom, ref right);
 
         return new RectangleL(top, left, bottom, right);
     }
@@ -138,7 +239,7 @@ public partial class HashLifeMap : ILifeMap
 
     public ILifeMap CreateRegionSnapshot(Rectangle rect)
     {
-        var snapshot = new Array2LifeMap();
+        var snapshot = new HashLifeMap(Rule);
 
         for (int row = rect.Top; row < rect.Bottom; row++)
         {
@@ -199,7 +300,7 @@ public partial class HashLifeMap : ILifeMap
         try
         {
             var sw = Stopwatch.StartNew();
-            GetRegion(rect.Left, rect.Top, rect.Width, rect.Height, buffer, buffer.Length);
+            GetRegion(_index, rect.Left, rect.Top, rect.Width, rect.Height, buffer, buffer.Length);
             var msGetRegion = sw.ElapsedMilliseconds;
 
             sw.Restart();
@@ -292,7 +393,7 @@ public partial class HashLifeMap : ILifeMap
     public void NextGeneration()
     {
         _sw.Restart();
-        NextStep(ref _population);
+        NextStep(_index, ref _population);
         _sw.Stop();
         MsGenerationTime = _sw.ElapsedMilliseconds;
         _isPopulationDirty = false;

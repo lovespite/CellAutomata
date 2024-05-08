@@ -195,6 +195,13 @@ void viewport::move(int dx, int dy) {
     y += addy;
     reposition();
 }
+
+void viewport::moveto(int xx, int yy) {
+    x = xx;
+    y = yy;
+    reposition();
+} 
+
 void viewport::resize(int newwidth, int newheight) {
     width = newwidth;
     height = newheight;

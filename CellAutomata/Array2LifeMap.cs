@@ -1,5 +1,6 @@
 ﻿using System.Buffers;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 
 namespace CellAutomata;
@@ -376,6 +377,58 @@ public class Array2LifeMap : ILifeMap
 
 
 
+    }
+
+    public Bitmap DrawRegionBitmap(Rectangle rect)
+    {
+        // 创建指定尺寸的1bpp位图
+        Bitmap bmp = new Bitmap(rect.Width, rect.Height, PixelFormat.Format1bppIndexed);
+
+        // 锁定位图数据
+        BitmapData data = bmp.LockBits(new Rectangle(0, 0, rect.Width, rect.Height),
+                                       ImageLockMode.WriteOnly, bmp.PixelFormat);
+
+        int stride = data.Stride;
+        IntPtr scan0 = data.Scan0;
+
+        // 创建空的位图数据缓冲区
+        byte[] bytes = new byte[stride * rect.Height];
+
+        // 获取指定区域内的活细胞
+        Point[] cells = QueryRegion(true, rect);
+
+        // 将生命游戏数据转换为位图数据
+        for (int i = 0; i < cells.Length; i++)
+        {
+            Point p = cells[i];
+            if (rect.Contains(p))
+            {
+                int x = p.X - rect.Left;
+                int y = p.Y - rect.Top;
+                int index = y * stride + x / 8;
+                int bit = 7 - x % 8;
+                bytes[index] |= (byte)(1 << bit);
+            }
+        }
+
+        // 复制缓冲区数据到位图
+        Marshal.Copy(bytes, 0, scan0, bytes.Length);
+
+        // 解锁位图
+        bmp.UnlockBits(data);
+
+        // 设置1bpp位图的调色板（黑白）
+        ColorPalette palette = bmp.Palette;
+        palette.Entries[0] = Color.Black;
+        palette.Entries[1] = Color.White;
+        bmp.Palette = palette;
+
+        return bmp;
+    }
+
+    public byte[] DrawRegionBitmapBGRA(Rectangle rect)
+    {
+        throw new NotSupportedException();
     }
 
     public RectangleL GetBounds()

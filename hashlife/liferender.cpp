@@ -27,7 +27,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "liferender.h"
 
-int currwd, currht;              // current width and height of viewport  
 
 liferender::~liferender()
 {
@@ -35,69 +34,50 @@ liferender::~liferender()
 
 bitmaprender::~bitmaprender() {}
 
-void bitmaprender::killrect(int x, int y, int w, int h)
-{
-}
-
-void bitmaprender::pixblit(int x, int y, int w, int h, char* pmdata, int pmscale)
-{
-    // is Tom's hashdraw code doing unnecessary work???
-    if (x >= currwd || y >= currht) return;
-    if (x + w <= 0 || y + h <= 0) return;
-
-    // stride is the horizontal pixel width of the image data
-    int stride = (pmscale == 1) ? w : w / pmscale;
-
-    // clip pixmap to be drawn against viewport:
-    if (pmscale == 1)
-    {
-        // pmdata contains 3 bytes per pixel
-        if (x < 0) {
-            pmdata -= 3 * x;
-            w += x;
-            x = 0;
+void bitmaprender::killrect(int x, int y, int w, int h) {
+    // 背景颜色 BGRA (0, 0, 0, 255) 代表黑色
+    const BYTE bgra[] = { 0, 0, 0, 255 };
+    for (int j = y; j < y + h; j++) {
+        for (int i = x; i < x + w; i++) {
+            BYTE* pixel = bitmapdataBGRA + j * stride + i * 4;
+            memcpy(pixel, bgra, 4);
         }
-        if (y < 0) {
-            pmdata -= 3 * y * stride;
-            h += y;
-            y = 0;
-        }
-        if (w > currwd) w = currwd;
-        if (h > currht) h = currht;
     }
-    else
-    {
-        // pmdata contains 1 byte per `pmscale' pixels, so we must be careful
-        // and adjust x, y, w and h by multiples of `pmscale' only.
-        if (x < 0) {
-            int dx = -x / pmscale * pmscale;
-            pmdata += dx / pmscale;
-            w -= dx;
-            x += dx;
+}
+
+
+void bitmaprender::pixblit(int x, int y, int w, int h, char* pmdata, int pmscale) {
+    unsigned char* r, * g, * b;
+    getcolors(&r, &g, &b);
+
+    if (pmscale == 1) {
+        // pmdata 包含 3*w*h 字节的 RGB 数据
+        for (int j = 0; j < h; j++) {
+            for (int i = 0; i < w; i++) {
+                BYTE* pixel = bitmapdataBGRA + (y + j) * stride + (x + i) * 4;
+                pixel[0] = pmdata[(j * w + i) * 3 + 2]; // B
+                pixel[1] = pmdata[(j * w + i) * 3 + 1]; // G
+                pixel[2] = pmdata[(j * w + i) * 3 + 0]; // R
+                pixel[3] = 255; // A
+            }
         }
-        if (y < 0) {
-            int dy = -y / pmscale * pmscale;
-            pmdata += dy / pmscale * stride;
-            h -= dy;
-            y += dy;
-        }
-        if (x + w >= currwd + pmscale) w = (currwd - x + pmscale - 1) / pmscale * pmscale;
-        if (y + h >= currht + pmscale) h = (currht - y + pmscale - 1) / pmscale * pmscale;
     }
-
-
+    else {
+        // pmdata 包含 (w/pmscale)*(h/pmscale) 字节的细胞状态数据
+        for (int j = 0; j < h / pmscale; j++) {
+            for (int i = 0; i < w / pmscale; i++) {
+                unsigned char state = (unsigned char)pmdata[j * (w / pmscale) + i];
+                for (int sj = 0; sj < pmscale; sj++) {
+                    for (int si = 0; si < pmscale; si++) {
+                        BYTE* pixel = bitmapdataBGRA + (y + j * pmscale + sj) * stride + (x + i * pmscale + si) * 4;
+                        pixel[0] = b[state]; // B
+                        pixel[1] = g[state]; // G
+                        pixel[2] = r[state]; // R
+                        pixel[3] = 255; // A
+                    }
+                }
+            }
+        }
+    }
 }
 
-// deadcolors
-const unsigned char colors[] = {
-    0, 255, // r: dead, alive 
-    0, 255, // g: dead, alive
-    0, 255  // b: dead, alive
-};
-
-void bitmaprender::getcolors(unsigned char** r, unsigned char** g, unsigned char** b)
-{
-    *r = (unsigned char*)colors;
-    *g = (unsigned char*)colors + 2;
-    *b = (unsigned char*)colors + 4;
-}
