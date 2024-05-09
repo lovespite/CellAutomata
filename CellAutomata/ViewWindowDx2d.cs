@@ -112,7 +112,7 @@ public class ViewWindowDx2d : ViewWindowBase
         renderer.Clear(_deadColor); // black  
 
         if (_cellSize <= 1)
-            DrawMainView3(bitmap);
+            DrawMainView4(bitmap);
         else
             DrawMainView2(bitmap);
 
@@ -219,9 +219,13 @@ public class ViewWindowDx2d : ViewWindowBase
         var renderer = _ctx.GetRenderer();
         var viewRect = GetViewRect();
 
-        if (!(bitmap is HashLifeMap hlm)) return;
+        if (bitmap is not HashLifeMap hlm)
+        {
+            DrawMainView3(bitmap);
+            return;
+        }
 
-        var bmpData = hlm.DrawRegionBitmapBGRA(viewRect, (int)_cellSize, _pxViewWidth, _pxViewHeight);
+        var bmpData = hlm.DrawRegionBitmapBGRA(viewRect, _pxViewWidth, _pxViewHeight);
         using SharpDX.Direct2D1.Bitmap direct2DBitmap = new(renderer, new Size2(viewRect.Width, viewRect.Height), bmpProps);
         var stride = viewRect.Width * 4; // 4 bytes per pixel (BGRA)
         direct2DBitmap.CopyFromMemory(bmpData, stride);

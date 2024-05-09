@@ -17,7 +17,7 @@ public:
     virtual void clearcell(int x, int y) = 0;
     virtual BIGINT getpopulation() = 0;
     virtual void swap() = 0;
-    virtual void draw(viewport& vp, liferender& renderer) = 0;
+    virtual void draw(viewport& vp, liferender& renderer) = 0; 
     virtual void findedges(bigint* t, bigint* l, bigint* b, bigint* r) = 0;
     virtual BIGINT nextstep(int i, int n, int needpop) = 0;
     virtual void setinc(int inc) { increment = inc; }

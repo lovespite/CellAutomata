@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <vector>
 
-std::string _version = "alpha1.0";
+std::string _version = "alpha1.1";
 
 static std::vector<lifealgo*> algos;
 
@@ -142,12 +142,12 @@ extern "C" __declspec(dllexport) BIGINT GetRegion(int index, int x, int y, int w
         // buffer is too small
         return -2;
     }
+    BIGINT pop = 0;
 
     int byteIndex = 0;
     int bitIndex = 0;
 
     // memset(buffer, 0, bufferLen); // clear buffer
-    BIGINT pop = 0;
 
     for (int i = 0; i < h; i++)
     {
@@ -340,7 +340,7 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(
 extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA2(
     int index,
     uint8_t * bitmapBuffer, int stride,
-    int x, int y, int w, int h, int cellSize)
+    int x, int y, int w, int h)
 {
     // 检查生命游戏实例索引是否有效
     if (index < 0 || index >= algos.size())
@@ -359,8 +359,8 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA2(
     bitmaprender render(w, h, bitmapBuffer, stride);
     viewport vp(w, h);
 
-    vp.setmag(cellSize);
-    vp.moveto(0, 0);
+    vp.setmag(0); // 0 means 1:1, not 1 !!
+    vp.moveto(x, y);
 
     algo->draw(vp, render);
 }

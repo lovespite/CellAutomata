@@ -53,7 +53,7 @@ public partial class HashLifeMap : ILifeMap
     internal static partial void DrawRegionBitmapBGRA(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void DrawRegionBitmapBGRA2(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h, int cellSize);
+    internal static partial void DrawRegionBitmapBGRA2(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
 
     public System.Drawing.Bitmap DrawRegionBitmap(Rectangle rect)
     {
@@ -102,17 +102,13 @@ public partial class HashLifeMap : ILifeMap
         // 4. 释放数据指针
         handle.Free();
 
-        // 5. 创建Direct2D1的Compatible Bitmap 
-        // SharpDX.Direct2D1.Bitmap direct2DBitmap = new SharpDX.Direct2D1.Bitmap(renderTarget, new Size2(width, height), bmpProps);
-
-        // 6. 使用 CopyFromMemory 方法直接拷贝数据
-        // direct2DBitmap.CopyFromMemory(bitmapData, stride);
-
         return bitmapData;
     }
 
-    public byte[] DrawRegionBitmapBGRA(Rectangle rect, int cellSize, int vw, int vh)
+    public byte[] DrawRegionBitmapBGRA(Rectangle rect, int vw, int vh)
     {
+        // viewport size must be equal to rect size at this time, which means cell size = 1
+        Debug.Assert(vw == rect.Width && vh == rect.Height, "vw == rect.Width && vh == rect.Height");
 
         // 1. 创建BGRA的位图缓冲区
         int stride = vw * 4;
@@ -123,16 +119,10 @@ public partial class HashLifeMap : ILifeMap
         IntPtr bitmapPtr = handle.AddrOfPinnedObject();
 
         // 3. 调用C++ DLL函数
-        DrawRegionBitmapBGRA2(_index, bitmapPtr, stride, rect.X, rect.Y, vw, vh, cellSize);
+        DrawRegionBitmapBGRA2(_index, bitmapPtr, stride, rect.X, rect.Y, vw, vh); // !
 
         // 4. 释放数据指针
         handle.Free();
-
-        // 5. 创建Direct2D1的Compatible Bitmap 
-        // SharpDX.Direct2D1.Bitmap direct2DBitmap = new SharpDX.Direct2D1.Bitmap(renderTarget, new Size2(width, height), bmpProps);
-
-        // 6. 使用 CopyFromMemory 方法直接拷贝数据
-        // direct2DBitmap.CopyFromMemory(bitmapData, stride);
 
         return bitmapData;
     }
@@ -309,7 +299,7 @@ public partial class HashLifeMap : ILifeMap
             var msCollect = sw.ElapsedMilliseconds;
 
             sw.Stop();
-            Debug.WriteLine($"> GetRegion: {msGetRegion} ms, Collect: {msCollect} ms");
+            // Debug.WriteLine($"> GetRegion: {msGetRegion} ms, Collect: {msCollect} ms");
         }
         finally
         {

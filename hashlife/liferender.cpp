@@ -37,9 +37,15 @@ bitmaprender::~bitmaprender() {}
 void bitmaprender::killrect(int x, int y, int w, int h) {
     // 背景颜色 BGRA (0, 0, 0, 255) 代表黑色
     const BYTE bgra[] = { 0, 0, 0, 255 };
-    for (int j = y; j < y + h; j++) {
-        for (int i = x; i < x + w; i++) {
-            BYTE* pixel = bitmapdataBGRA + j * stride + i * 4;
+    UINT64 pos;
+
+    for (UINT64 j = 0; j < h; j++) {
+        UINT64 row = currht - 1 - (j + y);
+        if (row >= currht) continue; // 避免越界
+        for (UINT64 i = 0; i < w; i++) {
+            if (i + x >= currwd) continue; // 避免越界
+            pos = row * stride + (i + x) * 4;
+            BYTE* pixel = bitmapdataBGRA + pos;
             memcpy(pixel, bgra, 4);
         }
     }
@@ -47,36 +53,30 @@ void bitmaprender::killrect(int x, int y, int w, int h) {
 
 
 void bitmaprender::pixblit(int x, int y, int w, int h, char* pmdata, int pmscale) {
-    unsigned char* r, * g, * b;
-    getcolors(&r, &g, &b);
+    // note: pmdata is in RGB format,
+    // we need to convert it to BGRA format
 
-    if (pmscale == 1) {
-        // pmdata 包含 3*w*h 字节的 RGB 数据
-        for (int j = 0; j < h; j++) {
-            for (int i = 0; i < w; i++) {
-                BYTE* pixel = bitmapdataBGRA + (y + j) * stride + (x + i) * 4;
-                pixel[0] = pmdata[(j * w + i) * 3 + 2]; // B
-                pixel[1] = pmdata[(j * w + i) * 3 + 1]; // G
-                pixel[2] = pmdata[(j * w + i) * 3 + 0]; // R
-                pixel[3] = 255; // A
-            }
-        }
-    }
-    else {
-        // pmdata 包含 (w/pmscale)*(h/pmscale) 字节的细胞状态数据
-        for (int j = 0; j < h / pmscale; j++) {
-            for (int i = 0; i < w / pmscale; i++) {
-                unsigned char state = (unsigned char)pmdata[j * (w / pmscale) + i];
-                for (int sj = 0; sj < pmscale; sj++) {
-                    for (int si = 0; si < pmscale; si++) {
-                        BYTE* pixel = bitmapdataBGRA + (y + j * pmscale + sj) * stride + (x + i * pmscale + si) * 4;
-                        pixel[0] = b[state]; // B
-                        pixel[1] = g[state]; // G
-                        pixel[2] = r[state]; // R
-                        pixel[3] = 255; // A
-                    }
-                }
-            }
+    if (pmscale != 1) return;
+
+    int pmstride = w * 3;
+    UINT64 pos;
+    UINT64 bbound = (UINT64)stride * currht;
+
+    for (UINT64 j = 0; j < h; j++) {
+        UINT64 row = currht - 1 - (j + y);
+        if (row >= currht) continue; // 避免越界
+        for (UINT64 i = 0; i < w; i++) {
+            if (i + x >= currwd) continue; // 避免越界
+            pos = row * stride + (i + x) * 4;
+            if (pos >= bbound) continue;
+
+            BYTE* pixel = bitmapdataBGRA + pos;
+
+            // RGB -> BGRA
+            pixel[0] = pmdata[j * pmstride + i * 3 + 2]; // B
+            pixel[1] = pmdata[j * pmstride + i * 3 + 1]; // G
+            pixel[2] = pmdata[j * pmstride + i * 3];     // R
+            pixel[3] = 255; // A
         }
     }
 }

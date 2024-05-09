@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "bigint.h"
 #include "viewport.h"
 #include "liferender.h"
+#include <functional>
 using namespace std;
 
 const int logbmsize = 7;                 // 6=64x64  7=128x128  8=256x256
@@ -160,7 +161,6 @@ void hlifealgo::renderbm(int x, int y) {
 
     memset(bigbuf, 0, sizeof(ibigbuf));
 }
-
 /*
  *   Here, llx and lly are coordinates in screen pixels describing
  *   where the lower left pixel of the screen is.  Draw one node.
