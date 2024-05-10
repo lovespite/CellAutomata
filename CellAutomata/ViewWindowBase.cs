@@ -41,7 +41,7 @@ public abstract class ViewWindowBase
         var mcp = MouseCellPoint; // current mouse cell point
 
         if (_cellSize < 21)
-            _cellSize += 1;
+            _cellSize *= 2;
 
         if (!isMoveView) return;
         var newMcp = MouseCellPoint; // new mouse cell point
@@ -60,7 +60,7 @@ public abstract class ViewWindowBase
 
         if (_cellSize > 1)
         {
-            _cellSize -= 1;
+            _cellSize /= 2;
         }
 
         if (!isMoveView) return;

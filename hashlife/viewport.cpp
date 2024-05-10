@@ -29,7 +29,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <iostream>
 #include <cstdio>
 
-int MAX_MAG = 4;   // default maximum cell size is 2^4
 
 using namespace std;
 
@@ -200,7 +199,7 @@ void viewport::moveto(int xx, int yy) {
     x = xx;
     y = yy;
     reposition();
-} 
+}
 
 void viewport::resize(int newwidth, int newheight) {
     width = newwidth;
@@ -232,6 +231,24 @@ void viewport::setpositionmag(const bigint& xarg, const bigint& yarg,
     x = xarg;
     y = yarg;
     mag = magarg;
+    reposition();
+}
+void viewport::setpositionmag(const bigint& xmin, const bigint& xmax,
+    const bigint& ymin, const bigint& ymax,
+    int magarg) {
+    if (magarg > MAX_MAG)
+        magarg = MAX_MAG;
+    else if (magarg < MIN_MAG)
+        magarg = MIN_MAG;
+    mag = magarg;
+    x = xmax;
+    x += xmin;
+    x += 1;
+    x >>= 1;
+    y = ymax;
+    y += ymin;
+    y += 1;
+    y >>= 1;
     reposition();
 }
 int viewport::contains(const bigint& xarg, const bigint& yarg) {

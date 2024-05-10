@@ -91,9 +91,11 @@ public partial class Form1 : Form
     {
         var vw = canvas.Width;
         var vh = canvas.Height;
-
         var renderContext = new D2dWindowContext(vw, vh, canvas.Handle);
-        _view = new ViewWindowDx2d(_env, renderContext, vw, vh, 10f);
+        _view = new ViewWindowDx2d(_env, renderContext, vw, vh, 8f)
+        {
+            CanvasHandle = canvas.Handle,
+        };
         MouseWheel += Form1_MouseWheel;
 
         _painting.Start();

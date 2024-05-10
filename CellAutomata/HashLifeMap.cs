@@ -52,8 +52,19 @@ public partial class HashLifeMap : ILifeMap
     [LibraryImport(HashLifeLib)]
     internal static partial void DrawRegionBitmapBGRA(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
 
+
+    //extern "C" __declspec(dllexport) void DrawRegion(
+    //   int index,
+    //   HWND canvas, int mag,
+    //   int x, int y, int w, int h) 
+
     [LibraryImport(HashLifeLib)]
-    internal static partial void DrawRegionBitmapBGRA2(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
+    internal static partial void DrawRegion(int index, IntPtr hWnd, int mag, int x, int y, int w, int h);
+
+    public void DrawRegionDC(nint hWndCanvas, int mag, Rectangle rect)
+    {
+        DrawRegion(_index, hWndCanvas, mag, rect.X, rect.Y, rect.Width, rect.Height);
+    }
 
     public System.Drawing.Bitmap DrawRegionBitmap(Rectangle rect)
     {
@@ -98,28 +109,6 @@ public partial class HashLifeMap : ILifeMap
 
         // 3. 调用C++ DLL函数
         DrawRegionBitmapBGRA(_index, bitmapPtr, stride, rect.X, rect.Y, width, height);
-
-        // 4. 释放数据指针
-        handle.Free();
-
-        return bitmapData;
-    }
-
-    public byte[] DrawRegionBitmapBGRA(Rectangle rect, int vw, int vh)
-    {
-        // viewport size must be equal to rect size at this time, which means cell size = 1
-        Debug.Assert(vw == rect.Width && vh == rect.Height, "vw == rect.Width && vh == rect.Height");
-
-        // 1. 创建BGRA的位图缓冲区
-        int stride = vw * 4;
-        byte[] bitmapData = ArrayPool<byte>.Shared.Rent(stride * vh);
-
-        // 2. 创建Bitmap对象并锁定位图数据
-        GCHandle handle = GCHandle.Alloc(bitmapData, GCHandleType.Pinned);
-        IntPtr bitmapPtr = handle.AddrOfPinnedObject();
-
-        // 3. 调用C++ DLL函数
-        DrawRegionBitmapBGRA2(_index, bitmapPtr, stride, rect.X, rect.Y, vw, vh); // !
 
         // 4. 释放数据指针
         handle.Free();

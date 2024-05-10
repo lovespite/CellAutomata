@@ -30,6 +30,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 using std::pair;
 using std::make_pair;
 
+const int MAX_MAG = 4;   // default maximum cell size is 2^4
+const int MIN_MAG = -1048576; // set some crazy high limit
+
 class lifealgo;
 /**
  *   This class holds information on where in space the user's window is.
@@ -63,6 +66,7 @@ public:
     int getmag() const { return mag; }
     void setmag(int magarg) { mag = magarg; reposition(); }
     void setpositionmag(const bigint& xarg, const bigint& yarg, int magarg);
+    void setpositionmag(const bigint& xlo, const bigint& xhi, const bigint& ylo, const bigint& yhi, int magarg);
     int getwidth() const { return width; }
     int getheight() const { return height; }
     int getxmax() const { return width - 1; }
@@ -79,8 +83,5 @@ private:
     double xymf;           // always = 2**-mag
 };
 
-extern int MAX_MAG;
-// maximum cell size is 2^MAX_MAG (default is 2^4, but mobile devices
-// will probably want a bigger cell size)
 
 #endif

@@ -1,55 +1,34 @@
 #include "pch.h"
-/*** /
+// This file is part of Golly.
+// See docs/License.html for the copyright notice.
 
-This file is part of Golly, a Game of Life Simulator.
-Copyright (C) 2012 Andrew Trevorrow and Tomas Rokicki.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
- Web site:  http://sourceforge.net/projects/golly
- Authors:   rokicki@gmail.com  andrew@trevorrow.com
-
-                        / ***/
-                        /**
-                         *   This file is where we figure out how to draw hlife structures,
-                         *   no matter what the magnification or renderer.
-                         */
+/**
+ *   This file is where we figure out how to draw hlife structures,
+ *   no matter what the magnification or renderer.
+ */
 #include "hlifealgo.h"
 #include <vector>
 #include <cstring>
 #include <cstdio>
 #include <algorithm>
-#include "bigint.h"
-#include "viewport.h"
-#include "liferender.h"
-#include <functional>
 using namespace std;
 
-const int logbmsize = 7;                 // 6=64x64  7=128x128  8=256x256
+const int logbmsize = 8;                 // 8=256x256
 const int bmsize = (1 << logbmsize);
 const int byteoff = (bmsize / 8);
 const int ibufsize = (bmsize * bmsize / 32);
-static unsigned int ibigbuf[ibufsize];   // a shared buffer for 128x128 pixels
+static unsigned int ibigbuf[ibufsize];   // a shared buffer for 256x256 pixels
 static unsigned char* bigbuf = (unsigned char*)ibigbuf;
 
-// AKT: 128x128 pixmap where each pixel is 3 rgb bytes
-static unsigned char pixbuf[bmsize * bmsize * 3];
+// AKT: 256x256 pixmap where each pixel is 4 RGBA bytes
+static unsigned char pixbuf[bmsize * bmsize * 4];
 
-// AKT: rgb colors for cell states (see getcolors call)
-static unsigned char deadr, deadg, deadb;
-static unsigned char liver, liveg, liveb;
+// AKT: RGBA values for cell states (see getcolors call)
+static unsigned char deadr, deadg, deadb, deada;
+static unsigned char liver, liveg, liveb, livea;
+
+// rowett: RGBA view of cell states
+static unsigned int liveRGBA, deadRGBA;
 
 static void drawpixel(int x, int y) {
     bigbuf[(((bmsize - 1) - y) << (logbmsize - 3)) + (x >> 3)] |= (128 >> (x & 7));
@@ -99,20 +78,6 @@ void draw4x4_4(unsigned short bits1, unsigned short bits2, int llx, int lly) {
     p[-3 * byteoff] = (unsigned char)(((bits1 >> 8) & 0xf0) + ((bits2 >> 12) & 0xf));
 }
 
-void hlifealgo::clearrect(int minx, int miny, int w, int h) {
-    // minx,miny is lower left corner
-    if (w <= 0 || h <= 0)
-        return;
-    if (pmag > 1) {
-        minx *= pmag;
-        miny *= pmag;
-        w *= pmag;
-        h *= pmag;
-    }
-    miny = uviewh - miny - h;
-    renderer->killrect(minx, miny, w, h);
-}
-
 void hlifealgo::renderbm(int x, int y) {
     // x,y is lower left corner
     int rx = x;
@@ -127,40 +92,46 @@ void hlifealgo::renderbm(int x, int y) {
     }
     ry = uviewh - ry - rh;
 
-    // AKT: eventually we'll draw directly into pixbuf rather than bigbuf!!!
+    unsigned char* bigptr = bigbuf;
     if (pmag > 1) {
         // convert each bigbuf byte into 8 bytes of state data
-        int j = 0;
+        unsigned char* pixptr = pixbuf;
+
         for (int i = 0; i < ibufsize * 4; i++) {
-            int byte = bigbuf[i];
-            for (int bit = 128; bit > 0; bit >>= 1) {
-                pixbuf[j++] = (byte & bit) ? 1 : 0;
-            }
+            unsigned char byte = *bigptr++;
+            *pixptr++ = (byte & 128) ? 1 : 0;
+            *pixptr++ = (byte & 64) ? 1 : 0;
+            *pixptr++ = (byte & 32) ? 1 : 0;
+            *pixptr++ = (byte & 16) ? 1 : 0;
+            *pixptr++ = (byte & 8) ? 1 : 0;
+            *pixptr++ = (byte & 4) ? 1 : 0;
+            *pixptr++ = (byte & 2) ? 1 : 0;
+            *pixptr++ = (byte & 1);   // no condition needed
         }
     }
     else {
-        // convert each bigbuf byte into 24 bytes of pixel data (8 * rgb)
-        int j = 0;
+        // convert each bigbuf byte into 32 bytes of pixel data (8 * RGBA)
+        // get RGBA view of pixel buffer
+        unsigned int* pixptr = (unsigned int*)pixbuf;
+
         for (int i = 0; i < ibufsize * 4; i++) {
-            int byte = bigbuf[i];
-            for (int bit = 128; bit > 0; bit >>= 1) {
-                if (byte & bit) {
-                    pixbuf[j++] = liver;
-                    pixbuf[j++] = liveg;
-                    pixbuf[j++] = liveb;
-                }
-                else {
-                    pixbuf[j++] = deadr;
-                    pixbuf[j++] = deadg;
-                    pixbuf[j++] = deadb;
-                }
-            }
+            unsigned char byte = *bigptr++;
+            *pixptr++ = (byte & 128) ? liveRGBA : deadRGBA;
+            *pixptr++ = (byte & 64) ? liveRGBA : deadRGBA;
+            *pixptr++ = (byte & 32) ? liveRGBA : deadRGBA;
+            *pixptr++ = (byte & 16) ? liveRGBA : deadRGBA;
+            *pixptr++ = (byte & 8) ? liveRGBA : deadRGBA;
+            *pixptr++ = (byte & 4) ? liveRGBA : deadRGBA;
+            *pixptr++ = (byte & 2) ? liveRGBA : deadRGBA;
+            *pixptr++ = (byte & 1) ? liveRGBA : deadRGBA;
         }
     }
-    renderer->pixblit(rx, ry, rw, rh, (char*)pixbuf, pmag);
+
+    renderer->pixblit(rx, ry, rw, rh, pixbuf, pmag);
 
     memset(bigbuf, 0, sizeof(ibigbuf));
 }
+
 /*
  *   Here, llx and lly are coordinates in screen pixels describing
  *   where the lower left pixel of the screen is.  Draw one node.
@@ -172,8 +143,7 @@ void hlifealgo::drawnode(node* n, int llx, int lly, int depth, node* z) {
         (llx + vieww <= 0 || lly + viewh <= 0 || llx >= sw || lly >= sw))
         return;
     if (n == z) {
-        if (sw >= bmsize)
-            clearrect(-llx, -lly, sw, sw);
+        // don't do anything
     }
     else if (depth > 2 && sw > 2) {
         z = z->nw;
@@ -256,6 +226,10 @@ static void init_compress4x4() {
             compress4x4[i] = compress4x4[i & (i - 1)] | compress4x4[i & -i];
 }
 
+static uint32_t RGBToInt(uint8_t r, uint8_t g, uint8_t b) {
+    return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
+}
+
 /*
  *   This is the top-level draw routine that takes the root node.
  *   It maintains four nodes onto which the screen fits and uses the
@@ -274,15 +248,14 @@ void hlifealgo::draw(viewport& viewarg, liferender& rendererarg) {
     ensure_hashed();
     renderer = &rendererarg;
 
-    // AKT: get cell colors
-    unsigned char* r, * g, * b;
+    unsigned char* r;
+    unsigned char* g;
+    unsigned char* b;
+
     renderer->getcolors(&r, &g, &b);
-    deadr = r[0];
-    deadg = g[0];
-    deadb = b[0];
-    liver = r[1];
-    liveg = g[1];
-    liveb = b[1];
+
+    deadRGBA = RGBToInt(r[0], g[0], b[0]);
+    liveRGBA = RGBToInt(r[1], g[1], b[1]);
 
     view = &viewarg;
     uvieww = view->getwidth();
@@ -314,7 +287,6 @@ void hlifealgo::draw(viewport& viewarg, liferender& rendererarg) {
         llx = (llx << 1) + llxb[i];
         lly = (lly << 1) + llyb[i];
         if (llx > 2 * maxd || lly > 2 * maxd || llx < -2 * maxd || lly < -2 * maxd) {
-            clearrect(0, 0, vieww, viewh);
             goto bail;
         }
     }
@@ -355,7 +327,6 @@ void hlifealgo::draw(viewport& viewarg, liferender& rendererarg) {
             }
         }
         if (llx > 2 * maxd || lly > 2 * maxd || llx < -2 * maxd || lly < -2 * maxd) {
-            clearrect(0, 0, vieww, viewh);
             goto bail;
         }
         d--;
@@ -370,13 +341,9 @@ void hlifealgo::draw(viewport& viewarg, liferender& rendererarg) {
         node* z = zeronode(d);
         if (llx > 0 || lly > 0 || llx + vieww <= 0 || lly + viewh <= 0 ||
             (sw == z && se == z && nw == z && ne == z)) {
-            clearrect(0, 0, vieww, viewh);
+            // no live cells
         }
         else {
-            clearrect(0, 1 - lly, vieww, viewh - 1 + lly);
-            clearrect(0, 0, vieww, -lly);
-            clearrect(0, -lly, -llx, 1);
-            clearrect(1 - llx, -lly, vieww - 1 + llx, 1);
             drawpixel(0, 0);
             renderbm(-llx, -lly);
         }
@@ -384,10 +351,6 @@ void hlifealgo::draw(viewport& viewarg, liferender& rendererarg) {
     else {
         z = zeronode(d);
         maxd = 1 << (d - mag + 2);
-        clearrect(0, maxd - lly, vieww, viewh - maxd + lly);
-        clearrect(0, 0, vieww, -lly);
-        clearrect(0, -lly, -llx, maxd);
-        clearrect(maxd - llx, -lly, vieww - maxd + llx, maxd);
         if (maxd <= bmsize) {
             maxd >>= 1;
             drawnode(sw, 0, 0, d, z);
@@ -408,7 +371,6 @@ bail:
     renderer = 0;
     view = 0;
 }
-
 int getbitsfromleaves(const vector<node*>& v) {
     unsigned short nw = 0, ne = 0, sw = 0, se = 0;
     int i;
@@ -438,6 +400,7 @@ int getbitsfromleaves(const vector<node*>& v) {
     }
     return r;
 }
+
 /**
  *   Copy the vector, but sort it and uniquify it so we don't have a ton
  *   of duplicate nodes.
@@ -450,8 +413,7 @@ void sortunique(vector<node*>& dest, vector<node*>& src) {
     src.clear();
 }
 
-void hlifealgo::findedges(bigint* ptop, bigint* pleft, bigint* pbottom, bigint* pright)
-{
+void hlifealgo::findedges(bigint* ptop, bigint* pleft, bigint* pbottom, bigint* pright) {
     // AKT: following code is from fit() but all goal/size stuff
     // has been removed so it finds the exact pattern edges
     ensure_hashed();
@@ -638,14 +600,15 @@ void hlifealgo::findedges(bigint* ptop, bigint* pleft, bigint* pbottom, bigint* 
     *pleft = xmin;
     *pright = xmax;
 }
+
 void hlifealgo::fit(viewport& view, int force) {
     ensure_hashed();
     bigint xmin = -1;
     bigint xmax = 1;
     bigint ymin = -1;
     bigint ymax = 1;
-    int xgoal = view.getwidth() - 2;
-    int ygoal = view.getheight() - 2;
+    int xgoal = view.getwidth();
+    int ygoal = view.getheight();
     if (xgoal < 8)
         xgoal = 8;
     if (ygoal < 8)
@@ -844,17 +807,13 @@ void hlifealgo::fit(viewport& view, int force) {
         if (view.contains(xmin, ymin) && view.contains(xmax, ymax))
             return;
     }
-    xmin += xmax;
-    xmin >>= 1;
-    ymin += ymax;
-    ymin >>= 1;
     int mag = -currdepth - 1;
     while (xsize <= xgoal && ysize <= ygoal && mag < MAX_MAG) {
         mag++;
         xsize *= 2;
         ysize *= 2;
     }
-    view.setpositionmag(xmin, ymin, mag);
+    view.setpositionmag(xmin, xmax, ymin, ymax, mag);
 }
 void hlifealgo::lowerRightPixel(bigint& x, bigint& y, int mag) {
     if (mag >= 0)

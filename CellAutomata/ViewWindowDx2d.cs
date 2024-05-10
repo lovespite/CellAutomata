@@ -35,6 +35,8 @@ public class ViewWindowDx2d : ViewWindowBase
     private readonly TextFormat _textForamt;
     private readonly TextRenderer _textRender;
 
+    public nint CanvasHandle { get; set; }
+
     public ViewWindowDx2d(CellEnvironment cellEnvironment, ID2dContext ctx, int pixelViewWidth, int pixelViewHeight, float cellSize)
         : base(cellEnvironment, pixelViewWidth, pixelViewHeight, cellSize)
     {
@@ -111,7 +113,8 @@ public class ViewWindowDx2d : ViewWindowBase
 
         renderer.Clear(_deadColor); // black  
 
-        if (_cellSize <= 1)
+
+        if (_cellSize == 1)
             DrawMainView4(bitmap);
         else
             DrawMainView2(bitmap);
@@ -216,24 +219,16 @@ public class ViewWindowDx2d : ViewWindowBase
 
     private void DrawMainView4(ILifeMap bitmap)
     {
-        var renderer = _ctx.GetRenderer();
-        var viewRect = GetViewRect();
+        if (bitmap is not HashLifeMap hlm) return;
+        if (CanvasHandle == 0) return;
 
-        if (bitmap is not HashLifeMap hlm)
-        {
-            DrawMainView3(bitmap);
-            return;
-        }
+        Rectangle viewRect = GetViewRect();
 
-        var bmpData = hlm.DrawRegionBitmapBGRA(viewRect, _pxViewWidth, _pxViewHeight);
-        using SharpDX.Direct2D1.Bitmap direct2DBitmap = new(renderer, new Size2(viewRect.Width, viewRect.Height), bmpProps);
-        var stride = viewRect.Width * 4; // 4 bytes per pixel (BGRA)
-        direct2DBitmap.CopyFromMemory(bmpData, stride);
+        var mag = _cellSize > 0
+            ? (int)Math.Log2(_cellSize)
+            : 0;
 
-        renderer.DrawBitmap(direct2DBitmap, new RawRectangleF(0, 0, _pxViewWidth, _pxViewHeight), 1, BitmapInterpolationMode.Linear);
-
-        ArrayPool<byte>.Shared.Return(bmpData);
-
+        hlm.DrawRegionDC(CanvasHandle, mag, viewRect);
     }
 
     private void DrawSelection()
@@ -263,7 +258,7 @@ public class ViewWindowDx2d : ViewWindowBase
 
     private void DrawGridLines()
     {
-        if (_cellSize < 10) return;
+        if (_cellSize < 8) return;
 
         var renderer = _ctx.GetRenderer();
 

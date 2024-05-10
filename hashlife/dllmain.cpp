@@ -6,6 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <cmath> 
 
 std::string _version = "alpha1.1";
 
@@ -337,9 +338,9 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(
     }
 }
 
-extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA2(
+extern "C" __declspec(dllexport) void DrawRegion(
     int index,
-    uint8_t * bitmapBuffer, int stride,
+    HWND canvas, int mag,
     int x, int y, int w, int h)
 {
     // 检查生命游戏实例索引是否有效
@@ -348,21 +349,22 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA2(
         return;
     }
 
+    HDC hdc = GetDC(canvas);
+
     // 获取生命游戏实例
     auto algo = algos[index];
 
-    if (algo == nullptr)
-    {
-        return;
-    }
+    if (algo == nullptr) return;
 
-    bitmaprender render(w, h, bitmapBuffer, stride);
     viewport vp(w, h);
+    dcrender render(w, h, hdc);
 
-    vp.setmag(0); // 0 means 1:1, not 1 !!
     vp.moveto(x, y);
+    vp.setmag(mag);
 
     algo->draw(vp, render);
+
+    ReleaseDC(canvas, hdc);
 }
 
 
