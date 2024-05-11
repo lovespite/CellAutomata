@@ -6,8 +6,19 @@ using System.Drawing.Imaging;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System;
 
 namespace CellAutomata;
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VIEWINFO
+{
+    public Int32 EMPTY;
+    public Int32 psl_x1; // selection rect point 1
+    public Int32 psl_y1; // selection rect point 1
+    public Int32 psl_x2; // selection rect point 2
+    public Int32 psl_y2; // selection rect point 2 
+}
 
 public partial class HashLifeMap : ILifeMap
 {
@@ -52,18 +63,36 @@ public partial class HashLifeMap : ILifeMap
     [LibraryImport(HashLifeLib)]
     internal static partial void DrawRegionBitmapBGRA(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
 
-
-    //extern "C" __declspec(dllexport) void DrawRegion(
-    //   int index,
-    //   HWND canvas, int mag,
-    //   int x, int y, int w, int h) 
+    [LibraryImport(HashLifeLib, StringMarshalling = StringMarshalling.Utf16)]
+    internal static partial void DrawRegion(int rednerCtx, int index, int mag, int x, int y, int w, int h, ref VIEWINFO viewinfo, string text);
 
     [LibraryImport(HashLifeLib)]
-    internal static partial void DrawRegion(int index, IntPtr hWnd, int mag, int x, int y, int w, int h);
+    internal static partial int CreateRender(int w, int h, nint canvas);
 
-    public void DrawRegionDC(nint hWndCanvas, int mag, Rectangle rect)
+    [LibraryImport(HashLifeLib)]
+    internal static partial void DestroyRender(int renderCtx);
+
+    private int _renderContextId = -1;
+    private Size _vwSize;
+
+    public void DrawRegionDC(nint hWndCanvas, int mag, Size vwSize, Point center, ref VIEWINFO selection, string text)
     {
-        DrawRegion(_index, hWndCanvas, mag, rect.X, rect.Y, rect.Width, rect.Height);
+        if (_renderContextId < 0)
+        {
+            _renderContextId = CreateRender(vwSize.Width, vwSize.Height, hWndCanvas);
+            _vwSize = vwSize;
+        }
+        else if (_vwSize != vwSize)
+        {
+            // Resize render context
+            DestroyRender(_renderContextId);
+            _renderContextId = CreateRender(vwSize.Width, vwSize.Height, hWndCanvas);
+            _vwSize = vwSize;
+
+            Debug.WriteLine("Resize render context: " + _renderContextId);
+        }
+
+        DrawRegion(_renderContextId, _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height, ref selection, text);
     }
 
     public System.Drawing.Bitmap DrawRegionBitmap(Rectangle rect)
@@ -141,6 +170,7 @@ public partial class HashLifeMap : ILifeMap
 
     ~HashLifeMap()
     {
+        DestroyRender(_renderContextId);
         DestroyUniverse(_index);
     }
 

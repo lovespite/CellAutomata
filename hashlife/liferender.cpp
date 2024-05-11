@@ -1,4 +1,3 @@
-#include "pch.h"
 /*** /
 
 This file is part of Golly, a Game of Life Simulator.
@@ -22,60 +21,232 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  Authors:   rokicki@gmail.com  andrew@trevorrow.com
 
                         / ***/
-
-
-
-#include "liferender.h"
-
+#include "pch.h"
+#include "liferender.h" 
 
 liferender::~liferender()
 {
 }
 
-dcrender::~dcrender() {}
-
-
 // 缓存 BitmapInfo 结构体
 BITMAPINFO g_BitmapInfo = {};
 
-void InitializeBitmapInfo(int w, int h)
-{
-    memset(&g_BitmapInfo, 0, sizeof(BITMAPINFO));
-    g_BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    g_BitmapInfo.bmiHeader.biWidth = w;
-    g_BitmapInfo.bmiHeader.biHeight = -h; // 图像正立（top-down）
-    g_BitmapInfo.bmiHeader.biPlanes = 1;
-    g_BitmapInfo.bmiHeader.biBitCount = 32; // 每像素32位：RGBA
-    g_BitmapInfo.bmiHeader.biCompression = BI_RGB; // 无压缩
+void dcrender::InitDirectWrite() {
+    HRESULT hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&g_pDWriteFactory));
+    if (SUCCEEDED(hr)) {
+        // 创建文本格式对象
+        g_pDWriteFactory->CreateTextFormat(
+            L"Trebuchet MS",                 // 字体家族名称
+            nullptr,                  // 字体集
+            DWRITE_FONT_WEIGHT_NORMAL,
+            DWRITE_FONT_STYLE_NORMAL,
+            DWRITE_FONT_STRETCH_NORMAL,
+            11.0f,                    // 字号
+            L"",                      // 语言标签
+            &g_pTextFormat
+        );
+
+        // 设置文本对齐方式
+        if (g_pTextFormat) {
+            g_pTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            g_pTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+        }
+
+        g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Purple, 0.45f), &pBackBrush);
+        g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::YellowGreen), &pFontBrush);
+    }
 }
 
-void DrawRGBAData(HDC dc, unsigned char* rgbadata, int x, int y, int w, int h)
-{
-    if (!dc || !rgbadata || w <= 0 || h <= 0)
-        return;
+void dcrender::EnsureDirect2DResources(HWND hWnd) {
+    if (!g_pD2DFactory) {
+        D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &g_pD2DFactory);
+    }
 
-    // 初始化 BitmapInfo（只在首次调用时）
-    if (g_BitmapInfo.bmiHeader.biWidth != w || g_BitmapInfo.bmiHeader.biHeight != -h)
-        InitializeBitmapInfo(w, h);
+    if (!g_pRenderTarget) {
+        RECT rc;
+        GetClientRect(hWnd, &rc);
 
-    // 使用 StretchDIBits 将位图绘制到目标 HDC
-    StretchDIBits(
-        dc,             // 目标设备上下文
-        x,              // 绘制区域左上角 X 坐标
-        y,              // 绘制区域左上角 Y 坐标
-        w,              // 绘制区域宽度
-        h,              // 绘制区域高度
-        0,              // 图像数据左上角 X 坐标
-        0,              // 图像数据左上角 Y 坐标
-        w,              // 图像数据宽度
-        h,              // 图像数据高度
-        rgbadata,       // 原始 RGBA 数据
-        &g_BitmapInfo,  // 位图信息
-        DIB_RGB_COLORS, // RGB 颜色
-        SRCCOPY         // 绘制操作：直接复制
+        D2D1_SIZE_U size = D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top);
+        g_pD2DFactory->CreateHwndRenderTarget(
+            D2D1::RenderTargetProperties(),
+            D2D1::HwndRenderTargetProperties(hWnd, size),
+            &g_pRenderTarget
+        );
+    }
+
+    if (!pWICFactory) {
+        HRESULT ret = CoCreateInstance(CLSID_WICImagingFactory, NULL, 0x1, IID_PPV_ARGS(&pWICFactory));
+
+        if (ret != 0) {
+            MessageBoxA(NULL, "Create WICImagingFactory failed", "Error", MB_OK);
+        }
+    }
+
+    if (!g_pDWriteFactory) {
+        InitDirectWrite();
+    }
+
+    if (!pSelBrush) {
+        g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 0.45f), &pSelBrush);
+    }
+
+    if (!pGridline) {
+        g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Gray, 0.45f), &pGridline);
+    }
+}
+
+void dcrender::UpdateBitmap(unsigned char* rgbadata, int w, int h) {
+
+    IWICBitmap* pWICBitmap = NULL;
+    pWICFactory->CreateBitmapFromMemory(
+        w, h, GUID_WICPixelFormat32bppPBGRA, w * 4, w * h * 4, rgbadata, &pWICBitmap);
+
+    g_pRenderTarget->CreateBitmapFromWicBitmap(pWICBitmap, NULL, &g_pBitmap);
+    pWICBitmap->Release();
+}
+
+void dcrender::CleanupDirect2D() {
+    if (g_pBitmap) {
+        g_pBitmap->Release();
+        g_pBitmap = NULL;
+    }
+    if (g_pRenderTarget) {
+        g_pRenderTarget->Release();
+        g_pRenderTarget = NULL;
+    }
+    if (pWICFactory) {
+        pWICFactory->Release();
+        pWICFactory = NULL;
+    }
+    if (g_pD2DFactory) {
+        g_pD2DFactory->Release();
+        g_pD2DFactory = NULL;
+    }
+}
+
+void dcrender::drawtext(int x, int y, const wchar_t* text) {
+    if (!g_pRenderTarget || !g_pTextFormat || !text) return;  // 简化错误处理
+
+    HRESULT hr = S_OK;
+
+    // 创建文本布局以便测量文本
+    IDWriteTextLayout* pTextLayout = nullptr;
+    hr = g_pDWriteFactory->CreateTextLayout(
+        text,        // 要渲染的文本
+        wcslen(text),// 文本的长度
+        g_pTextFormat,// 文本格式
+        currwd,      // 最大宽度 
+        currht,      // 最大高度 
+        &pTextLayout // 输出的文本布局
     );
+
+    if (SUCCEEDED(hr)) {
+        // 获取文本的尺寸
+        DWRITE_TEXT_METRICS textMetrics;
+        hr = pTextLayout->GetMetrics(&textMetrics);
+        if (SUCCEEDED(hr)) {
+            // 根据文本尺寸设定矩形
+            D2D1_RECT_F rectangle = D2D1::RectF(
+                static_cast<float>(x),
+                static_cast<float>(y),
+                static_cast<float>(x) + textMetrics.widthIncludingTrailingWhitespace,
+                static_cast<float>(y) + textMetrics.height
+            );
+
+            // 绘制背景
+            g_pRenderTarget->FillRectangle(&rectangle, pBackBrush);
+
+            // 绘制文本
+            g_pRenderTarget->DrawTextLayout(
+                D2D1::Point2F(static_cast<float>(x), static_cast<float>(y)),
+                pTextLayout,
+                pFontBrush,
+                D2D1_DRAW_TEXT_OPTIONS_CLIP
+            );
+        }
+        pTextLayout->Release(); // 释放文本布局资源
+    }
 }
 
+void dcrender::drawselection(VIEWINFO* pvi) {
+    if (!g_pRenderTarget || !pvi) return;  // 简化错误处理
+
+    D2D1_RECT_F rectangle = D2D1::RectF(
+        static_cast<float>(pvi->psl_x1),
+        static_cast<float>(pvi->psl_y1),
+        static_cast<float>(pvi->psl_x2),
+        static_cast<float>(pvi->psl_y2)
+    );
+
+    g_pRenderTarget->FillRectangle(&rectangle, pSelBrush);
+    g_pRenderTarget->DrawRectangle(&rectangle, pSelBrush);
+}
+
+void dcrender::drawgridlines(int cellsize) {
+    if (!g_pRenderTarget) return;  // 简化错误处理
+
+    int centerx = currwd / 2;
+    int centery = currht / 2;
+
+    // 绘制垂直线，从中心向左
+    for (float dx = centerx; dx >= 0; dx -= cellsize) {
+        g_pRenderTarget->DrawLine(
+            D2D1::Point2F(dx, 0.0f),
+            D2D1::Point2F(dx, static_cast<float>(currht)),
+            pGridline,
+            1.0f // 线宽
+        );
+    }
+
+    // 绘制垂直线，从中心向右
+    for (float dx = centerx + cellsize; dx <= currwd; dx += cellsize) {
+        g_pRenderTarget->DrawLine(
+            D2D1::Point2F(dx, 0.0f),
+            D2D1::Point2F(dx, static_cast<float>(currht)),
+            pGridline,
+            1.0f // 线宽
+        );
+    }
+
+    // 绘制水平线，从中心向上
+    for (float dy = centery; dy >= 0; dy -= cellsize) {
+        g_pRenderTarget->DrawLine(
+            D2D1::Point2F(0.0f, dy),
+            D2D1::Point2F(static_cast<float>(currwd), dy),
+            pGridline,
+            1.0f // 线宽
+        );
+    }
+
+    // 绘制水平线，从中心向下
+    for (float dy = centery + cellsize; dy <= currht; dy += cellsize) {
+        g_pRenderTarget->DrawLine(
+            D2D1::Point2F(0.0f, dy),
+            D2D1::Point2F(static_cast<float>(currwd), dy),
+            pGridline,
+            1.0f // 线宽
+        );
+    }
+
+}
+
+void dcrender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h) {
+
+    UpdateBitmap(rgbadata, w, h);
+
+    // 绘制位图 
+    g_pRenderTarget->DrawBitmap(g_pBitmap, D2D1::RectF(x, y, x + w, y + h));
+    g_pBitmap->Release();
+    g_pBitmap = NULL;
+}
+
+void dcrender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int pmscale) {
+
+    // draw magnified cells, assuming pmdata contains (w/pmscale)*(h/pmscale) bytes
+    // where each byte contains a cell state
+
+
+}
 
 void dcrender::pixblit(int x, int y, int w, int h, unsigned char* pmdata, int pmscale) {
 
@@ -107,12 +278,11 @@ void dcrender::pixblit(int x, int y, int w, int h, unsigned char* pmdata, int pm
 
     if (pmscale == 1) {
         // draw RGBA pixel data at scale 1:1
-        DrawRGBAData(chdc, pmdata, x, y, w, h);
-
+        DrawRGBAData(pmdata, x, y, w, h);
     }
     else {
         // draw magnified cells, assuming pmdata contains (w/pmscale)*(h/pmscale) bytes
         // where each byte contains a cell state
-        // DrawCells(chdc, pmdata, x, y, w / pmscale, h / pmscale, pmscale, stride, currlayer->numicons, celltexture);
+        DrawCells(pmdata, x, y, w / pmscale, h / pmscale, pmscale);
     }
 }

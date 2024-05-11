@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <vector>
 #include <cmath> 
+#include <cstringt.h>
 
 std::string _version = "alpha1.1";
 
@@ -338,18 +339,58 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(
     }
 }
 
-extern "C" __declspec(dllexport) void DrawRegion(
-    int index,
-    HWND canvas, int mag,
-    int x, int y, int w, int h)
+static std::vector<dcrender*> renderctxs;
+
+extern "C" __declspec(dllexport) int CreateRender(int w, int h, HWND hWnd)
 {
+    auto render = new dcrender(w, h, hWnd);
+    renderctxs.push_back(render);
+
+    return renderctxs.size() - 1;
+}
+
+extern "C" __declspec(dllexport) void DestroyRender(int index)
+{
+    if (index < 0 || index >= renderctxs.size())
+    {
+        return;
+    }
+
+    auto render = renderctxs[index];
+
+    if (render != nullptr)
+    {
+        delete render;
+
+        renderctxs[index] = nullptr;
+        render = nullptr;
+    }
+}
+
+extern "C" __declspec(dllexport) void DrawRegion(
+    int renderIndex,
+    int index, int mag,
+    int x, int y, int w, int h, VIEWINFO * selection, const wchar_t* text)
+{
+    // 检查渲染上下文索引是否有效
+    if (renderIndex < 0 || renderIndex >= renderctxs.size())
+    {
+        return;
+    }
+
+    // 获取渲染上下文
+    auto render = renderctxs[renderIndex];
+
+    if (render == nullptr)
+    {
+        return;
+    }
+
     // 检查生命游戏实例索引是否有效
     if (index < 0 || index >= algos.size())
     {
         return;
     }
-
-    HDC hdc = GetDC(canvas);
 
     // 获取生命游戏实例
     auto algo = algos[index];
@@ -357,14 +398,25 @@ extern "C" __declspec(dllexport) void DrawRegion(
     if (algo == nullptr) return;
 
     viewport vp(w, h);
-    dcrender render(w, h, hdc);
 
     vp.moveto(x, y);
     vp.setmag(mag);
 
-    algo->draw(vp, render);
+    render->begindraw();
+    render->clear();
 
-    ReleaseDC(canvas, hdc);
+    algo->draw(vp, *render);
+
+    if (mag > 3)
+        render->drawgridlines(pow(2, mag));
+
+    if (selection != nullptr && selection->EMPTY == 0)
+    {
+        render->drawselection(selection);
+    }
+
+    render->drawtext(10, 10, text);
+    render->enddraw();
 }
 
 

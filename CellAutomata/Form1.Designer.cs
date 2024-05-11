@@ -60,6 +60,7 @@
             nextGenerationToolStripMenuItem = new ToolStripMenuItem();
             viewToolStripMenuItem = new ToolStripMenuItem();
             homeToolStripMenuItem = new ToolStripMenuItem();
+            fitToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
             ((System.ComponentModel.ISupportInitialize)inputSpeed).BeginInit();
             menuStrip1.SuspendLayout();
@@ -68,7 +69,7 @@
             // canvas
             // 
             canvas.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            canvas.BackColor = Color.White;
+            canvas.BackColor = Color.Black;
             canvas.Location = new Point(4, 55);
             canvas.Name = "canvas";
             canvas.Size = new Size(935, 655);
@@ -122,8 +123,8 @@
             // loadFileToolStripMenuItem
             // 
             loadFileToolStripMenuItem.Name = "loadFileToolStripMenuItem";
-            loadFileToolStripMenuItem.ShortcutKeys = Keys.F2;
-            loadFileToolStripMenuItem.Size = new Size(163, 22);
+            loadFileToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Q;
+            loadFileToolStripMenuItem.Size = new Size(180, 22);
             loadFileToolStripMenuItem.Text = "&Load file";
             loadFileToolStripMenuItem.Click += btnLoad_Click;
             // 
@@ -131,19 +132,19 @@
             // 
             saveToToolStripMenuItem.Name = "saveToToolStripMenuItem";
             saveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
-            saveToToolStripMenuItem.Size = new Size(163, 22);
+            saveToToolStripMenuItem.Size = new Size(180, 22);
             saveToToolStripMenuItem.Text = "&Save to";
             saveToToolStripMenuItem.Click += btnSave_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(160, 6);
+            toolStripSeparator1.Size = new Size(177, 6);
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(163, 22);
+            exitToolStripMenuItem.Size = new Size(180, 22);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
@@ -303,7 +304,7 @@
             // 
             // viewToolStripMenuItem
             // 
-            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { homeToolStripMenuItem });
+            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { homeToolStripMenuItem, fitToolStripMenuItem });
             viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             viewToolStripMenuItem.Size = new Size(47, 21);
             viewToolStripMenuItem.Text = "&View";
@@ -313,9 +314,17 @@
             homeToolStripMenuItem.Name = "homeToolStripMenuItem";
             homeToolStripMenuItem.ShortcutKeyDisplayString = "";
             homeToolStripMenuItem.ShortcutKeys = Keys.F1;
-            homeToolStripMenuItem.Size = new Size(132, 22);
+            homeToolStripMenuItem.Size = new Size(180, 22);
             homeToolStripMenuItem.Text = "Home";
             homeToolStripMenuItem.Click += homeToolStripMenuItem_Click;
+            // 
+            // fitToolStripMenuItem
+            // 
+            fitToolStripMenuItem.Name = "fitToolStripMenuItem";
+            fitToolStripMenuItem.ShortcutKeys = Keys.F2;
+            fitToolStripMenuItem.Size = new Size(180, 22);
+            fitToolStripMenuItem.Text = "Fit";
+            fitToolStripMenuItem.Click += fitToolStripMenuItem_Click;
             // 
             // Form1
             // 
@@ -375,5 +384,6 @@
         private ToolStripMenuItem viewToolStripMenuItem;
         private ToolStripMenuItem homeToolStripMenuItem;
         private ToolStripMenuItem selectAllToolStripMenuItem;
+        private ToolStripMenuItem fitToolStripMenuItem;
     }
 }

@@ -91,11 +91,13 @@ public partial class Form1 : Form
     {
         var vw = canvas.Width;
         var vh = canvas.Height;
-        var renderContext = new D2dWindowContext(vw, vh, canvas.Handle);
-        _view = new ViewWindowDx2d(_env, renderContext, vw, vh, 8f)
-        {
-            CanvasHandle = canvas.Handle,
-        };
+        //var renderContext = new D2dWindowContext(vw, vh, canvas.Handle);
+        //_view = new ViewWindowDx2d(_env, renderContext, vw, vh, 8f)
+        //{
+        //    CanvasHandle = canvas.Handle,
+        //};
+
+        _view = new ViewWindowDx2dRaw(_env, new Size(vw, vh), canvas.Handle);
         MouseWheel += Form1_MouseWheel;
 
         _painting.Start();
@@ -529,5 +531,15 @@ public partial class Form1 : Form
     {
         var bounds = _env.BitMap.GetBounds();
         _view.SetSelection(bounds.Location, bounds.Location2);
+    }
+
+    private void fitToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        var bounds = _env.BitMap.GetBounds();
+        _view.MoveTo(
+            (int)bounds.Left + (int)bounds.Width / 2,
+            (int)bounds.Top + (int)bounds.Height / 2
+            );
+
     }
 }

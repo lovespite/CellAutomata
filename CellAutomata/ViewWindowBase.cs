@@ -43,14 +43,14 @@ public abstract class ViewWindowBase
         if (_cellSize < 21)
             _cellSize *= 2;
 
-        if (!isMoveView) return;
-        var newMcp = MouseCellPoint; // new mouse cell point
+        //if (!isMoveView) return;
+        //var newMcp = MouseCellPoint; // new mouse cell point
 
-        var dx = mcp.X - newMcp.X;
-        var dy = mcp.Y - newMcp.Y;
+        //var dx = mcp.X - newMcp.X;
+        //var dy = mcp.Y - newMcp.Y;
 
-        _centerX += dx;
-        _centerY += dy;
+        //_centerX += dx;
+        //_centerY += dy;
     }
 
     public void ZoomOut()
@@ -63,14 +63,14 @@ public abstract class ViewWindowBase
             _cellSize /= 2;
         }
 
-        if (!isMoveView) return;
-        var newMcp = MouseCellPoint;
+        //if (!isMoveView) return;
+        //var newMcp = MouseCellPoint;
 
-        var dx = mcp.X - newMcp.X;
-        var dy = mcp.Y - newMcp.Y;
+        //var dx = mcp.X - newMcp.X;
+        //var dy = mcp.Y - newMcp.Y;
 
-        _centerX += dx;
-        _centerY += dy;
+        //_centerX += dx;
+        //_centerY += dy;
     }
 
     public Point MousePoint { get; set; }

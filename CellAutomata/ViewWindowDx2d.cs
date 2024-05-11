@@ -54,7 +54,6 @@ public class ViewWindowDx2d : ViewWindowBase
         _centerY = top;
     }
 
-
     private void CreateBrushes()
     {
         var renderer = _ctx.GetRenderer();
@@ -115,7 +114,7 @@ public class ViewWindowDx2d : ViewWindowBase
 
 
         if (_cellSize == 1)
-            DrawMainView4(bitmap);
+            DrawMainView3(bitmap);
         else
             DrawMainView2(bitmap);
 
@@ -217,19 +216,7 @@ public class ViewWindowDx2d : ViewWindowBase
         ArrayPool<byte>.Shared.Return(bmpData);
     }
 
-    private void DrawMainView4(ILifeMap bitmap)
-    {
-        if (bitmap is not HashLifeMap hlm) return;
-        if (CanvasHandle == 0) return;
 
-        Rectangle viewRect = GetViewRect();
-
-        var mag = _cellSize > 0
-            ? (int)Math.Log2(_cellSize)
-            : 0;
-
-        hlm.DrawRegionDC(CanvasHandle, mag, viewRect);
-    }
 
     private void DrawSelection()
     {
