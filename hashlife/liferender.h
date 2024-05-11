@@ -4,6 +4,7 @@
 #include <dwrite.h>
 #include <wincodec.h>
 #include "combaseapi.h"
+#include <cstdint>
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
@@ -60,6 +61,10 @@ const unsigned char colors[] = {
     0, 255  // b: dead, alive
 };
 
+static uint32_t RGBToInt(uint8_t r, uint8_t g, uint8_t b) {
+    return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
+}
+
 struct VIEWINFO
 {
     INT32 EMPTY;
@@ -88,6 +93,9 @@ private:
 
     ID2D1SolidColorBrush* pBackBrush = nullptr;
     ID2D1SolidColorBrush* pFontBrush = nullptr;
+
+    ID2D1SolidColorBrush* pLiveCell = nullptr;
+    ID2D1SolidColorBrush* pDeadCell = nullptr;
      
     void InitDirectWrite();// 初始化 DirectWrite，创建文本格式 
     void EnsureDirect2DResources(HWND hWnd); // 初始化 Direct2D 

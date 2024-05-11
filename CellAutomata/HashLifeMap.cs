@@ -64,7 +64,7 @@ public partial class HashLifeMap : ILifeMap
     internal static partial void DrawRegionBitmapBGRA(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
 
     [LibraryImport(HashLifeLib, StringMarshalling = StringMarshalling.Utf16)]
-    internal static partial void DrawRegion(int rednerCtx, int index, int mag, int x, int y, int w, int h, ref VIEWINFO viewinfo, string text);
+    internal static partial void DrawViewport(int rednerCtx, int index, int mag, int x, int y, int w, int h, ref VIEWINFO viewinfo, string text);
 
     [LibraryImport(HashLifeLib)]
     internal static partial int CreateRender(int w, int h, nint canvas);
@@ -75,7 +75,7 @@ public partial class HashLifeMap : ILifeMap
     private int _renderContextId = -1;
     private Size _vwSize;
 
-    public void DrawRegionDC(nint hWndCanvas, int mag, Size vwSize, Point center, ref VIEWINFO selection, string text)
+    public void DrawViewportDC(nint hWndCanvas, int mag, Size vwSize, Point center, ref VIEWINFO selection, string text)
     {
         if (_renderContextId < 0)
         {
@@ -92,7 +92,7 @@ public partial class HashLifeMap : ILifeMap
             Debug.WriteLine("Resize render context: " + _renderContextId);
         }
 
-        DrawRegion(_renderContextId, _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height, ref selection, text);
+        DrawViewport(_renderContextId, _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height, ref selection, text);
     }
 
     public System.Drawing.Bitmap DrawRegionBitmap(Rectangle rect)

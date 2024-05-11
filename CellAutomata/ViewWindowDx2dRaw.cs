@@ -42,6 +42,7 @@ public class ViewWindowDx2dRaw : ViewWindowBase
     }
     private ulong _frames = 0;
     private readonly Stopwatch _sw = Stopwatch.StartNew();
+    private readonly Stopwatch _sw2 = Stopwatch.StartNew();
 
     private float _fps; // frames per second 
     private string text = string.Empty;
@@ -83,7 +84,8 @@ public class ViewWindowDx2dRaw : ViewWindowBase
         }
 
 
-        hlm.DrawRegionDC(_canvas, mag, _vwSize, _center, ref selview, text);
+
+        hlm.DrawViewportDC(_canvas, mag, _vwSize, _center, ref selview, text);
 
         if (_sw.ElapsedMilliseconds > 500)
         {
@@ -91,12 +93,20 @@ public class ViewWindowDx2dRaw : ViewWindowBase
             _frames = 0;
             _sw.Restart();
 
-            text =
-                $"Generation: {_cellEnvironment.Generation:#,0} Population: {_cellEnvironment.Population:#,0}\n" +
-                $"Position: {MouseCellPoint}\n" +
-                $"CPU Time: {_cellEnvironment.MsCPUTime:#,0}\n" +
-                $"GPS: {_gps:0.0} FPS: {_fps:0.0}";
         }
+
+        if (_sw2.ElapsedMilliseconds > 100)
+        {
+            text =
+                $"Generation: {_cellEnvironment.Generation:#,0}\n" +
+                $"Population: {_cellEnvironment.Population:#,0}\n" +
+                $"Position: {MouseCellPoint}  Mag: {mag}\n" +
+                $"CPU Time: {_cellEnvironment.MsCPUTime:#,0}\n" +
+                $"GPS: {_gps:0.0}, FPS: {_fps:0.0}";
+
+            _sw2.Restart();
+        }
+
         ++_frames;
     }
 }

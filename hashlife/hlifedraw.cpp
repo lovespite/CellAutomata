@@ -226,9 +226,6 @@ static void init_compress4x4() {
             compress4x4[i] = compress4x4[i & (i - 1)] | compress4x4[i & -i];
 }
 
-static uint32_t RGBToInt(uint8_t r, uint8_t g, uint8_t b) {
-    return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
-}
 
 /*
  *   This is the top-level draw routine that takes the root node.

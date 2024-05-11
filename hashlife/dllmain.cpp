@@ -367,7 +367,7 @@ extern "C" __declspec(dllexport) void DestroyRender(int index)
     }
 }
 
-extern "C" __declspec(dllexport) void DrawRegion(
+extern "C" __declspec(dllexport) void DrawViewport(
     int renderIndex,
     int index, int mag,
     int x, int y, int w, int h, VIEWINFO * selection, const wchar_t* text)

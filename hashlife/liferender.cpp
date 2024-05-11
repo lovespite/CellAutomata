@@ -93,6 +93,20 @@ void dcrender::EnsureDirect2DResources(HWND hWnd) {
     if (!pGridline) {
         g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Gray, 0.45f), &pGridline);
     }
+
+    if (!pLiveCell || !pDeadCell) {
+        unsigned char* r;
+        unsigned char* g;
+        unsigned char* b;
+
+        getcolors(&r, &g, &b);
+
+        int deadRGBA = RGBToInt(r[0], g[0], b[0]);
+        int liveRGBA = RGBToInt(r[1], g[1], b[1]);
+
+        g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(liveRGBA), &pLiveCell);
+        g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(deadRGBA), &pDeadCell);
+    }
 }
 
 void dcrender::UpdateBitmap(unsigned char* rgbadata, int w, int h) {
@@ -244,7 +258,21 @@ void dcrender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int 
 
     // draw magnified cells, assuming pmdata contains (w/pmscale)*(h/pmscale) bytes
     // where each byte contains a cell state
+    D2D1_RECT_F rect = D2D1::RectF(0, 0, 0, 0);
+    for (int row = 0; row < h; row++) {
+        for (int col = 0; col < w; col++) {
+            unsigned char cellState = pmdata[col + row * w]; // 获取细胞状态 
+            // 绘制矩形
+            if (cellState == 0) continue;
 
+            rect.left = x + pmscale * col;
+            rect.top = y + pmscale * row;
+            rect.right = rect.left + pmscale;
+            rect.bottom = rect.top + pmscale;
+
+            g_pRenderTarget->FillRectangle(&rect, pLiveCell);
+        }
+    }
 
 }
 
