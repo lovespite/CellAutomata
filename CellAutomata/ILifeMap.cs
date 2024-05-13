@@ -170,6 +170,8 @@ public interface ILifeMap : IDisposable
     long Generation { get; }
     long Population { get; }
 
+    int GenInterval { get; set; }
+
     bool Get(int row, int col);
     void Set(int row, int col, bool value);
 
@@ -177,6 +179,7 @@ public interface ILifeMap : IDisposable
     void Set(ref Point point, bool value);
 
     void Clear();
+    void ClearRect(Rectangle rect);
 
     ILifeMap CreateSnapshot();
 

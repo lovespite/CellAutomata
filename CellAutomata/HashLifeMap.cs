@@ -22,6 +22,8 @@ public struct VIEWINFO
 
 public partial class HashLifeMap : ILifeMap
 {
+    public int GenInterval { get; set; } = 10;
+
     private int _renderContextId = -1;
     private Size _vwSize;
 
@@ -139,6 +141,17 @@ public partial class HashLifeMap : ILifeMap
         Generation = 0;
     }
 
+    public void ClearRect(Rectangle rect)
+    {
+        for (int row = rect.Top; row < rect.Bottom; row++)
+        {
+            for (int col = rect.Left; col < rect.Right; col++)
+            {
+                Set(row, col, false);
+            }
+        }
+    }
+
     public ILifeMap CreateSnapshot()
     {
         var bounds = GetBounds();
@@ -236,7 +249,7 @@ public partial class HashLifeMap : ILifeMap
 
 
         return [.. points];
-    } 
+    }
 
     private static void CollectBitMap2(Rectangle rect, List<Point> points, byte[] buffer, int bufferLen)
     {

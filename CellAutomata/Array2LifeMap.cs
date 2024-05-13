@@ -7,6 +7,7 @@ namespace CellAutomata;
 
 public class Array2LifeMap : ILifeMap
 {
+    public int GenInterval { get; set; } = 10;
     public long Population => QueryRegionCount(true, Rectangle.Empty);
     public long Generation { get; private set; } = 0;
 
@@ -75,6 +76,20 @@ public class Array2LifeMap : ILifeMap
     {
         _cellFactory.ReturnAll();
         Generation = 0;
+    }
+
+    public void ClearRect(Rectangle rect)
+    {
+        var cells = _cellFactory.GetLocations();
+
+        for (int i = 0; i < cells.Length; i++)
+        {
+            var loc = cells[i];
+            if (rect.Contains(loc))
+            {
+                _cellFactory.Return(ref loc);
+            }
+        }
     }
 
     public ILifeMap CreateRegionSnapshot(Rectangle rect)

@@ -23,18 +23,6 @@ public partial class Form1 : Form
         }
     }
 
-    public int Speed
-    {
-        get
-        {
-            return (int)inputSpeed.Value;
-        }
-        set
-        {
-            inputSpeed.Value = value;
-        }
-    }
-
     #endregion
 
     private readonly Graphics g;
@@ -89,6 +77,8 @@ public partial class Form1 : Form
 
     private void Form1_Load(object sender, EventArgs e)
     {
+        label1.Text = $"GenInterval: {_env.MsGenInterval} ms";
+
         var vw = canvas.Width;
         var vh = canvas.Height;
         //var renderContext = new D2dWindowContext(vw, vh, canvas.Handle);
@@ -252,7 +242,7 @@ public partial class Form1 : Form
                 _view.Gps = genPerSec;
             }
 
-            Thread.Sleep(Speed);
+            Thread.Sleep(_env.MsGenInterval);
         }
 
         Debug.WriteLine("EvolutionThread stopped");
@@ -564,5 +554,78 @@ public partial class Form1 : Form
 
     private void rotateToolStripMenuItem_Click(object sender, EventArgs e)
     {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        using var snapshot = _env.BitMap.CreateRegionSnapshot(selection);
+
+        _env.BitMap.ClearRect(selection);
+
+        // 获取选区中心点 
+        int centerX = selection.Left + (int)Math.Floor(selection.Width / 2.0);
+        int centerY = selection.Top + (int)Math.Floor(selection.Height / 2.0);
+
+        var prList = new List<Point>();
+
+        // 90度顺时针旋转
+        for (var row = selection.Top; row < selection.Bottom; row++)
+        {
+            for (var col = selection.Left; col < selection.Right; col++)
+            {
+                // 相对于选区中心的坐标
+                int relX = col - centerX;
+                int relY = row - centerY;
+
+                // 旋转坐标
+                int rotatedX = -relY;
+                int rotatedY = relX;
+
+                // 计算新位置的绝对坐标
+                var p2 = new Point(centerX + rotatedX, centerY + rotatedY);
+                var p0 = new Point(col - selection.Left, row - selection.Top);
+
+                _env.BitMap.Set(ref p2, snapshot.Get(ref p0));
+
+                if (
+                    row == selection.Top
+                    || row == selection.Bottom - 1
+                    || col == selection.Left
+                    || col == selection.Right - 1
+                    )
+                {
+                    prList.Add(p2);
+                }
+            }
+        }
+
+        var pr1 = prList.Min(p => p.X);
+        var pr2 = prList.Max(p => p.X);
+        var pc1 = prList.Min(p => p.Y);
+        var pc2 = prList.Max(p => p.Y);
+
+        _view.SetSelection(new Point(pr1, pc1), new Point(pr2, pc2));
+    }
+
+
+    private void flipUpDownToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+
+    }
+
+    private void flipLeftRightToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+
+    }
+
+    private void speedUpToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        _env.MsGenInterval -= 10;
+        label1.Text = $"GenInterval: {_env.MsGenInterval} ms";
+    }
+
+    private void speedDownToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        _env.MsGenInterval += 10;
+        label1.Text = $"GenInterval: {_env.MsGenInterval} ms";
     }
 }

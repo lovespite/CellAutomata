@@ -8,6 +8,29 @@ public class CellEnvironment
 {
     private readonly ILifeMap _bitmap;
 
+    /// <summary>
+    /// Milliseconds
+    /// </summary>
+    public int MsGenInterval
+    {
+        get => _bitmap.GenInterval;
+        set
+        {
+            if (value < 10)
+            {
+                _bitmap.GenInterval = 10;
+            }
+            else if (value > 10_000)
+            {
+                _bitmap.GenInterval = 10_000;
+            }
+            else
+            {
+                _bitmap.GenInterval = value;
+            }
+        }
+    }
+
     public ILifeMap BitMap => _bitmap;
 
     private readonly object _lock = new();
