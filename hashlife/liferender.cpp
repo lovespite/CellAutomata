@@ -90,8 +90,12 @@ void dcrender::EnsureDirect2DResources(HWND hWnd) {
         g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 0.45f), &pSelBrush);
     }
 
+    if (!pZerBrush) {
+        g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red), &pZerBrush);
+    }
+
     if (!pGridline) {
-        g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Gray, 0.45f), &pGridline);
+        g_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Gray, 1.0f), &pGridline);
     }
 
     if (!pLiveCell || !pDeadCell) {
@@ -183,7 +187,7 @@ void dcrender::drawtext(int x, int y, const wchar_t* text) {
 }
 
 void dcrender::drawselection(VIEWINFO* pvi) {
-    if (!g_pRenderTarget || !pvi) return;  // 简化错误处理
+    if (!g_pRenderTarget || !pvi || pvi->EMPTY) return;  // 简化错误处理
 
     D2D1_RECT_F rectangle = D2D1::RectF(
         static_cast<float>(pvi->psl_x1),
@@ -203,27 +207,50 @@ void dcrender::drawgridlines(int cellsize) {
     int centery = currht / 2;
 
     // 绘制垂直线，从中心向左
-    for (float dx = centerx; dx >= 0; dx -= cellsize) {
-        g_pRenderTarget->DrawLine(
-            D2D1::Point2F(dx, 0.0f),
-            D2D1::Point2F(dx, static_cast<float>(currht)),
-            pGridline,
-            1.0f // 线宽
-        );
-    }
+    //for (float dx = centerx; dx >= 0; dx -= cellsize) {
+    //    g_pRenderTarget->DrawLine(
+    //        D2D1::Point2F(dx, 0.0f),
+    //        D2D1::Point2F(dx, static_cast<float>(currht)),
+    //        pGridline,
+    //        1.0f // 线宽
+    //    );
+    //}
 
-    // 绘制垂直线，从中心向右
-    for (float dx = centerx + cellsize; dx <= currwd; dx += cellsize) {
-        g_pRenderTarget->DrawLine(
-            D2D1::Point2F(dx, 0.0f),
-            D2D1::Point2F(dx, static_cast<float>(currht)),
-            pGridline,
-            1.0f // 线宽
-        );
-    }
+    //// 绘制垂直线，从中心向右
+    //for (float dx = centerx + cellsize; dx <= currwd; dx += cellsize) {
+    //    g_pRenderTarget->DrawLine(
+    //        D2D1::Point2F(dx, 0.0f),
+    //        D2D1::Point2F(dx, static_cast<float>(currht)),
+    //        pGridline,
+    //        1.0f // 线宽
+    //    );
+    //}
 
-    // 绘制水平线，从中心向上
-    for (float dy = centery; dy >= 0; dy -= cellsize) {
+    //// 绘制水平线，从中心向上
+    //for (float dy = centery; dy >= 0; dy -= cellsize) {
+    //    g_pRenderTarget->DrawLine(
+    //        D2D1::Point2F(0.0f, dy),
+    //        D2D1::Point2F(static_cast<float>(currwd), dy),
+    //        pGridline,
+    //        1.0f // 线宽
+    //    );
+    //}
+
+    //// 绘制水平线，从中心向下
+    //for (float dy = centery + cellsize; dy <= currht; dy += cellsize) {
+    //    g_pRenderTarget->DrawLine(
+    //        D2D1::Point2F(0.0f, dy),
+    //        D2D1::Point2F(static_cast<float>(currwd), dy),
+    //        pGridline,
+    //        1.0f // 线宽
+    //    );
+    //}
+
+    // zero point
+    //g_pRenderTarget->FillEllipse(D2D1::Ellipse(D2D1::Point2F(centerx, centery), 2, 2), pZerBrush);
+
+    // 0 -> ht
+    for (float dy = 0.0f; dy <= currht; dy += cellsize) {
         g_pRenderTarget->DrawLine(
             D2D1::Point2F(0.0f, dy),
             D2D1::Point2F(static_cast<float>(currwd), dy),
@@ -232,15 +259,15 @@ void dcrender::drawgridlines(int cellsize) {
         );
     }
 
-    // 绘制水平线，从中心向下
-    for (float dy = centery + cellsize; dy <= currht; dy += cellsize) {
+    for (float dx = 0.0f; dx <= currwd; dx += cellsize) {
         g_pRenderTarget->DrawLine(
-            D2D1::Point2F(0.0f, dy),
-            D2D1::Point2F(static_cast<float>(currwd), dy),
+            D2D1::Point2F(dx, 0.0f),
+            D2D1::Point2F(dx, static_cast<float>(currht)),
             pGridline,
             1.0f // 线宽
         );
     }
+
 
 }
 
@@ -261,9 +288,9 @@ void dcrender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int 
     D2D1_RECT_F rect = D2D1::RectF(0, 0, 0, 0);
     for (int row = 0; row < h; row++) {
         for (int col = 0; col < w; col++) {
-            unsigned char cellState = pmdata[col + row * w]; // 获取细胞状态 
+            unsigned char state = pmdata[col + row * w]; // 获取细胞状态 
             // 绘制矩形
-            if (cellState == 0) continue;
+            if (state == 0) continue;
 
             rect.left = x + pmscale * col;
             rect.top = y + pmscale * row;
@@ -286,22 +313,14 @@ void dcrender::pixblit(int x, int y, int w, int h, unsigned char* pmdata, int pm
 
     // clip data outside viewport
     if (pmscale > 1) {
-        // pmdata contains 1 byte per `pmscale' pixels, so we must be careful
-        // and adjust x, y, w and h by multiples of `pmscale' only.
-        if (x < 0) {
-            int dx = -x / pmscale * pmscale;
-            pmdata += dx / pmscale;
-            w -= dx;
-            x += dx;
-        }
-        if (y < 0) {
-            int dy = -y / pmscale * pmscale;
-            pmdata += dy / pmscale * stride;
-            h -= dy;
-            y += dy;
-        }
-        if (x + w >= currwd + pmscale) w = (currwd - x + pmscale - 1) / pmscale * pmscale;
-        if (y + h >= currht + pmscale) h = (currht - y + pmscale - 1) / pmscale * pmscale;
+        //int vcentx = currwd / 2.0f;
+        //int vcenty = currht / 2.0f;
+
+        //float offsetx = vcentx % pmscale;
+        //float offsety = vcenty % pmscale;
+
+        //x += offsetx;
+        //y += offsety;
     }
 
     if (pmscale == 1) {

@@ -30,6 +30,18 @@ public struct PointL
     public long X;
     public long Y;
 
+    public long Row
+    {
+        get => Y;
+        set => Y = value;
+    }
+
+    public long Column
+    {
+        get => X;
+        set => X = value;
+    }
+
     public PointL(long x, long y)
     {
         X = x;
@@ -185,5 +197,7 @@ public interface ILifeMap : IDisposable
 
     Bitmap DrawRegionBitmap(Rectangle rectangle);
     byte[] DrawRegionBitmapBGRA(Rectangle rectangle);
+
+    PointL At(int x, int y);
 }
 

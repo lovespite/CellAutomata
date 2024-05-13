@@ -68,22 +68,12 @@ public class ViewWindowDx2dRaw : ViewWindowBase
         else
         {
             selview.EMPTY = 0;
-            var left = (selection.X - _centerX) * _cellSize + viewCX;
-            var top = (selection.Y - _centerY) * _cellSize + viewCY;
 
-            //var rect = new RawRectangleF(
-            //    left: left,
-            //    top: top,
-            //    right: left + selection.Width * _cellSize,
-            //    bottom: top + selection.Height * _cellSize);
-
-            selview.psl_x1 = (int)left - 1;
-            selview.psl_y1 = (int)top - 1;
-            selview.psl_x2 = (int)(left + selection.Width * _cellSize) + 1;
-            selview.psl_y2 = (int)(top + selection.Height * _cellSize) + 1;
+            selview.psl_x1 = selection.X;
+            selview.psl_y1 = selection.Y;
+            selview.psl_x2 = selection.Right;
+            selview.psl_y2 = selection.Bottom;
         }
-
-
 
         hlm.DrawViewportDC(_canvas, mag, _vwSize, _center, ref selview, text);
 

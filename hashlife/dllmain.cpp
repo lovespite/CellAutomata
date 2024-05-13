@@ -340,11 +340,14 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(
 }
 
 static std::vector<dcrender*> renderctxs;
+static std::vector<viewport*> views;
 
 extern "C" __declspec(dllexport) int CreateRender(int w, int h, HWND hWnd)
 {
     auto render = new dcrender(w, h, hWnd);
+    auto view = new viewport(w, h);
     renderctxs.push_back(render);
+    views.push_back(view);
 
     return renderctxs.size() - 1;
 }
@@ -365,57 +368,83 @@ extern "C" __declspec(dllexport) void DestroyRender(int index)
         renderctxs[index] = nullptr;
         render = nullptr;
     }
+
+    auto view = views[index];
+
+    if (view != nullptr)
+    {
+        delete view;
+
+        views[index] = nullptr;
+        view = nullptr;
+    }
+}
+
+extern "C" __declspec(dllexport) void AtViewport(
+    int rctxindex,
+    int px, int py, INT64 * row, INT64 * col) {
+
+    // 检查渲染上下文索引是否有效
+    if (rctxindex < 0 || rctxindex >= renderctxs.size()) return;
+
+    // 获取渲染上下文
+    auto vp = views[rctxindex];
+    if (vp == nullptr) return;
+
+    auto lt = vp->at(px, py);
+
+    *row = lt.second.toint64(); // y
+    *col = lt.first.toint64();  // x
 }
 
 extern "C" __declspec(dllexport) void DrawViewport(
-    int renderIndex,
-    int index, int mag,
+    int rctxindex,
+    int algoindex, int mag,
     int x, int y, int w, int h, VIEWINFO * selection, const wchar_t* text)
 {
-    // 检查渲染上下文索引是否有效
-    if (renderIndex < 0 || renderIndex >= renderctxs.size())
-    {
-        return;
-    }
-
-    // 获取渲染上下文
-    auto render = renderctxs[renderIndex];
-
-    if (render == nullptr)
-    {
-        return;
-    }
-
     // 检查生命游戏实例索引是否有效
-    if (index < 0 || index >= algos.size())
-    {
-        return;
-    }
+    if (algoindex < 0 || algoindex >= algos.size()) return;
+    // 检查渲染上下文索引是否有效
+    if (rctxindex < 0 || rctxindex >= renderctxs.size()) return;
 
     // 获取生命游戏实例
-    auto algo = algos[index];
+    auto algo = algos[algoindex];
+    if (algo == nullptr) return; // no algo to draw 
 
-    if (algo == nullptr) return;
+    // 获取渲染上下文
+    auto render = renderctxs[rctxindex];
+    auto vp = views[rctxindex];
 
-    viewport vp(w, h);
+    if (render == nullptr || vp == nullptr) return;
 
-    vp.moveto(x, y);
-    vp.setmag(mag);
+    int pmscale = 1 << mag; // 2^mag, cell size 
+
+    vp->moveto(x, y);
+    vp->setmag(mag);
 
     render->begindraw();
     render->clear();
 
-    algo->draw(vp, *render);
+    algo->draw(*vp, *render);
 
     if (mag > 3)
-        render->drawgridlines(pow(2, mag));
+        render->drawgridlines(pmscale);
 
     if (selection != nullptr && selection->EMPTY == 0)
     {
-        render->drawselection(selection);
+        auto lt = vp->at(0, 0);
+        VIEWINFO vw{};
+
+        vw.psl_x1 = -(-selection->psl_x1 + lt.first.toint64()) * pmscale;
+        vw.psl_y1 = -(-selection->psl_y1 + lt.second.toint64()) * pmscale;
+
+        vw.psl_x2 = -(-selection->psl_x2 + lt.first.toint64()) * pmscale;
+        vw.psl_y2 = -(-selection->psl_y2 + lt.second.toint64()) * pmscale;
+
+        render->drawselection(&vw);
     }
 
-    render->drawtext(10, 10, text);
+    render->drawtext(2, 2, text);
     render->enddraw();
 }
 

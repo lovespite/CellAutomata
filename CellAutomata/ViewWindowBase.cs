@@ -78,13 +78,22 @@ public abstract class ViewWindowBase
     {
         get
         {
-            var relX = (MousePoint.X - _pxViewWidth / 2) / _cellSize;
-            var relY = (MousePoint.Y - _pxViewHeight / 2) / _cellSize;
+            try
+            {
+                return _cellEnvironment.BitMap.At(MousePoint.X, MousePoint.Y);
+            }
+            catch (NotImplementedException)
+            {
+                Debug.WriteLine("Fallback to MouseCellPoint");
 
-            if (relX < 0) relX -= 1;
-            if (relY < 0) relY -= 1;
+                var relX = (MousePoint.X - _pxViewWidth / 2) / _cellSize;
+                var relY = (MousePoint.Y - _pxViewHeight / 2) / _cellSize;
 
-            return new Point(_centerX + (int)relX, _centerY + (int)relY);
+                if (relX < 0) relX -= 1;
+                if (relY < 0) relY -= 1;
+
+                return new Point(_centerX + (int)relX, _centerY + (int)relY);
+            }
         }
     }
 

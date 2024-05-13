@@ -22,127 +22,36 @@ public struct VIEWINFO
 
 public partial class HashLifeMap : ILifeMap
 {
-    const string HashLifeLib = "Hashlifelib/hashlife.dll";
-
-    [LibraryImport(HashLifeLib, StringMarshalling = StringMarshalling.Utf8)]
-    internal static partial int CreateNewUniverse(string rule);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void DestroyUniverse(int index);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void SetCell(int index, int x, int y, [MarshalAs(UnmanagedType.Bool)] bool value);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial int GetCell(int index, int x, int y);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void NextStep(int index, ref ulong pop);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void SetThreadCount(int index, int count);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void GetPopulation(int index, ref ulong pop);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial ulong GetRegion(int index, int x, int y, int w, int h, [In, Out] byte[] buffer, int bufferSize);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void SetRegion(int index, int x, int y, int w, int h, [In] byte[] buffer, int bufferSize);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void Version([In, Out] byte[] buffer, int bufferSize);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void FindEdges(int index, ref Int64 top, ref Int64 left, ref Int64 bottom, ref Int64 right);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void DrawRegionBitmap(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void DrawRegionBitmapBGRA(int index, IntPtr bitmapBuffer, long stride, int x, int y, int w, int h);
-
-    [LibraryImport(HashLifeLib, StringMarshalling = StringMarshalling.Utf16)]
-    internal static partial void DrawViewport(int rednerCtx, int index, int mag, int x, int y, int w, int h, ref VIEWINFO viewinfo, string text);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial int CreateRender(int w, int h, nint canvas);
-
-    [LibraryImport(HashLifeLib)]
-    internal static partial void DestroyRender(int renderCtx);
-
     private int _renderContextId = -1;
     private Size _vwSize;
+
+    public PointL At(int x, int y)
+    {
+        long row = 0, col = 0;
+        HashLifeMapStatic.AtViewport(_renderContextId, x, y, ref row, ref col);
+        return new PointL(col, row);
+    }
 
     public void DrawViewportDC(nint hWndCanvas, int mag, Size vwSize, Point center, ref VIEWINFO selection, string text)
     {
         if (_renderContextId < 0)
         {
-            _renderContextId = CreateRender(vwSize.Width, vwSize.Height, hWndCanvas);
+            _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas);
             _vwSize = vwSize;
         }
         else if (_vwSize != vwSize)
         {
-            // Resize render context
-            DestroyRender(_renderContextId);
-            _renderContextId = CreateRender(vwSize.Width, vwSize.Height, hWndCanvas);
+            HashLifeMapStatic.
+                        // Resize render context
+                        DestroyRender(_renderContextId);
+            _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas);
             _vwSize = vwSize;
 
             Debug.WriteLine("Resize render context: " + _renderContextId);
         }
 
-        DrawViewport(_renderContextId, _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height, ref selection, text);
-    }
-
-    public System.Drawing.Bitmap DrawRegionBitmap(Rectangle rect)
-    {
-        System.Drawing.Bitmap bitmap = new(rect.Width, rect.Height, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
-
-        // 锁定位图的像素数据
-        BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                                             ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
-
-        // 获取位图缓冲区的指针
-        IntPtr bitmapPtr = bmpData.Scan0;
-
-        // 获取每行字节跨度
-        long stride = bmpData.Stride;
-
-        // 调用C++ DLL函数
-        DrawRegionBitmap(_index, bitmapPtr, stride, rect.X, rect.Y, rect.Width, rect.Height);
-
-        // 解锁位图
-        bitmap.UnlockBits(bmpData);
-
-        // 设置1bpp位图的调色板（黑白）
-        ColorPalette palette = bitmap.Palette;
-        palette.Entries[0] = Color.Black;
-        palette.Entries[1] = Color.White;
-        bitmap.Palette = palette;
-
-        return bitmap;
-    }
-
-    public byte[] DrawRegionBitmapBGRA(Rectangle rect)
-    {
-        // 1. 创建BGRA的位图缓冲区
-        int width = rect.Width;
-        int height = rect.Height;
-        int stride = width * 4;
-        byte[] bitmapData = ArrayPool<byte>.Shared.Rent(stride * height);
-
-        // 2. 创建Bitmap对象并锁定位图数据
-        GCHandle handle = GCHandle.Alloc(bitmapData, GCHandleType.Pinned);
-        IntPtr bitmapPtr = handle.AddrOfPinnedObject();
-
-        // 3. 调用C++ DLL函数
-        DrawRegionBitmapBGRA(_index, bitmapPtr, stride, rect.X, rect.Y, width, height);
-
-        // 4. 释放数据指针
-        handle.Free();
-
-        return bitmapData;
+        HashLifeMapStatic.
+                DrawViewport(_renderContextId, _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height, ref selection, text);
     }
 
     private static readonly string _version;
@@ -152,7 +61,7 @@ public partial class HashLifeMap : ILifeMap
     static HashLifeMap()
     {
         var buffer = new byte[256];
-        Version(buffer, buffer.Length);
+        HashLifeMapStatic.Version(buffer, buffer.Length);
         _version = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
         Debug.WriteLine($"Hashlifelib Version: {_version}");
     }
@@ -161,7 +70,7 @@ public partial class HashLifeMap : ILifeMap
     public HashLifeMap(string rule = "B3/S23")
     {
         Rule = rule;
-        _index = CreateNewUniverse(rule);
+        _index = HashLifeMapStatic.CreateNewUniverse(rule);
         if (_index < 0)
         {
             throw new InvalidOperationException($"Failed to create HashLife universe: {rule}, code: {_index}");
@@ -170,8 +79,8 @@ public partial class HashLifeMap : ILifeMap
 
     ~HashLifeMap()
     {
-        DestroyRender(_renderContextId);
-        DestroyUniverse(_index);
+        HashLifeMapStatic.DestroyRender(_renderContextId);
+        HashLifeMapStatic.DestroyUniverse(_index);
     }
 
 
@@ -191,7 +100,7 @@ public partial class HashLifeMap : ILifeMap
         {
             if (_isPopulationDirty)
             {
-                GetPopulation(_index, ref _population);
+                HashLifeMapStatic.GetPopulation(_index, ref _population);
                 _isPopulationDirty = false;
             }
 
@@ -203,12 +112,12 @@ public partial class HashLifeMap : ILifeMap
 
     public bool Get(int row, int col)
     {
-        return GetCell(_index, col, row) != 0;
+        return HashLifeMapStatic.GetCell(_index, col, row) != 0;
     }
 
     public void Set(int row, int col, bool value)
     {
-        SetCell(_index, col, row, value);
+        HashLifeMapStatic.SetCell(_index, col, row, value);
         _isPopulationDirty = true;
     }
 
@@ -224,8 +133,8 @@ public partial class HashLifeMap : ILifeMap
 
     public void Clear()
     {
-        DestroyUniverse(_index);
-        _index = CreateNewUniverse(Rule);
+        HashLifeMapStatic.DestroyUniverse(_index);
+        _index = HashLifeMapStatic.CreateNewUniverse(Rule);
         _population = 0;
         Generation = 0;
     }
@@ -240,7 +149,7 @@ public partial class HashLifeMap : ILifeMap
     public RectangleL GetBounds()
     {
         Int64 top = 0, left = 0, bottom = 0, right = 0;
-        FindEdges(_index, ref top, ref left, ref bottom, ref right);
+        HashLifeMapStatic.FindEdges(_index, ref top, ref left, ref bottom, ref right);
 
         return new RectangleL(top, left, bottom, right);
     }
@@ -309,7 +218,7 @@ public partial class HashLifeMap : ILifeMap
         try
         {
             var sw = Stopwatch.StartNew();
-            GetRegion(_index, rect.Left, rect.Top, rect.Width, rect.Height, buffer, buffer.Length);
+            HashLifeMapStatic.GetRegion(_index, rect.Left, rect.Top, rect.Width, rect.Height, buffer, buffer.Length);
             var msGetRegion = sw.ElapsedMilliseconds;
 
             sw.Restart();
@@ -327,32 +236,7 @@ public partial class HashLifeMap : ILifeMap
 
 
         return [.. points];
-    }
-
-    private static void CollectBitMap(Rectangle rect, List<Point> points, byte[] buffer)
-    {
-        int byteIndex = 0;
-        int bitIndex = 0;
-        for (int row = 0; row < rect.Height; row++)
-        {
-            for (int col = 0; col < rect.Width; col++)
-            {
-                if (buffer[byteIndex] != 0)
-                {
-                    if ((buffer[byteIndex] & (1 << bitIndex)) != 0)
-                    {
-                        points.Add(new Point(col + rect.Left, row + rect.Top));
-                    }
-                }
-
-                if (++bitIndex == 8)
-                {
-                    bitIndex = 0;
-                    ++byteIndex;
-                }
-            }
-        }
-    }
+    } 
 
     private static void CollectBitMap2(Rectangle rect, List<Point> points, byte[] buffer, int bufferLen)
     {
@@ -402,7 +286,7 @@ public partial class HashLifeMap : ILifeMap
     public void NextGeneration()
     {
         _sw.Restart();
-        NextStep(_index, ref _population);
+        HashLifeMapStatic.NextStep(_index, ref _population);
         _sw.Stop();
         MsGenerationTime = _sw.ElapsedMilliseconds;
         _isPopulationDirty = false;
@@ -416,12 +300,69 @@ public partial class HashLifeMap : ILifeMap
 
     public void SaveRle(Stream stream)
     {
-        throw new NotImplementedException();
     }
 
     public void ReadRle(Stream stream)
     {
-        throw new NotImplementedException();
     }
+
+
+    // ======================
+
+    #region Drawing
+
+    public System.Drawing.Bitmap DrawRegionBitmap(Rectangle rect)
+    {
+        System.Drawing.Bitmap bitmap = new(rect.Width, rect.Height, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+
+        // 锁定位图的像素数据
+        BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                                             ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+
+        // 获取位图缓冲区的指针
+        IntPtr bitmapPtr = bmpData.Scan0;
+
+        // 获取每行字节跨度
+        long stride = bmpData.Stride;
+        HashLifeMapStatic.
+
+                // 调用C++ DLL函数
+                DrawRegionBitmap(_index, bitmapPtr, stride, rect.X, rect.Y, rect.Width, rect.Height);
+
+        // 解锁位图
+        bitmap.UnlockBits(bmpData);
+
+        // 设置1bpp位图的调色板（黑白）
+        ColorPalette palette = bitmap.Palette;
+        palette.Entries[0] = Color.Black;
+        palette.Entries[1] = Color.White;
+        bitmap.Palette = palette;
+
+        return bitmap;
+    }
+
+    public byte[] DrawRegionBitmapBGRA(Rectangle rect)
+    {
+        // 1. 创建BGRA的位图缓冲区
+        int width = rect.Width;
+        int height = rect.Height;
+        int stride = width * 4;
+        byte[] bitmapData = ArrayPool<byte>.Shared.Rent(stride * height);
+
+        // 2. 创建Bitmap对象并锁定位图数据
+        GCHandle handle = GCHandle.Alloc(bitmapData, GCHandleType.Pinned);
+        IntPtr bitmapPtr = handle.AddrOfPinnedObject();
+        HashLifeMapStatic.
+
+                // 3. 调用C++ DLL函数
+                DrawRegionBitmapBGRA(_index, bitmapPtr, stride, rect.X, rect.Y, width, height);
+
+        // 4. 释放数据指针
+        handle.Free();
+
+        return bitmapData;
+    }
+
+    #endregion
 }
 

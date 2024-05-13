@@ -88,6 +88,7 @@ private:
     IDWriteTextFormat* g_pTextFormat = nullptr;
 
     // »­Ë¢
+    ID2D1SolidColorBrush* pZerBrush = nullptr;
     ID2D1SolidColorBrush* pSelBrush = nullptr;
     ID2D1SolidColorBrush* pGridline = nullptr;
 
@@ -137,7 +138,7 @@ public:
 
     void clear() {
         if (g_pRenderTarget) {
-            g_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black));
+            g_pRenderTarget->Clear(D2D1::ColorF(0.1456f, 0.1456f, 0.1456f, 1.0f));
         }
     }
 

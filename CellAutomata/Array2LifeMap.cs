@@ -451,4 +451,9 @@ public class Array2LifeMap : ILifeMap
     {
         throw new NotImplementedException();
     }
+
+    public PointL At(int x, int y)
+    {
+        throw new NotImplementedException();
+    }
 }

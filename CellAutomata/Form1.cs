@@ -542,4 +542,27 @@ public partial class Form1 : Form
             );
 
     }
+
+    private void clearUnselectedCellsToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        var bounds = _env.BitMap.GetBounds();
+
+        for (var row = bounds.Top; row <= bounds.Bottom; row++)
+        {
+            for (var col = bounds.Left; col <= bounds.Right; col++)
+            {
+                if (!selection.Contains((int)col, (int)row))
+                {
+                    _env.DeactivateCell((int)row, (int)col);
+                }
+            }
+        }
+    }
+
+    private void rotateToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+    }
 }
