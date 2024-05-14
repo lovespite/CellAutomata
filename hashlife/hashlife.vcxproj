@@ -148,6 +148,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="bigint.h" />
+    <ClInclude Include="dc3drender.h" />
+    <ClInclude Include="dcrender.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="hlifealgo.h" />
     <ClInclude Include="lifealgo.h" />
@@ -159,6 +161,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bigint.cpp" />
+    <ClCompile Include="dc3drender.cpp" />
+    <ClCompile Include="dcrender.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="hlifealgo.cpp" />
     <ClCompile Include="hlifedraw.cpp" />

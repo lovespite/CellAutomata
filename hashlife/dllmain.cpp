@@ -8,6 +8,9 @@
 #include <vector>
 #include <cmath> 
 #include <cstringt.h>
+#include "liferender.h"
+#include "dcrender.h"
+#include "dc3drender.h"
 
 std::string _version = "alpha1.1";
 
@@ -339,12 +342,15 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(
     }
 }
 
-static std::vector<dcrender*> renderctxs;
+static std::vector<liferender*> renderctxs;
 static std::vector<viewport*> views;
 
-extern "C" __declspec(dllexport) int CreateRender(int w, int h, HWND hWnd)
+extern "C" __declspec(dllexport) int CreateRender(int w, int h, HWND hWnd, int use3d)
 {
-    auto render = new dcrender(w, h, hWnd);
+    liferender* render = use3d != 0
+        ? (liferender*)new dc3drender(w, h, hWnd)
+        : (liferender*)new dcrender(w, h, hWnd);
+
     auto view = new viewport(w, h);
     renderctxs.push_back(render);
     views.push_back(view);
@@ -449,10 +455,7 @@ extern "C" __declspec(dllexport) void DrawViewport(
 }
 
 
-BOOL APIENTRY DllMain(HMODULE hModule,
-    DWORD  ul_reason_for_call,
-    LPVOID lpReserved
-)
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
     switch (ul_reason_for_call)
     {

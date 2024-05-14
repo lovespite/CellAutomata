@@ -38,7 +38,7 @@ public partial class HashLifeMap : ILifeMap
     {
         if (_renderContextId < 0)
         {
-            _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas);
+            _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas, Use3dRender);
             _vwSize = vwSize;
         }
         else if (_vwSize != vwSize)
@@ -46,14 +46,18 @@ public partial class HashLifeMap : ILifeMap
             HashLifeMapStatic.
                         // Resize render context
                         DestroyRender(_renderContextId);
-            _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas);
+            _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas, Use3dRender);
             _vwSize = vwSize;
 
             Debug.WriteLine("Resize render context: " + _renderContextId);
         }
 
         HashLifeMapStatic.
-                DrawViewport(_renderContextId, _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height, ref selection, text);
+                DrawViewport(
+            _renderContextId,
+            _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height,
+            ref selection,
+            text + "\n3D Render: " + (Use3dRender == 1 ? "On" : "Off"));
     }
 
     private static readonly string _version;
@@ -69,8 +73,10 @@ public partial class HashLifeMap : ILifeMap
     }
 
     private readonly string Rule;
-    public HashLifeMap(string rule = "B3/S23")
+    private readonly int Use3dRender;
+    public HashLifeMap(string rule = "B3/S23", bool use3dRender = false)
     {
+        Use3dRender = use3dRender ? 1 : 0;
         Rule = rule;
         _index = HashLifeMapStatic.CreateNewUniverse(rule);
         if (_index < 0)

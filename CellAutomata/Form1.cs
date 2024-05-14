@@ -23,9 +23,7 @@ public partial class Form1 : Form
         }
     }
 
-    #endregion
-
-    private readonly Graphics g;
+    #endregion 
 
     public Form1()
     {
@@ -34,7 +32,15 @@ public partial class Form1 : Form
 
         canvas.Resize += Form1_Resize;
 
-        var lifemap = new HashLifeMap();
+        var use3d = Environment.GetCommandLineArgs().Contains("--enbale-3d-render=true");
+        if (use3d)
+        {
+            Debug.WriteLine("3D render enabled");
+        }
+
+        var lifemap = new HashLifeMap(
+            use3dRender: use3d
+            );
         _env = new CellEnvironment(lifemap)
         {
             ThreadCount = ThreadCount
@@ -42,21 +48,21 @@ public partial class Form1 : Form
 
         _painting = new Thread(Render);
 
-        g = canvas.CreateGraphics();
+        // g = canvas.CreateGraphics();
     }
 
     public void Render()
     {
         while (!IsDisposed)
         {
-            Thread.Sleep(1);
+            Thread.Sleep(10); // 100 fps max
             if (_view is null) continue;
 
             try
             {
                 Invoke((MethodInvoker)delegate
                 {
-                    _view.Draw(g);
+                    _view.Draw(null);
                 });
             }
             catch

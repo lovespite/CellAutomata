@@ -13,7 +13,7 @@ namespace CellAutomata
         internal static partial int CreateNewUniverse(string rule);
 
         [LibraryImport(HashLifeLib)]
-        internal static partial int CreateRender(int w, int h, nint canvas);
+        internal static partial int CreateRender(int w, int h, nint canvas, int use3d);
 
         [LibraryImport(HashLifeLib)]
         internal static partial void DestroyRender(int renderCtx);

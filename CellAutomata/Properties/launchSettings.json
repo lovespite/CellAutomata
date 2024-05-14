@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CellAutomata": {
+      "commandName": "Project",
+      "commandLineArgs": "--enbale-3d-render=true"
+    }
+  }
+}

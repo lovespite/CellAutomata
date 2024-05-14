@@ -91,8 +91,7 @@ public class ViewWindowDx2dRaw : ViewWindowBase
                 $"Generation: {_cellEnvironment.Generation:#,0}\n" +
                 $"Population: {_cellEnvironment.Population:#,0}\n" +
                 $"Position: {MouseCellPoint}  Mag: {mag}\n" +
-                $"CPU Time: {_cellEnvironment.MsCPUTime:#,0}\n" +
-                $"GPS: {_gps:0.0}, FPS: {_fps:0.0}";
+                $"CPU Time: {_cellEnvironment.MsCPUTime:#,0} ms  FPS: {_fps:0.0}";
 
             _sw2.Restart();
         }

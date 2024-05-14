@@ -45,6 +45,12 @@
     <ClInclude Include="viewport.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="dcrender.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="dc3drender.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -72,6 +78,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="viewport.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="dcrender.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="dc3drender.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
