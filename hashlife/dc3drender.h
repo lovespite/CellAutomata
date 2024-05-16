@@ -32,6 +32,8 @@ class dc3drender : public liferender {
 private:
 
     // 全局声明 Direct3D 变量
+    D3D11_VIEWPORT* g_vp;
+
     ID3D11Device* g_pDevice = nullptr;
     ID3D11DeviceContext* g_pImmediateContext = nullptr;
     IDXGISwapChain* g_pSwapChain = nullptr;
@@ -94,11 +96,22 @@ public:
         currht = h;
         chWnd = hWnd;
 
+        g_vp = new D3D11_VIEWPORT();
+
+        g_vp->Width = float(currwd);
+        g_vp->Height = float(currht);
+        g_vp->MinDepth = 0.0f;
+        g_vp->MaxDepth = 1.0f;
+        g_vp->TopLeftX = 0;
+        g_vp->TopLeftY = 0;
+
         BackgroundColor = new FLOAT[4]{ 0.1456f, 0.1456f, 0.1456f, 1.0f };
         GridlineColor = new FLOAT[4]{ 0.0f, 0.0f, 0.0f, 1.0f };
         pLiveColor = new DirectX::XMFLOAT4{ 1.0f, 1.0f, 1.0f, 1.0f };
 
         renderinfo = (const wchar_t*)malloc(sizeof(wchar_t) * 256);
+
+        initialize();
     }
 
     ~dc3drender() {

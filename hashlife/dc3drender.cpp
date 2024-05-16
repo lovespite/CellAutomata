@@ -187,7 +187,7 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
     // 创建交换链描述
     DXGI_SWAP_CHAIN_DESC sd;
     ZeroMemory(&sd, sizeof(sd));
-    sd.BufferCount = 1;
+    sd.BufferCount = 2;
     sd.BufferDesc.Width = currwd;
     sd.BufferDesc.Height = currht;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -198,7 +198,7 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
     sd.SampleDesc.Count = 1;
     sd.SampleDesc.Quality = 0;
     sd.Windowed = TRUE;
-
+    sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     // 创建设备、交换链和设备上下文    
     UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;  // 添加 BGRA 支持标志
 
@@ -586,22 +586,16 @@ void dc3drender::begindraw() {
     initialize();
     vertices = 0;
 
+    // 重新绑定渲染目标
+    g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, nullptr);
     // 设置输入布局
     g_pImmediateContext->IASetInputLayout(g_pVertexLayout);
     // 设置顶点着色器
     g_pImmediateContext->VSSetShader(g_pVertexShader, nullptr, 0);
     // 设置像素着色器
     g_pImmediateContext->PSSetShader(g_pPixelShader, nullptr, 0);
-
     // 更新视口
-    static D3D11_VIEWPORT vp{};
-    vp.Width = float(currwd);
-    vp.Height = float(currht);
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
-    g_pImmediateContext->RSSetViewports(1, &vp);// 设置视口
+    g_pImmediateContext->RSSetViewports(1, g_vp);
 
 }
 
