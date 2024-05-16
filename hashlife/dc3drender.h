@@ -15,8 +15,7 @@
 #include <dwrite.h>
 #include <string>
 #pragma comment(lib, "d2d1.lib")
-#pragma comment(lib, "dwrite.lib")
-#include <dxgi.h>
+#pragma comment(lib, "dwrite.lib") 
 
 struct Vertex
 {
@@ -118,27 +117,6 @@ public:
     void begindraw() {
         initialize();
         vertices = 0;
-
-        //// 计算世界-视图-投影矩阵    
-        //// 世界矩阵
-        //DirectX::XMMATRIX worldMatrix = DirectX::XMMatrixIdentity();
-
-        //// 视图矩阵 
-        //DirectX::XMVECTOR eyePosition = DirectX::XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f);
-        //DirectX::XMVECTOR focusPoint = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-        //DirectX::XMVECTOR upDirection = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-        //DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
-
-        //// 投影矩阵
-        //float fovAngleY = 70.0f * DirectX::XM_PI / 180.0f;
-        //float aspectRatio = static_cast<float>(currwd) / static_cast<float>(currht);
-        //float nearZ = 0.01f;
-        //float farZ = 100.0f;
-        //DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fovAngleY, aspectRatio, nearZ, farZ);
-
-        //// 计算 WVP 矩阵
-        //DirectX::XMMATRIX wvpMatrix = worldMatrix * viewMatrix * projectionMatrix;
-        //UpdateConstantBuffer(wvpMatrix); // 更新常量缓冲区
     }
 
     void enddraw();
