@@ -13,9 +13,13 @@
 #include "dc3drender.h"
 #include "dllmain.h"
 
-std::string _version = "alpha1.1";
+std::string _version = "beta2.3";
+std::wstring _versionw = L"beta2.3";
+typedef long long BigInt;
 
 static std::vector<lifealgo*> algos;
+static std::vector<liferender*> renderctxs;
+static std::vector<viewport*> views;
 
 extern "C" __declspec(dllexport) void Version(char* versionBuffer, int bufferSize)
 {
@@ -227,8 +231,6 @@ extern "C" __declspec(dllexport) void SetRegion(int index, int x, int y, int w, 
     }
 }
 
-typedef long long BigInt;
-
 extern "C" __declspec(dllexport) void FindEdges(int index, BigInt * t, BigInt * l, BigInt * b, BigInt * r)
 {
     if (index < 0 || index >= algos.size())
@@ -252,7 +254,6 @@ extern "C" __declspec(dllexport) void FindEdges(int index, BigInt * t, BigInt * 
     *r = right.toint64();
 }
 
-// 定义导出函数接口
 extern "C" __declspec(dllexport) void DrawRegionBitmap(int index, BYTE * bitmapBuffer, long stride, int x, int y, int w, int h)
 {
     // 检查生命游戏实例索引是否有效
@@ -297,10 +298,7 @@ extern "C" __declspec(dllexport) void DrawRegionBitmap(int index, BYTE * bitmapB
     }
 }
 
-extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(
-    int index,
-    uint8_t * bitmapBuffer, int stride,
-    int x, int y, int w, int h)
+extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(int index, uint8_t * bitmapBuffer, int stride, int x, int y, int w, int h)
 {
     // 检查生命游戏实例索引是否有效
     if (index < 0 || index >= algos.size())
@@ -343,9 +341,6 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(
     }
 }
 
-static std::vector<liferender*> renderctxs;
-static std::vector<viewport*> views;
-
 extern "C" __declspec(dllexport) int CreateRender(int w, int h, HWND hWnd, int use3d)
 {
     liferender* render = use3d != 0
@@ -387,9 +382,7 @@ extern "C" __declspec(dllexport) void DestroyRender(int index)
     }
 }
 
-extern "C" __declspec(dllexport) void AtViewport(
-    int rctxindex,
-    int px, int py, INT64 * row, INT64 * col) {
+extern "C" __declspec(dllexport) void AtViewport(int rctxindex, int px, int py, INT64 * row, INT64 * col) {
 
     // 检查渲染上下文索引是否有效
     if (rctxindex < 0 || rctxindex >= renderctxs.size()) return;
@@ -404,10 +397,7 @@ extern "C" __declspec(dllexport) void AtViewport(
     *col = lt.first.toint64();  // x
 }
 
-extern "C" __declspec(dllexport) void DrawViewport(
-    int rctxindex,
-    int algoindex, int mag,
-    int x, int y, int w, int h, VIEWINFO * selection, const wchar_t* text)
+extern "C" __declspec(dllexport) void DrawViewport(int rctxindex, int algoindex, int mag, int x, int y, int w, int h, VIEWINFO * selection, const wchar_t* text)
 {
     // 检查生命游戏实例索引是否有效
     if (algoindex < 0 || algoindex >= algos.size()) return;
@@ -458,8 +448,7 @@ void drawframe(liferender* render, lifealgo* algo, viewport* vp, VIEWINFO* selec
     }
 
     render->drawtext(2, 2, text);
-    // render->drawtext(2, vp->getheight() - 20, (std::wstring(L"Vertices: ") + std::to_wstring(render->vertices)).c_str());
-    render->drawtext(2, vp->getheight() - 20, (std::wstring(L"Feature: ") + std::wstring(render->renderinfo)).c_str());
+    render->drawtext(2, vp->getheight() - 30, (std::wstring(L"Lib Ver.: ") + _versionw + L"\n" + std::wstring(L"Feature: ") + std::wstring(render->renderinfo)).c_str());
 
     render->drawlogo();
     render->enddraw();

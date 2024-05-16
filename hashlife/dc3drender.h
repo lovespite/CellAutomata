@@ -111,14 +111,11 @@ public:
         if (initialized) return;
         EnsureDirect3DResources(chWnd);
         LoadShaders();
+        UpdateConstantBuffer();
         initialized = true;
     }
 
-    void begindraw() {
-        initialize();
-        vertices = 0;
-    }
-
+    void begindraw();
     void enddraw();
 
     void clear() {

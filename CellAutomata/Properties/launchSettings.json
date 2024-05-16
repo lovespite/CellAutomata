@@ -2,7 +2,8 @@
   "profiles": {
     "CellAutomata": {
       "commandName": "Project",
-      "commandLineArgs": "--enbale-3d-render=true"
+      "commandLineArgs": "--enbale-3d-render=true",
+      "nativeDebugging": true
     }
   }
 }
