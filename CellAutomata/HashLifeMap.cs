@@ -57,7 +57,7 @@ public partial class HashLifeMap : ILifeMap
             _renderContextId,
             _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height,
             ref selection,
-            text + "\n3D Render: " + (Use3dRender == 1 ? "On" : "Off"));
+            text + "\nD3D Render: " + (Use3dRender == 1 ? "On" : "Off"));
     }
 
     private static readonly string _version;

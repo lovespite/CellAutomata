@@ -150,6 +150,7 @@
     <ClInclude Include="bigint.h" />
     <ClInclude Include="dc3drender.h" />
     <ClInclude Include="dcrender.h" />
+    <ClInclude Include="dllmain.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="hlifealgo.h" />
     <ClInclude Include="lifealgo.h" />

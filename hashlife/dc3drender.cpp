@@ -1,13 +1,16 @@
 #include "pch.h"
 #include "dc3drender.h"
+#include <vector>
 
 void fatal(const char* msg, HRESULT hr, bool exit = true) {
+
+#if defined(DEBUG) || defined(_DEBUG)
     auto message = std::string(msg) + " " + std::to_string(hr);
     MessageBoxA(NULL, message.c_str(), "Error", MB_OK);
-
     if (exit) {
         TerminateProcess(GetCurrentProcess(), 0);
     }
+#endif
 }
 
 HRESULT CompileShaderFromFile(
@@ -75,9 +78,56 @@ void dc3drender::CleanupDirect3D()
         g_pDevice->Release();
         g_pDevice = nullptr;
     }
+
+    if (g_pVertexShader) {
+        g_pVertexShader->Release();
+        g_pVertexShader = nullptr;
+    }
+
+    if (g_pPixelShader) {
+        g_pPixelShader->Release();
+        g_pPixelShader = nullptr;
+    }
+
+    if (g_pVertexLayout) {
+        g_pVertexLayout->Release();
+        g_pVertexLayout = nullptr;
+    }
+
+    if (g_pDepthStencil) {
+        g_pDepthStencil->Release();
+        g_pDepthStencil = nullptr;
+    }
+
+    if (g_pDepthStencilView) {
+        g_pDepthStencilView->Release();
+        g_pDepthStencilView = nullptr;
+    }
 }
 
-int dc3drender::LoadShaders() {
+void dc3drender::UpdateConstantBuffer() {
+
+    if (!g_pImmediateContext) return;
+    if (!g_pConstantBuffer) return;
+
+    DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
+    DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(
+        DirectX::XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f),
+        DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
+        DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)
+    );
+    DirectX::XMMATRIX projection = DirectX::XMMatrixPerspectiveFovLH(
+        DirectX::XM_PIDIV4,
+        static_cast<float>(currwd) / static_cast<float>(currht),
+        0.01f,
+        100.0f
+    );
+
+    auto wvp = world * view * projection;
+    g_pImmediateContext->UpdateSubresource(g_pConstantBuffer, 0, nullptr, &wvp, 0, 0);
+}
+
+HRESULT dc3drender::LoadShaders() {
     HRESULT hr = S_OK;
 
     // 编译顶点着色器
@@ -111,8 +161,6 @@ int dc3drender::LoadShaders() {
         return hr;
     }
 
-    // 设置输入布局
-    g_pImmediateContext->IASetInputLayout(g_pVertexLayout);
 
     // 编译像素着色器
     ID3DBlob* pPSBlob = nullptr;
@@ -126,15 +174,20 @@ int dc3drender::LoadShaders() {
     hr = g_pDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &g_pPixelShader);
     pPSBlob->Release();
     if (FAILED(hr)) {
+        fatal("CreatePixelShader failed", hr);
         return hr;
     }
 
+    // 设置输入布局
+    g_pImmediateContext->IASetInputLayout(g_pVertexLayout);
+    // 设置顶点着色器
+    g_pImmediateContext->VSSetShader(g_pVertexShader, nullptr, 0);
+    // 设置像素着色器
+    g_pImmediateContext->PSSetShader(g_pPixelShader, nullptr, 0);
+
     return S_OK;
 }
-
 HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
-    if (initialized) return S_OK;
-
     HRESULT hr = S_OK;
 
     // 创建交换链描述
@@ -169,10 +222,19 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
         &featureLevel,
         &g_pImmediateContext
     );
+
+    if (renderinfo != nullptr) {
+        swprintf((wchar_t*)renderinfo, 256, L"Direct3D 11.0, %s", featureLevel == D3D_FEATURE_LEVEL_11_0 ? L"Hardware" : L"Software");
+    }
+
+    // 检查结果
     if (FAILED(hr)) {
         fatal("D3D11CreateDeviceAndSwapChain failed", hr);
         return hr;
     }
+
+    // 设置图元拓扑结构 -> 三角形列表
+    g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 获取交换链中的后台缓冲区并创建渲染目标视图
     ID3D11Texture2D* pBackBuffer = nullptr;
@@ -181,7 +243,6 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
         fatal("GetBuffer failed", hr);
         return hr;
     }
-
     hr = g_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_pRenderTargetView);
     pBackBuffer->Release();
     if (FAILED(hr)) {
@@ -189,10 +250,42 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
         return hr;
     }
 
-    g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, nullptr);
+    // 创建深度模板缓冲区
+    D3D11_TEXTURE2D_DESC depthStencilDesc;
+    ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+    depthStencilDesc.Width = currwd;
+    depthStencilDesc.Height = currht;
+    depthStencilDesc.MipLevels = 1;
+    depthStencilDesc.ArraySize = 1;
+    depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthStencilDesc.SampleDesc.Count = 1;
+    depthStencilDesc.SampleDesc.Quality = 0;
+    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depthStencilDesc.CPUAccessFlags = 0;
+    depthStencilDesc.MiscFlags = 0;
+    // 创建深度模板缓冲区
+    hr = g_pDevice->CreateTexture2D(&depthStencilDesc, nullptr, &g_pDepthStencil);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    // 创建深度模板视图
+    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+    ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
+    depthStencilViewDesc.Format = depthStencilDesc.Format;
+    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    depthStencilViewDesc.Texture2D.MipSlice = 0;
+
+    hr = g_pDevice->CreateDepthStencilView(g_pDepthStencil, &depthStencilViewDesc, &g_pDepthStencilView);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, g_pDepthStencilView);
 
     // 设置视口
-    D3D11_VIEWPORT vp = {};
+    D3D11_VIEWPORT vp{};
     vp.Width = (FLOAT)currwd;
     vp.Height = (FLOAT)currht;
     vp.MinDepth = 0.0f;
@@ -201,7 +294,47 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
     vp.TopLeftY = 0;
     g_pImmediateContext->RSSetViewports(1, &vp);
 
-    return InitializeDirectWrite();
+    InitializeVertexBuffer();
+    InitializeDirectWrite();
+
+    return S_OK;
+}
+
+HRESULT dc3drender::InitializeVertexBuffer()
+{
+    HRESULT hr = S_OK;
+
+    D3D11_BUFFER_DESC bd = {};
+    bd.Usage = D3D11_USAGE_DYNAMIC;
+    bd.ByteWidth = sizeof(Vertex) * 6 * MAX_CELLS;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+    hr = g_pDevice->CreateBuffer(&bd, nullptr, &g_pVertexBuffer);
+    if (FAILED(hr)) {
+        fatal("CreateBuffer failed", hr);
+        return hr;
+    }
+
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(DirectX::XMMATRIX);
+    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bd.CPUAccessFlags = 0;
+    bd.MiscFlags = 0;
+    bd.StructureByteStride = 0;
+
+    hr = g_pDevice->CreateBuffer(&bd, nullptr, &g_pConstantBuffer);
+    if (FAILED(hr)) {
+        fatal("CreateConstantBuffer failed", hr);
+        return hr;
+    }
+
+    UINT stride = sizeof(Vertex);
+    UINT offset = 0;
+    g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
+    g_pImmediateContext->DSSetConstantBuffers(0, 1, &g_pConstantBuffer); // 设置常量缓冲区
+
+    return S_OK;
 }
 
 HRESULT dc3drender::InitializeDirectWrite() {
@@ -262,7 +395,9 @@ HRESULT dc3drender::InitializeDirectWrite() {
     // 创建 Direct2D 渲染目标
     D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
         D2D1_RENDER_TARGET_TYPE_DEFAULT,
-        D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+        D2D1::PixelFormat(
+            DXGI_FORMAT_R8G8B8A8_UNORM,
+            D2D1_ALPHA_MODE_PREMULTIPLIED),
         0,
         0
     );
@@ -300,16 +435,174 @@ void dc3drender::CleanupDirectWrite() {
     if (g_pD2DFactory) g_pD2DFactory->Release();
     if (g_pFontBrush) g_pFontBrush->Release();
     if (g_pBackBrush) g_pBackBrush->Release();
+    if (g_pLiveBrush) g_pLiveBrush->Release();
+    if (g_pSelBrush) g_pSelBrush->Release();
+    if (g_pGridline) g_pGridline->Release();
 }
 
-void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h)
-{
+void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h) {
+    if (!g_2dpRenderTarget) {
+        return;
+    }
 
+    // 创建 Direct2D 位图属性
+    D2D1_BITMAP_PROPERTIES bitmapProperties = D2D1::BitmapProperties(
+        D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+        96.0f, // DPI
+        96.0f  // DPI
+    );
+
+    // 创建 Direct2D 位图
+    ID2D1Bitmap* pBitmap = nullptr;
+    HRESULT hr = g_2dpRenderTarget->CreateBitmap(
+        D2D1::SizeU(w, h),
+        rgbadata,
+        w * 4, // 每行字节数
+        &bitmapProperties,
+        &pBitmap
+    );
+
+    if (FAILED(hr)) {
+        return;
+    }
+
+    g_2dpRenderTarget->BeginDraw();
+    g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+    // 绘制位图
+    D2D1_RECT_F destinationRect = D2D1::RectF(
+        static_cast<float>(x),
+        static_cast<float>(y),
+        static_cast<float>(x + w),
+        static_cast<float>(y + h)
+    );
+    g_2dpRenderTarget->DrawBitmap(pBitmap, destinationRect);
+
+    hr = g_2dpRenderTarget->EndDraw();
+    if (FAILED(hr)) {
+        // 处理绘制错误
+    }
+
+    // 释放位图资源
+    pBitmap->Release();
 }
 
-void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int pmscale)
+void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int pmscale) {
+    if (!g_pImmediateContext || !g_pDevice || !g_pVertexBuffer || !g_pVertexShader || !g_pPixelShader || !g_pVertexLayout) {
+        fatal("DrawCells failed", 0);
+        return;
+    }
+
+    static std::vector<Vertex> vertices(6 * MAX_CELLS); // 将顶点缓冲区作为静态变量
+    UINT64 vertexCount = 0;
+    Vertex* pVertices = vertices.data();
+
+    // 生成顶点数据
+    for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++j) {
+            int index = i * w + j;
+            if (pmdata[index] == 0) continue;
+
+            float startX = static_cast<float>(x + j * pmscale);
+            float startY = static_cast<float>(y + i * pmscale);
+            float endX = startX + static_cast<float>(pmscale);
+            float endY = startY + static_cast<float>(pmscale);
+
+            // 左上角
+            pVertices[vertexCount++] = { DirectX::XMFLOAT3(startX, startY, 0.0f), *pLiveColor };
+            // 右上角
+            pVertices[vertexCount++] = { DirectX::XMFLOAT3(endX, startY, 0.0f), *pLiveColor };
+            // 右下角
+            pVertices[vertexCount++] = { DirectX::XMFLOAT3(endX, endY, 0.0f), *pLiveColor };
+
+            // 左上角
+            pVertices[vertexCount++] = { DirectX::XMFLOAT3(startX, startY, 0.0f), *pLiveColor };
+            // 右下角
+            pVertices[vertexCount++] = { DirectX::XMFLOAT3(endX, endY, 0.0f), *pLiveColor };
+            // 左下角
+            pVertices[vertexCount++] = { DirectX::XMFLOAT3(startX, endY, 0.0f), *pLiveColor };
+        }
+    }
+
+    if (vertexCount == 0) return; // 没有顶点数据
+
+    this->vertices += vertexCount;
+
+    // 更新顶点缓冲区
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    HRESULT hr = g_pImmediateContext->Map(g_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (FAILED(hr)) {
+        fatal("Map failed", hr);
+        return;
+    }
+
+    if (mappedResource.pData) {
+        memcpy(mappedResource.pData, pVertices, vertexCount * sizeof(Vertex));
+        g_pImmediateContext->Unmap(g_pVertexBuffer, 0);
+    }
+    else {
+        fatal("Map failed", 0);
+    }
+
+    // 设置顶点缓冲区
+    UINT stride = sizeof(Vertex);
+    UINT offset = 0;
+    g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
+
+    // 设置图元拓扑结构
+    g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 更新常量缓冲区
+    // UpdateConstantBuffer();
+
+    // 绘制顶点
+    g_pImmediateContext->Draw(static_cast<UINT>(vertexCount), 0);
+}
+
+void dc3drender::DrawCells2D(unsigned char* pmdata, int x, int y, int w, int h, int pmscale)
 {
-    
+    if (!g_2dpRenderTarget) {
+        return;
+    }
+
+    if (!g_pLiveBrush) {
+        HRESULT hr = g_2dpRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &g_pLiveBrush);
+        if (FAILED(hr) || !g_pLiveBrush) return;
+    }
+
+    g_2dpRenderTarget->BeginDraw();
+    g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+
+    D2D1_RECT_F rect = D2D1::RectF(0, 0, 0, 0);
+    for (int row = 0; row < h; row++) {
+        for (int col = 0; col < w; col++) {
+            unsigned char state = pmdata[col + row * w]; // 获取细胞状态 
+            // 绘制矩形
+            if (state == 0) continue;
+
+            rect.left = x + pmscale * col;
+            rect.top = y + pmscale * row;
+            rect.right = rect.left + pmscale;
+            rect.bottom = rect.top + pmscale;
+
+            g_2dpRenderTarget->FillRectangle(&rect, g_pLiveBrush);
+        }
+    }
+
+    g_2dpRenderTarget->EndDraw();
+}
+
+void dc3drender::enddraw() {
+    if (g_pSwapChain) {
+        auto hr = g_pSwapChain->Present(0, 0);
+        if (FAILED(hr)) {
+            fatal("Present failed", hr);
+        }
+    }
+
+    if (g_pImmediateContext) {
+        // g_pImmediateContext->ClearState();
+    }
 }
 
 void dc3drender::drawtext(int x, int y, const wchar_t* text) {
@@ -425,25 +718,53 @@ void dc3drender::drawgridlines(int cellsize)
     g_2dpRenderTarget->EndDraw();
 }
 
+void dc3drender::drawlogo()
+{
+    static DirectX::XMFLOAT4  logoColor(1.0f, 1.0f, 0.0f, 1.0f); // RGB 黄色：1.0f, 1.0f, 0.0f
+    static std::vector<Vertex> vertices = {
+        { DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),  logoColor },
+        { DirectX::XMFLOAT3(0.0f, 100.0f, 0.0f), logoColor },
+        { DirectX::XMFLOAT3(100.0f, 100.0f, 0.0f), logoColor },
+        { DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), logoColor },
+        { DirectX::XMFLOAT3(100.0f, 100.0f, 0.0f), logoColor },
+        { DirectX::XMFLOAT3(100.0f, 0.0f, 0.0f), logoColor }
+    }; // 6 个顶点, 矩形
+
+    // 更新顶点缓冲区
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    HRESULT hr = g_pImmediateContext->Map(g_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (FAILED(hr)) {
+        fatal("Map failed", hr);
+        return;
+    }
+
+    if (mappedResource.pData) {
+        memcpy(mappedResource.pData, vertices.data(), vertices.size() * sizeof(Vertex));
+        g_pImmediateContext->Unmap(g_pVertexBuffer, 0);
+    }
+    else {
+        fatal("Map failed", 0);
+    }
+
+    // 设置顶点缓冲区
+    UINT stride = sizeof(Vertex);
+    UINT offset = 0;
+    g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
+
+    // 设置图元拓扑结构
+    g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 更新常量缓冲区
+    // UpdateConstantBuffer();
+
+    // 绘制顶点
+    g_pImmediateContext->Draw(static_cast<UINT>(vertices.size()), 0); // 6 个顶点
+}
+
 void dc3drender::pixblit(int x, int y, int w, int h, unsigned char* pmdata, int pmscale)
 {
     if (x >= currwd || y >= currht) return;
     if (x + w <= 0 || y + h <= 0) return;
-
-    // stride is the horizontal pixel width of the image data
-    int stride = w / pmscale;
-
-    // clip data outside viewport
-    if (pmscale > 1) {
-        //int vcentx = currwd / 2.0f;
-        //int vcenty = currht / 2.0f;
-
-        //float offsetx = vcentx % pmscale;
-        //float offsety = vcenty % pmscale;
-
-        //x += offsetx;
-        //y += offsety;
-    }
 
     if (pmscale == 1) {
         // draw RGBA pixel data at scale 1:1

@@ -8,27 +8,26 @@ cbuffer ConstantBuffer : register(b0)
 struct VertexInput
 {
     float3 Pos : POSITION; // 顶点位置
-    float4 Color : COLOR;  // 顶点颜色
+    float4 Color : COLOR; // 顶点颜色
 };
 
-// 从顶点着色器到像素着色器的数据结构
-struct PixelInput
+struct VertexOutput
 {
-    float4 Pos : SV_POSITION; // 处理过的顶点位置
-    float4 Color : COLOR;     // 传递给像素着色器的颜色
+    float4 Pos : SV_POSITION; // 顶点位置
+    float4 Color : COLOR; // 顶点颜色 
 };
 
 // 顶点着色器
-PixelInput VS(VertexInput input)
+VertexOutput VS(VertexInput input)
 {
-    PixelInput output;
+    VertexOutput output;
     output.Pos = mul(float4(input.Pos, 1.0), WorldViewProjection); // 应用变换矩阵
     output.Color = input.Color; // 直接传递颜色到像素着色器
     return output;
 }
 
 // 像素着色器
-float4 PS(PixelInput input) : SV_Target
+float4 PS(VertexOutput input) : SV_Target
 {
     return input.Color; // 使用顶点提供的颜色作为像素颜色
 }

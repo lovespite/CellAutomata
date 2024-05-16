@@ -83,15 +83,6 @@ void dcrender::EnsureDirect2DResources(HWND hWnd) {
     }
 }
 
-void dcrender::UpdateBitmap(unsigned char* rgbadata, int w, int h) {
-
-    IWICBitmap* pWICBitmap = NULL;
-    pWICFactory->CreateBitmapFromMemory(
-        w, h, GUID_WICPixelFormat32bppPBGRA, w * 4, w * h * 4, rgbadata, &pWICBitmap);
-
-    g_pRenderTarget->CreateBitmapFromWicBitmap(pWICBitmap, NULL, &g_pBitmap);
-    pWICBitmap->Release();
-}
 
 void dcrender::CleanupDirect2D() {
     if (g_pBitmap) {
@@ -196,6 +187,20 @@ void dcrender::drawgridlines(int cellsize) {
             1.0f // Ïß¿í
         );
     }
+}
+
+void dcrender::drawlogo()
+{
+}
+
+void dcrender::UpdateBitmap(unsigned char* rgbadata, int w, int h) {
+
+    IWICBitmap* pWICBitmap = NULL;
+    pWICFactory->CreateBitmapFromMemory(
+        w, h, GUID_WICPixelFormat32bppPBGRA, w * 4, w * h * 4, rgbadata, &pWICBitmap);
+
+    g_pRenderTarget->CreateBitmapFromWicBitmap(pWICBitmap, NULL, &g_pBitmap);
+    pWICBitmap->Release();
 }
 
 void dcrender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h) {

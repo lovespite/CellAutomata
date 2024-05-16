@@ -64,6 +64,8 @@ public:
     liferender() {}
     virtual ~liferender();
 
+    UINT64 vertices = 0;
+    const wchar_t* renderinfo = nullptr;
     // First two methods (pixblit/getcolors) only called for normal
     // display renderers.  For "getstate" renderers, these will never
     // be called.
@@ -90,6 +92,8 @@ public:
 
     // draw grid lines at the given cell size
     virtual void drawgridlines(int cellsize) = 0;
+
+    virtual void drawlogo() = 0;
 
 };
 const unsigned char colors[] = {

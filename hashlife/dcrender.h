@@ -89,6 +89,8 @@ public:
     void drawselection(VIEWINFO* pvi);
     void drawgridlines(int cellsize);
 
+    void drawlogo();
+
     virtual void pixblit(int x, int y, int w, int h, unsigned char* pmdata, int pmscale);
 
     virtual void getcolors(unsigned char** r, unsigned char** g, unsigned char** b)

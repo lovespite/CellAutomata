@@ -16,11 +16,16 @@
 #include <string>
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
+#include <dxgi.h>
 
 struct Vertex
 {
     DirectX::XMFLOAT3 Pos;
     DirectX::XMFLOAT4 Color;
+};
+
+struct ConstantBuffer {
+    DirectX::XMMATRIX WorldViewProjection;
 };
 
 class dc3drender : public liferender {
@@ -33,11 +38,17 @@ private:
     IDXGISwapChain* g_pSwapChain = nullptr;
     ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
 
+    ID3D11Buffer* g_pConstantBuffer = nullptr;
+
     ID3D11Buffer* g_pVertexBuffer = nullptr;
+
+    ID3D11Texture2D* g_pDepthStencil = nullptr;
+    ID3D11DepthStencilView* g_pDepthStencilView = nullptr;
 
     ID3D11VertexShader* g_pVertexShader = nullptr;
     ID3D11PixelShader* g_pPixelShader = nullptr;
     ID3D11InputLayout* g_pVertexLayout = nullptr;
+
 
     // Direct2D 和 DirectWrite 变量 
     IDWriteFactory* g_pDWriteFactory = nullptr;
@@ -50,14 +61,19 @@ private:
     ID2D1SolidColorBrush* g_pGridline = nullptr;
     ID2D1SolidColorBrush* g_pBackBrush = nullptr;
     ID2D1SolidColorBrush* g_pFontBrush = nullptr;
+    ID2D1SolidColorBrush* g_pLiveBrush = nullptr;
 
     FLOAT* BackgroundColor;
     FLOAT* GridlineColor;
+    DirectX::XMFLOAT4* pLiveColor;
 
     bool initialized = false;
 
-    int LoadShaders();
+    void UpdateConstantBuffer();
+
+    HRESULT LoadShaders();
     HRESULT EnsureDirect3DResources(HWND hWnd); // 初始化 Direct3D
+    HRESULT InitializeVertexBuffer(); // 初始化顶点缓冲区
 
     HRESULT InitializeDirectWrite(); // 初始化 DirectWrite
     void CleanupDirectWrite();
@@ -67,6 +83,7 @@ private:
     // 绘制 RGBA 数据
     void DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h);
     void DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int pmscale);
+    void DrawCells2D(unsigned char* pmdata, int x, int y, int w, int h, int pmscale);
 
 public:
 
@@ -80,6 +97,9 @@ public:
 
         BackgroundColor = new FLOAT[4]{ 0.1456f, 0.1456f, 0.1456f, 1.0f };
         GridlineColor = new FLOAT[4]{ 0.0f, 0.0f, 0.0f, 1.0f };
+        pLiveColor = new DirectX::XMFLOAT4{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+        renderinfo = (const wchar_t*)malloc(sizeof(wchar_t) * 256);
     }
 
     ~dc3drender() {
@@ -90,47 +110,51 @@ public:
     void initialize()
     {
         if (initialized) return;
-
-        HRESULT hr = EnsureDirect3DResources(chWnd);
-        if (FAILED(hr)) {
-            MessageBoxA(
-                NULL,
-                (std::string("Direct3D initialization failed: ") + std::to_string(hr)).c_str(),
-                "Error",
-                MB_OK);
-            return;
-        }
-
-        if (LoadShaders() != S_OK) {
-            MessageBoxA(NULL, "Shader loading failed", "Error", MB_OK);
-            return;
-        }
-
+        EnsureDirect3DResources(chWnd);
+        LoadShaders();
         initialized = true;
     }
+
     void begindraw() {
         initialize();
+        vertices = 0;
+
+        //// 计算世界-视图-投影矩阵    
+        //// 世界矩阵
+        //DirectX::XMMATRIX worldMatrix = DirectX::XMMatrixIdentity();
+
+        //// 视图矩阵 
+        //DirectX::XMVECTOR eyePosition = DirectX::XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f);
+        //DirectX::XMVECTOR focusPoint = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+        //DirectX::XMVECTOR upDirection = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+        //DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
+
+        //// 投影矩阵
+        //float fovAngleY = 70.0f * DirectX::XM_PI / 180.0f;
+        //float aspectRatio = static_cast<float>(currwd) / static_cast<float>(currht);
+        //float nearZ = 0.01f;
+        //float farZ = 100.0f;
+        //DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fovAngleY, aspectRatio, nearZ, farZ);
+
+        //// 计算 WVP 矩阵
+        //DirectX::XMMATRIX wvpMatrix = worldMatrix * viewMatrix * projectionMatrix;
+        //UpdateConstantBuffer(wvpMatrix); // 更新常量缓冲区
     }
 
-    void enddraw() {
-        if (g_pSwapChain) {
-            g_pSwapChain->Present(0, 0);
-        }
-
-        if (g_pImmediateContext) {
-            g_pImmediateContext->ClearState();
-        }
-    }
+    void enddraw();
 
     void clear() {
         if (g_pImmediateContext) {
             g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, BackgroundColor);
+            g_pImmediateContext->ClearDepthStencilView(g_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
         }
     }
 
     void drawtext(int x, int y, const wchar_t* text);
     void drawselection(VIEWINFO* pvi);
     void drawgridlines(int cellsize);
+
+    void drawlogo();
 
     virtual void pixblit(int x, int y, int w, int h, unsigned char* pmdata, int pmscale);
 

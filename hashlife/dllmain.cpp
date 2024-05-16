@@ -11,6 +11,7 @@
 #include "liferender.h"
 #include "dcrender.h"
 #include "dc3drender.h"
+#include "dllmain.h"
 
 std::string _version = "alpha1.1";
 
@@ -423,22 +424,28 @@ extern "C" __declspec(dllexport) void DrawViewport(
 
     if (render == nullptr || vp == nullptr) return;
 
-    int pmscale = 1 << mag; // 2^mag, cell size 
-
     vp->moveto(x, y);
     vp->setmag(mag);
 
+    drawframe(render, algo, vp, selection, text);
+}
+
+void drawframe(liferender* render, lifealgo* algo, viewport* vp, VIEWINFO* selection, const wchar_t* text)
+{
+    int pmscale = 1 << vp->getmag(); // 2^mag, cell size 
     render->begindraw();
     render->clear();
 
     algo->draw(*vp, *render);
 
-    if (mag > 3)
-        render->drawgridlines(pmscale);
+    if (vp->getmag() > 3) render->drawgridlines(pmscale);
 
     if (selection != nullptr && selection->EMPTY == 0)
     {
-        auto lt = vp->at(0, 0);
+        // draw selection
+        // need to convert selection(world position) to viewport coordinates
+
+        auto lt = vp->at(0, 0); // left-top cell position in world coordinates
         VIEWINFO vw{};
 
         vw.psl_x1 = -(-selection->psl_x1 + lt.first.toint64()) * pmscale;
@@ -451,6 +458,10 @@ extern "C" __declspec(dllexport) void DrawViewport(
     }
 
     render->drawtext(2, 2, text);
+    // render->drawtext(2, vp->getheight() - 20, (std::wstring(L"Vertices: ") + std::to_wstring(render->vertices)).c_str());
+    render->drawtext(2, vp->getheight() - 20, (std::wstring(L"Feature: ") + std::wstring(render->renderinfo)).c_str());
+
+    render->drawlogo();
     render->enddraw();
 }
 
