@@ -19,7 +19,7 @@ HRESULT CompileShaderFromFile(
     const char* model,
     ID3DBlob** ppBlobOut
 ) {
-    // ´ÓÎÄ¼ş±àÒë×ÅÉ«Æ÷
+    // ä»æ–‡ä»¶ç¼–è¯‘ç€è‰²å™¨
 
     DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined(DEBUG) || defined(_DEBUG)
@@ -130,7 +130,7 @@ void dc3drender::UpdateConstantBuffer() {
 HRESULT dc3drender::LoadShaders() {
     HRESULT hr = S_OK;
 
-    // ±àÒë¶¥µã×ÅÉ«Æ÷
+    // ç¼–è¯‘é¡¶ç‚¹ç€è‰²å™¨
     ID3DBlob* pVSBlob = nullptr;
     hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "VS", "vs_4_0", 0, 0, &pVSBlob, nullptr);
     if (FAILED(hr)) {
@@ -138,7 +138,7 @@ HRESULT dc3drender::LoadShaders() {
         return hr;
     }
 
-    // ´´½¨¶¥µã×ÅÉ«Æ÷
+    // åˆ›å»ºé¡¶ç‚¹ç€è‰²å™¨
     hr = g_pDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &g_pVertexShader);
     if (FAILED(hr)) {
         pVSBlob->Release();
@@ -146,14 +146,14 @@ HRESULT dc3drender::LoadShaders() {
         return hr;
     }
 
-    // ¶¨ÒåÊäÈë²¼¾Ö
+    // å®šä¹‰è¾“å…¥å¸ƒå±€
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
     UINT numElements = ARRAYSIZE(layout);
 
-    // ´´½¨ÊäÈë²¼¾Ö
+    // åˆ›å»ºè¾“å…¥å¸ƒå±€
     hr = g_pDevice->CreateInputLayout(layout, numElements, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &g_pVertexLayout);
     pVSBlob->Release();
     if (FAILED(hr)) {
@@ -162,7 +162,7 @@ HRESULT dc3drender::LoadShaders() {
     }
 
 
-    // ±àÒëÏñËØ×ÅÉ«Æ÷
+    // ç¼–è¯‘åƒç´ ç€è‰²å™¨
     ID3DBlob* pPSBlob = nullptr;
     hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "PS", "ps_4_0", 0, 0, &pPSBlob, nullptr);
     if (FAILED(hr)) {
@@ -170,7 +170,7 @@ HRESULT dc3drender::LoadShaders() {
         return hr;
     }
 
-    // ´´½¨ÏñËØ×ÅÉ«Æ÷
+    // åˆ›å»ºåƒç´ ç€è‰²å™¨
     hr = g_pDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &g_pPixelShader);
     pPSBlob->Release();
     if (FAILED(hr)) {
@@ -178,11 +178,11 @@ HRESULT dc3drender::LoadShaders() {
         return hr;
     }
 
-    // ÉèÖÃÊäÈë²¼¾Ö
+    // è®¾ç½®è¾“å…¥å¸ƒå±€
     g_pImmediateContext->IASetInputLayout(g_pVertexLayout);
-    // ÉèÖÃ¶¥µã×ÅÉ«Æ÷
+    // è®¾ç½®é¡¶ç‚¹ç€è‰²å™¨
     g_pImmediateContext->VSSetShader(g_pVertexShader, nullptr, 0);
-    // ÉèÖÃÏñËØ×ÅÉ«Æ÷
+    // è®¾ç½®åƒç´ ç€è‰²å™¨
     g_pImmediateContext->PSSetShader(g_pPixelShader, nullptr, 0);
 
     return S_OK;
@@ -190,7 +190,7 @@ HRESULT dc3drender::LoadShaders() {
 HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
     HRESULT hr = S_OK;
 
-    // ´´½¨½»»»Á´ÃèÊö
+    // åˆ›å»ºäº¤æ¢é“¾æè¿°
     DXGI_SWAP_CHAIN_DESC sd;
     ZeroMemory(&sd, sizeof(sd));
     sd.BufferCount = 1;
@@ -205,8 +205,8 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
     sd.SampleDesc.Quality = 0;
     sd.Windowed = TRUE;
 
-    // ´´½¨Éè±¸¡¢½»»»Á´ºÍÉè±¸ÉÏÏÂÎÄ    
-    UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;  // Ìí¼Ó BGRA Ö§³Ö±êÖ¾
+    // åˆ›å»ºè®¾å¤‡ã€äº¤æ¢é“¾å’Œè®¾å¤‡ä¸Šä¸‹æ–‡    
+    UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;  // æ·»åŠ  BGRA æ”¯æŒæ ‡å¿—
     D3D_FEATURE_LEVEL featureLevel;
     hr = D3D11CreateDeviceAndSwapChain(
         nullptr,
@@ -227,16 +227,16 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
         swprintf((wchar_t*)renderinfo, 256, L"Direct3D 11.0, %s", featureLevel == D3D_FEATURE_LEVEL_11_0 ? L"Hardware" : L"Software");
     }
 
-    // ¼ì²é½á¹û
+    // æ£€æŸ¥ç»“æœ
     if (FAILED(hr)) {
         fatal("D3D11CreateDeviceAndSwapChain failed", hr);
         return hr;
     }
 
-    // ÉèÖÃÍ¼ÔªÍØÆË½á¹¹ -> Èı½ÇĞÎÁĞ±í
+    // è®¾ç½®å›¾å…ƒæ‹“æ‰‘ç»“æ„ -> ä¸‰è§’å½¢åˆ—è¡¨
     g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // »ñÈ¡½»»»Á´ÖĞµÄºóÌ¨»º³åÇø²¢´´½¨äÖÈ¾Ä¿±êÊÓÍ¼
+    // è·å–äº¤æ¢é“¾ä¸­çš„åå°ç¼“å†²åŒºå¹¶åˆ›å»ºæ¸²æŸ“ç›®æ ‡è§†å›¾
     ID3D11Texture2D* pBackBuffer = nullptr;
     hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
     if (FAILED(hr)) {
@@ -250,7 +250,7 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
         return hr;
     }
 
-    // ´´½¨Éî¶ÈÄ£°å»º³åÇø
+    // åˆ›å»ºæ·±åº¦æ¨¡æ¿ç¼“å†²åŒº
     D3D11_TEXTURE2D_DESC depthStencilDesc;
     ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
     depthStencilDesc.Width = currwd;
@@ -264,13 +264,13 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
     depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
     depthStencilDesc.CPUAccessFlags = 0;
     depthStencilDesc.MiscFlags = 0;
-    // ´´½¨Éî¶ÈÄ£°å»º³åÇø
+    // åˆ›å»ºæ·±åº¦æ¨¡æ¿ç¼“å†²åŒº
     hr = g_pDevice->CreateTexture2D(&depthStencilDesc, nullptr, &g_pDepthStencil);
     if (FAILED(hr)) {
         return hr;
     }
 
-    // ´´½¨Éî¶ÈÄ£°åÊÓÍ¼
+    // åˆ›å»ºæ·±åº¦æ¨¡æ¿è§†å›¾
     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
     ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
     depthStencilViewDesc.Format = depthStencilDesc.Format;
@@ -284,7 +284,7 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
 
     g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, g_pDepthStencilView);
 
-    // ÉèÖÃÊÓ¿Ú
+    // è®¾ç½®è§†å£
     D3D11_VIEWPORT vp{};
     vp.Width = (FLOAT)currwd;
     vp.Height = (FLOAT)currht;
@@ -332,7 +332,7 @@ HRESULT dc3drender::InitializeVertexBuffer()
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
     g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
-    g_pImmediateContext->DSSetConstantBuffers(0, 1, &g_pConstantBuffer); // ÉèÖÃ³£Á¿»º³åÇø
+    g_pImmediateContext->DSSetConstantBuffers(0, 1, &g_pConstantBuffer); // è®¾ç½®å¸¸é‡ç¼“å†²åŒº
 
     return S_OK;
 }
@@ -340,21 +340,21 @@ HRESULT dc3drender::InitializeVertexBuffer()
 HRESULT dc3drender::InitializeDirectWrite() {
     HRESULT hr = S_OK;
 
-    // ´´½¨ Direct2D ¹¤³§
+    // åˆ›å»º Direct2D å·¥å‚
     hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &g_pD2DFactory);
     if (FAILED(hr)) {
         fatal("D2D1CreateFactory failed", hr);
         return hr;
     }
 
-    // ´´½¨ DirectWrite ¹¤³§
+    // åˆ›å»º DirectWrite å·¥å‚
     hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&g_pDWriteFactory));
     if (FAILED(hr)) {
         fatal("DWriteCreateFactory failed", hr);
         return hr;
     }
 
-    // ´´½¨ÎÄ±¾¸ñÊ½
+    // åˆ›å»ºæ–‡æœ¬æ ¼å¼
     hr = g_pDWriteFactory->CreateTextFormat(
         L"Trebuchet MS",
         nullptr,
@@ -370,7 +370,7 @@ HRESULT dc3drender::InitializeDirectWrite() {
         return hr;
     }
 
-    // »ñÈ¡½»»»Á´ÖĞµÄºóÌ¨»º³åÇø
+    // è·å–äº¤æ¢é“¾ä¸­çš„åå°ç¼“å†²åŒº
     ID3D11Texture2D* pBackBuffer = nullptr;
     hr = g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
     if (FAILED(hr)) {
@@ -378,7 +378,7 @@ HRESULT dc3drender::InitializeDirectWrite() {
         return hr;
     }
 
-    // »ñÈ¡ DXGI ±íÃæ
+    // è·å– DXGI è¡¨é¢
     IDXGISurface* dxgiSurface = nullptr;
     hr = pBackBuffer->QueryInterface(__uuidof(IDXGISurface), (void**)&dxgiSurface);
     pBackBuffer->Release();
@@ -392,7 +392,7 @@ HRESULT dc3drender::InitializeDirectWrite() {
         return 0xF001;
     }
 
-    // ´´½¨ Direct2D äÖÈ¾Ä¿±ê
+    // åˆ›å»º Direct2D æ¸²æŸ“ç›®æ ‡
     D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
         D2D1_RENDER_TARGET_TYPE_DEFAULT,
         D2D1::PixelFormat(
@@ -445,19 +445,19 @@ void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int 
         return;
     }
 
-    // ´´½¨ Direct2D Î»Í¼ÊôĞÔ
+    // åˆ›å»º Direct2D ä½å›¾å±æ€§
     D2D1_BITMAP_PROPERTIES bitmapProperties = D2D1::BitmapProperties(
         D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
         96.0f, // DPI
         96.0f  // DPI
     );
 
-    // ´´½¨ Direct2D Î»Í¼
+    // åˆ›å»º Direct2D ä½å›¾
     ID2D1Bitmap* pBitmap = nullptr;
     HRESULT hr = g_2dpRenderTarget->CreateBitmap(
         D2D1::SizeU(w, h),
         rgbadata,
-        w * 4, // Ã¿ĞĞ×Ö½ÚÊı
+        w * 4, // æ¯è¡Œå­—èŠ‚æ•°
         &bitmapProperties,
         &pBitmap
     );
@@ -469,7 +469,7 @@ void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int 
     g_2dpRenderTarget->BeginDraw();
     g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-    // »æÖÆÎ»Í¼
+    // ç»˜åˆ¶ä½å›¾
     D2D1_RECT_F destinationRect = D2D1::RectF(
         static_cast<float>(x),
         static_cast<float>(y),
@@ -480,10 +480,10 @@ void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int 
 
     hr = g_2dpRenderTarget->EndDraw();
     if (FAILED(hr)) {
-        // ´¦Àí»æÖÆ´íÎó
+        // å¤„ç†ç»˜åˆ¶é”™è¯¯
     }
 
-    // ÊÍ·ÅÎ»Í¼×ÊÔ´
+    // é‡Šæ”¾ä½å›¾èµ„æº
     pBitmap->Release();
 }
 
@@ -493,11 +493,11 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
         return;
     }
 
-    static std::vector<Vertex> vertices(6 * MAX_CELLS); // ½«¶¥µã»º³åÇø×÷Îª¾²Ì¬±äÁ¿
+    static std::vector<Vertex> vertices(6 * MAX_CELLS); // å°†é¡¶ç‚¹ç¼“å†²åŒºä½œä¸ºé™æ€å˜é‡
     UINT64 vertexCount = 0;
     Vertex* pVertices = vertices.data();
 
-    // Éú³É¶¥µãÊı¾İ
+    // ç”Ÿæˆé¡¶ç‚¹æ•°æ®
     for (int i = 0; i < h; ++i) {
         for (int j = 0; j < w; ++j) {
             int index = i * w + j;
@@ -508,27 +508,27 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
             float endX = startX + static_cast<float>(pmscale);
             float endY = startY + static_cast<float>(pmscale);
 
-            // ×óÉÏ½Ç
+            // å·¦ä¸Šè§’
             pVertices[vertexCount++] = { DirectX::XMFLOAT3(startX, startY, 0.0f), *pLiveColor };
-            // ÓÒÉÏ½Ç
+            // å³ä¸Šè§’
             pVertices[vertexCount++] = { DirectX::XMFLOAT3(endX, startY, 0.0f), *pLiveColor };
-            // ÓÒÏÂ½Ç
+            // å³ä¸‹è§’
             pVertices[vertexCount++] = { DirectX::XMFLOAT3(endX, endY, 0.0f), *pLiveColor };
 
-            // ×óÉÏ½Ç
+            // å·¦ä¸Šè§’
             pVertices[vertexCount++] = { DirectX::XMFLOAT3(startX, startY, 0.0f), *pLiveColor };
-            // ÓÒÏÂ½Ç
+            // å³ä¸‹è§’
             pVertices[vertexCount++] = { DirectX::XMFLOAT3(endX, endY, 0.0f), *pLiveColor };
-            // ×óÏÂ½Ç
+            // å·¦ä¸‹è§’
             pVertices[vertexCount++] = { DirectX::XMFLOAT3(startX, endY, 0.0f), *pLiveColor };
         }
     }
 
-    if (vertexCount == 0) return; // Ã»ÓĞ¶¥µãÊı¾İ
+    if (vertexCount == 0) return; // æ²¡æœ‰é¡¶ç‚¹æ•°æ®
 
     this->vertices += vertexCount;
 
-    // ¸üĞÂ¶¥µã»º³åÇø
+    // æ›´æ–°é¡¶ç‚¹ç¼“å†²åŒº
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     HRESULT hr = g_pImmediateContext->Map(g_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (FAILED(hr)) {
@@ -544,18 +544,18 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
         fatal("Map failed", 0);
     }
 
-    // ÉèÖÃ¶¥µã»º³åÇø
+    // è®¾ç½®é¡¶ç‚¹ç¼“å†²åŒº
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
     g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
 
-    // ÉèÖÃÍ¼ÔªÍØÆË½á¹¹
+    // è®¾ç½®å›¾å…ƒæ‹“æ‰‘ç»“æ„
     g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // ¸üĞÂ³£Á¿»º³åÇø
+    // æ›´æ–°å¸¸é‡ç¼“å†²åŒº
     // UpdateConstantBuffer();
 
-    // »æÖÆ¶¥µã
+    // ç»˜åˆ¶é¡¶ç‚¹
     g_pImmediateContext->Draw(static_cast<UINT>(vertexCount), 0);
 }
 
@@ -576,8 +576,8 @@ void dc3drender::DrawCells2D(unsigned char* pmdata, int x, int y, int w, int h, 
     D2D1_RECT_F rect = D2D1::RectF(0, 0, 0, 0);
     for (int row = 0; row < h; row++) {
         for (int col = 0; col < w; col++) {
-            unsigned char state = pmdata[col + row * w]; // »ñÈ¡Ï¸°û×´Ì¬ 
-            // »æÖÆ¾ØĞÎ
+            unsigned char state = pmdata[col + row * w]; // è·å–ç»†èƒçŠ¶æ€ 
+            // ç»˜åˆ¶çŸ©å½¢
             if (state == 0) continue;
 
             rect.left = x + pmscale * col;
@@ -610,15 +610,15 @@ void dc3drender::drawtext(int x, int y, const wchar_t* text) {
         return;
     }
 
-    // ´´½¨ÎÄ±¾²¼¾ÖÒÔ±ã²âÁ¿ÎÄ±¾
+    // åˆ›å»ºæ–‡æœ¬å¸ƒå±€ä»¥ä¾¿æµ‹é‡æ–‡æœ¬
     IDWriteTextLayout* pTextLayout = nullptr;
     HRESULT hr = g_pDWriteFactory->CreateTextLayout(
-        text,        // ÒªäÖÈ¾µÄÎÄ±¾
-        wcslen(text),// ÎÄ±¾µÄ³¤¶È
-        g_pTextFormat,// ÎÄ±¾¸ñÊ½
-        currwd,      // ×î´ó¿í¶È 
-        currht,      // ×î´ó¸ß¶È 
-        &pTextLayout // Êä³öµÄÎÄ±¾²¼¾Ö
+        text,        // è¦æ¸²æŸ“çš„æ–‡æœ¬
+        wcslen(text),// æ–‡æœ¬çš„é•¿åº¦
+        g_pTextFormat,// æ–‡æœ¬æ ¼å¼
+        currwd,      // æœ€å¤§å®½åº¦ 
+        currht,      // æœ€å¤§é«˜åº¦ 
+        &pTextLayout // è¾“å‡ºçš„æ–‡æœ¬å¸ƒå±€
     );
 
     if (FAILED(hr)) return;
@@ -633,7 +633,7 @@ void dc3drender::drawtext(int x, int y, const wchar_t* text) {
     g_2dpRenderTarget->BeginDraw();
     g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-    // ¸ù¾İÎÄ±¾³ß´çÉè¶¨¾ØĞÎ
+    // æ ¹æ®æ–‡æœ¬å°ºå¯¸è®¾å®šçŸ©å½¢
     D2D1_RECT_F rectangle = D2D1::RectF(
         static_cast<float>(x),
         static_cast<float>(y),
@@ -641,10 +641,10 @@ void dc3drender::drawtext(int x, int y, const wchar_t* text) {
         static_cast<float>(y) + textMetrics.height
     );
 
-    // »æÖÆ±³¾°
+    // ç»˜åˆ¶èƒŒæ™¯
     g_2dpRenderTarget->FillRectangle(&rectangle, g_pBackBrush);
 
-    // »æÖÆÎÄ±¾
+    // ç»˜åˆ¶æ–‡æœ¬
     g_2dpRenderTarget->DrawTextLayout(
         D2D1::Point2F(static_cast<float>(x), static_cast<float>(y)),
         pTextLayout,
@@ -653,13 +653,13 @@ void dc3drender::drawtext(int x, int y, const wchar_t* text) {
     );
     hr = g_2dpRenderTarget->EndDraw();
 
-    pTextLayout->Release(); // ÊÍ·ÅÎÄ±¾²¼¾Ö×ÊÔ´  
+    pTextLayout->Release(); // é‡Šæ”¾æ–‡æœ¬å¸ƒå±€èµ„æº  
 }
 
 void dc3drender::drawselection(VIEWINFO* pvi) {
     if (!g_2dpRenderTarget) return;
 
-    // È·±£ÓĞÒ»¸ö»­Ë¢¿ÉÓÃ
+    // ç¡®ä¿æœ‰ä¸€ä¸ªç”»åˆ·å¯ç”¨
     if (!g_pSelBrush) {
         HRESULT hr = g_2dpRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 0.45f), &g_pSelBrush);
         if (FAILED(hr) || !g_pSelBrush) return;
@@ -668,7 +668,7 @@ void dc3drender::drawselection(VIEWINFO* pvi) {
     g_2dpRenderTarget->BeginDraw();
     g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
-    // ´´½¨Ñ¡Çø¾ØĞÎ
+    // åˆ›å»ºé€‰åŒºçŸ©å½¢
     D2D1_RECT_F selectionRect = D2D1::RectF(
         static_cast<float>(pvi->psl_x1),
         static_cast<float>(pvi->psl_y1),
@@ -676,7 +676,7 @@ void dc3drender::drawselection(VIEWINFO* pvi) {
         static_cast<float>(pvi->psl_y2)
     );
 
-    // »æÖÆÑ¡Çø¾ØĞÎ
+    // ç»˜åˆ¶é€‰åŒºçŸ©å½¢
     g_2dpRenderTarget->FillRectangle(&selectionRect, g_pSelBrush);
     g_2dpRenderTarget->DrawRectangle(&selectionRect, g_pSelBrush, 1.0f);
 
@@ -702,7 +702,7 @@ void dc3drender::drawgridlines(int cellsize)
             D2D1::Point2F(0.0f, dy),
             D2D1::Point2F(static_cast<float>(currwd), dy),
             g_pGridline,
-            1.0f // Ïß¿í
+            1.0f // çº¿å®½
         );
     }
 
@@ -711,7 +711,7 @@ void dc3drender::drawgridlines(int cellsize)
             D2D1::Point2F(dx, 0.0f),
             D2D1::Point2F(dx, static_cast<float>(currht)),
             g_pGridline,
-            1.0f // Ïß¿í
+            1.0f // çº¿å®½
         );
     }
 
@@ -720,7 +720,7 @@ void dc3drender::drawgridlines(int cellsize)
 
 void dc3drender::drawlogo()
 {
-    static DirectX::XMFLOAT4  logoColor(1.0f, 1.0f, 0.0f, 1.0f); // RGB »ÆÉ«£º1.0f, 1.0f, 0.0f
+    static DirectX::XMFLOAT4  logoColor(1.0f, 1.0f, 0.0f, 1.0f); // RGB é»„è‰²ï¼š1.0f, 1.0f, 0.0f
     static std::vector<Vertex> vertices = {
         { DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),  logoColor },
         { DirectX::XMFLOAT3(0.0f, 100.0f, 0.0f), logoColor },
@@ -728,9 +728,9 @@ void dc3drender::drawlogo()
         { DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), logoColor },
         { DirectX::XMFLOAT3(100.0f, 100.0f, 0.0f), logoColor },
         { DirectX::XMFLOAT3(100.0f, 0.0f, 0.0f), logoColor }
-    }; // 6 ¸ö¶¥µã, ¾ØĞÎ
+    }; // 6 ä¸ªé¡¶ç‚¹, çŸ©å½¢
 
-    // ¸üĞÂ¶¥µã»º³åÇø
+    // æ›´æ–°é¡¶ç‚¹ç¼“å†²åŒº
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     HRESULT hr = g_pImmediateContext->Map(g_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (FAILED(hr)) {
@@ -746,19 +746,19 @@ void dc3drender::drawlogo()
         fatal("Map failed", 0);
     }
 
-    // ÉèÖÃ¶¥µã»º³åÇø
+    // è®¾ç½®é¡¶ç‚¹ç¼“å†²åŒº
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
     g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
 
-    // ÉèÖÃÍ¼ÔªÍØÆË½á¹¹
+    // è®¾ç½®å›¾å…ƒæ‹“æ‰‘ç»“æ„
     g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // ¸üĞÂ³£Á¿»º³åÇø
+    // æ›´æ–°å¸¸é‡ç¼“å†²åŒº
     // UpdateConstantBuffer();
 
-    // »æÖÆ¶¥µã
-    g_pImmediateContext->Draw(static_cast<UINT>(vertices.size()), 0); // 6 ¸ö¶¥µã
+    // ç»˜åˆ¶é¡¶ç‚¹
+    g_pImmediateContext->Draw(static_cast<UINT>(vertices.size()), 0); // 6 ä¸ªé¡¶ç‚¹
 }
 
 void dc3drender::pixblit(int x, int y, int w, int h, unsigned char* pmdata, int pmscale)

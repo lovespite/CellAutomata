@@ -31,7 +31,7 @@ class dc3drender : public liferender {
 
 private:
 
-    // È«¾ÖÉùÃ÷ Direct3D ±äÁ¿
+    // å…¨å±€å£°æ˜ Direct3D å˜é‡
     ID3D11Device* g_pDevice = nullptr;
     ID3D11DeviceContext* g_pImmediateContext = nullptr;
     IDXGISwapChain* g_pSwapChain = nullptr;
@@ -49,13 +49,13 @@ private:
     ID3D11InputLayout* g_pVertexLayout = nullptr;
 
 
-    // Direct2D ºÍ DirectWrite ±äÁ¿ 
+    // Direct2D å’Œ DirectWrite å˜é‡ 
     IDWriteFactory* g_pDWriteFactory = nullptr;
     IDWriteTextFormat* g_pTextFormat = nullptr;
     ID2D1Factory* g_pD2DFactory = nullptr;
     ID2D1RenderTarget* g_2dpRenderTarget = nullptr;
 
-    // »­Ë¢  
+    // ç”»åˆ·  
     ID2D1SolidColorBrush* g_pSelBrush = nullptr;
     ID2D1SolidColorBrush* g_pGridline = nullptr;
     ID2D1SolidColorBrush* g_pBackBrush = nullptr;
@@ -71,15 +71,15 @@ private:
     void UpdateConstantBuffer();
 
     HRESULT LoadShaders();
-    HRESULT EnsureDirect3DResources(HWND hWnd); // ³õÊ¼»¯ Direct3D
-    HRESULT InitializeVertexBuffer(); // ³õÊ¼»¯¶¥µã»º³åÇø
+    HRESULT EnsureDirect3DResources(HWND hWnd); // åˆå§‹åŒ– Direct3D
+    HRESULT InitializeVertexBuffer(); // åˆå§‹åŒ–é¡¶ç‚¹ç¼“å†²åŒº
 
-    HRESULT InitializeDirectWrite(); // ³õÊ¼»¯ DirectWrite
+    HRESULT InitializeDirectWrite(); // åˆå§‹åŒ– DirectWrite
     void CleanupDirectWrite();
 
-    void CleanupDirect3D(); // ÇåÀí Direct3D ×ÊÔ´ 
+    void CleanupDirect3D(); // æ¸…ç† Direct3D èµ„æº 
 
-    // »æÖÆ RGBA Êı¾İ
+    // ç»˜åˆ¶ RGBA æ•°æ®
     void DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h);
     void DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int pmscale);
     void DrawCells2D(unsigned char* pmdata, int x, int y, int w, int h, int pmscale);
