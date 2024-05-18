@@ -64,6 +64,7 @@ public:
     liferender() {}
     virtual ~liferender();
 
+    float pmscale = 1.0f;
     UINT64 vertices = 0;
     const wchar_t* renderinfo = nullptr;
     // First two methods (pixblit/getcolors) only called for normal
@@ -84,6 +85,9 @@ public:
     virtual void enddraw() = 0;
     virtual void clear() = 0;
 
+    void setpmscale(float scale) { pmscale = scale; }
+    virtual void resize(int w, int h) = 0;
+
     // draw text at the given location
     virtual void drawtext(int x, int y, const wchar_t* text) = 0;
 
@@ -94,6 +98,8 @@ public:
     virtual void drawgridlines(int cellsize) = 0;
 
     virtual void drawlogo() = 0;
+
+    virtual void destroy() = 0;
 
 };
 const unsigned char colors[] = {

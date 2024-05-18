@@ -26,11 +26,14 @@ struct Vertex
     DirectX::XMFLOAT4 Color;
 };
 
-//struct ConstantBuffer {
-//    DirectX::XMMATRIX World;
-//    DirectX::XMMATRIX View;
-//    DirectX::XMMATRIX Projection;
-//};
+struct InstanceData {
+    DirectX::XMINT4 position; // x, y, column, row
+};
+
+struct ConstantBuffer {
+    DirectX::XMFLOAT4 rwhscale; // 16 bytes
+    DirectX::XMFLOAT4 canvasSize; // 16 bytes
+};
 
 class dc3drender : public liferender {
 
@@ -46,10 +49,11 @@ private:
 
     ID3D11Buffer* g_pConstantBuffer = nullptr;
 
-    ID3D11Buffer* g_pVertexBuffer = nullptr;
+    ID3D11Buffer* g_pCellVertexBuffer = nullptr;
+    ID3D11Buffer* g_pInstanceBuffer = nullptr;
 
-    ID3D11Texture2D* g_pDepthStencil = nullptr;
-    ID3D11DepthStencilView* g_pDepthStencilView = nullptr;
+    //ID3D11Texture2D* g_pDepthStencil = nullptr;
+    //ID3D11DepthStencilView* g_pDepthStencilView = nullptr;
 
     ID3D11VertexShader* g_pVertexShader = nullptr;
     ID3D11PixelShader* g_pPixelShader = nullptr;
@@ -66,8 +70,7 @@ private:
     ID2D1SolidColorBrush* g_pSelBrush = nullptr;
     ID2D1SolidColorBrush* g_pGridline = nullptr;
     ID2D1SolidColorBrush* g_pBackBrush = nullptr;
-    ID2D1SolidColorBrush* g_pFontBrush = nullptr;
-    ID2D1SolidColorBrush* g_pLiveBrush = nullptr;
+    ID2D1SolidColorBrush* g_pFontBrush = nullptr; 
 
     FLOAT* BackgroundColor;
     FLOAT* GridlineColor;
@@ -75,11 +78,13 @@ private:
 
     bool initialized = false;
 
-    void UpdateConstantBuffer();
+    void UpdateConstantBuffer(float pmscale, DirectX::XMUINT2 canvasSize);
+    void UpdateInstanceBuffer(InstanceData* pInstanceData, int numInstances);
 
     HRESULT LoadShaders();
     HRESULT EnsureDirect3DResources(HWND hWnd); // 初始化 Direct3D
     HRESULT InitializeVertexBuffer(); // 初始化顶点缓冲区
+    HRESULT InitializeInstanceBuffer(); // 初始化实例缓冲区
 
     HRESULT InitializeDirectWrite(); // 初始化 DirectWrite
     void CleanupDirectWrite();
@@ -90,6 +95,29 @@ private:
     void DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h);
     void DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int pmscale);
     void DrawCells2D(unsigned char* pmdata, int x, int y, int w, int h, int pmscale);
+
+    void WaitForGPU() {
+
+        // 创建事件查询对象
+        ID3D11Query* g_pEventQuery;
+        D3D11_QUERY_DESC queryDesc;
+        queryDesc.Query = D3D11_QUERY_EVENT;
+        queryDesc.MiscFlags = 0;
+        g_pDevice->CreateQuery(&queryDesc, &g_pEventQuery); // 创建事件查询对象
+
+        // 等待 GPU 完成 
+        g_pImmediateContext->End(g_pEventQuery); // 发出信号 
+        while (S_OK != g_pImmediateContext->GetData(g_pEventQuery, NULL, 0, 0)) {
+            // 等待 GPU 完成
+            Sleep(1);
+        }
+    }
+
+    bool _destroyed = false;
+    bool _canRender = false;
+    bool _isDrawing = false;
+
+    bool _suspend = false;
 
 public:
 
@@ -119,9 +147,24 @@ public:
         initialize();
     }
 
+    void suspend() {
+        _suspend = true;
+    }
+
+    void resume() {
+        _suspend = false;
+    }
+
     ~dc3drender() {
-        CleanupDirect3D();
-        CleanupDirectWrite();
+        destroy();
+    }
+
+    void waitfordrawing() {
+        while (_isDrawing)
+        {
+            Sleep(1);
+        }
+        WaitForGPU();
     }
 
     void initialize()
@@ -129,18 +172,30 @@ public:
         if (initialized) return;
         EnsureDirect3DResources(chWnd);
         LoadShaders();
-        UpdateConstantBuffer();
         initialized = true;
     }
 
+    void resize(int w, int h);
     void begindraw();
     void enddraw();
 
     void clear() {
         if (g_pImmediateContext) {
             g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, BackgroundColor);
-            g_pImmediateContext->ClearDepthStencilView(g_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+            // g_pImmediateContext->ClearDepthStencilView(g_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
         }
+    }
+
+    void destroy() {
+        if (_destroyed) return;
+
+        CleanupDirect3D();
+        CleanupDirectWrite();
+        delete[] BackgroundColor;
+        delete[] GridlineColor;
+        delete pLiveColor;
+        delete g_vp;
+        _destroyed = true;
     }
 
     void drawtext(int x, int y, const wchar_t* text);

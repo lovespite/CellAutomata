@@ -13,8 +13,8 @@
 #include "dc3drender.h"
 #include "dllmain.h"
 
-std::string _version = "beta2.4.2";
-std::wstring _versionw = L"beta2.4.2";
+std::string _version = "beta2.4.3";
+std::wstring _versionw = L"beta2.4.3";
 typedef long long BigInt;
 
 static std::vector<lifealgo*> algos;
@@ -365,6 +365,7 @@ extern "C" __declspec(dllexport) void DestroyRender(int index)
 
     if (render != nullptr)
     {
+        render->destroy();
         delete render;
 
         renderctxs[index] = nullptr;
@@ -380,6 +381,25 @@ extern "C" __declspec(dllexport) void DestroyRender(int index)
         views[index] = nullptr;
         view = nullptr;
     }
+}
+
+extern "C" __declspec(dllexport) void ResizeViewport(int rctxindex, int w, int h)
+{
+    if (rctxindex < 0 || rctxindex >= renderctxs.size())
+    {
+        return;
+    }
+
+    auto render = renderctxs[rctxindex];
+    auto view = views[rctxindex];
+
+    if (render == nullptr || view == nullptr)
+    {
+        return;
+    }
+
+    view->resize(w, h);
+    render->resize(w, h);
 }
 
 extern "C" __declspec(dllexport) void AtViewport(int rctxindex, int px, int py, INT64 * row, INT64 * col) {
@@ -423,6 +443,7 @@ extern "C" __declspec(dllexport) void DrawViewport(int rctxindex, int algoindex,
 void drawframe(liferender* render, lifealgo* algo, viewport* vp, VIEWINFO* selection, const wchar_t* text)
 {
     int pmscale = 1 << vp->getmag(); // 2^mag, cell size 
+    render->setpmscale(pmscale);
     render->begindraw();
     render->clear();
 

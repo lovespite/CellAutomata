@@ -52,6 +52,20 @@ private:
 
 public:
 
+    void resize(int w, int h) {
+        currwd = w;
+        currht = h;
+
+        if (g_pRenderTarget) {
+            g_pRenderTarget->Resize(D2D1::SizeU(w, h));
+        }
+
+        if (g_pBitmap) {
+            g_pBitmap->Release();
+            g_pBitmap = nullptr;
+        }
+    }
+
     HWND chWnd;
     int currwd, currht;              // current width and height of viewport  
 
@@ -62,6 +76,10 @@ public:
     }
 
     ~dcrender() {
+        CleanupDirect2D();
+    }
+
+    void destroy() {
         CleanupDirect2D();
     }
 

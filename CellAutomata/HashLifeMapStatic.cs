@@ -19,6 +19,9 @@ namespace CellAutomata
         internal static partial void DestroyRender(int renderCtx);
 
         [LibraryImport(HashLifeLib)]
+        internal static partial void ResizeViewport(int renderCtx, int w, int h);
+
+        [LibraryImport(HashLifeLib)]
         internal static partial void DestroyUniverse(int index);
 
         [LibraryImport(HashLifeLib)]

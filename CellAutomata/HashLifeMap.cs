@@ -43,10 +43,11 @@ public partial class HashLifeMap : ILifeMap
         }
         else if (_vwSize != vwSize)
         {
-            HashLifeMapStatic.
-                        // Resize render context
-                        DestroyRender(_renderContextId);
-            _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas, Use3dRender);
+            HashLifeMapStatic.ResizeViewport(_renderContextId, vwSize.Width, vwSize.Height); // Resize render context
+            //HashLifeMapStatic.
+            //            // Resize render context
+            //            DestroyRender(_renderContextId);
+            //_renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas, Use3dRender);
             _vwSize = vwSize;
 
             Debug.WriteLine("Resize render context: " + _renderContextId);
