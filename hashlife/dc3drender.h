@@ -5,11 +5,14 @@
 #include <iostream>
 
 #include <d3d11.h>
+#include <d3d11_1.h> 
+
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "D3DCompiler.lib")
+
 
 #include <d2d1.h>
 #include <dwrite.h>
@@ -23,9 +26,11 @@ struct Vertex
     DirectX::XMFLOAT4 Color;
 };
 
-struct ConstantBuffer {
-    DirectX::XMMATRIX WorldViewProjection;
-};
+//struct ConstantBuffer {
+//    DirectX::XMMATRIX World;
+//    DirectX::XMMATRIX View;
+//    DirectX::XMMATRIX Projection;
+//};
 
 class dc3drender : public liferender {
 

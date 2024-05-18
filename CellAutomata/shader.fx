@@ -1,7 +1,9 @@
 // 定义常量缓冲区，它将从应用程序传递数据到着色器
 cbuffer ConstantBuffer : register(b0)
 {
-    matrix WorldViewProjection; // 用于顶点位置变换的世界-视图-投影矩阵
+    matrix World;
+    matrix View;
+    matrix Projection;
 }
 
 // 顶点数据结构
@@ -21,7 +23,14 @@ struct VertexOutput
 VertexOutput VS(VertexInput input)
 {
     VertexOutput output;
-    output.Pos = mul(float4(input.Pos, 1.0), WorldViewProjection); // 应用变换矩阵
+    
+    output.Pos = float4(input.Pos, 1.0f);
+    
+    // 将输入位置从对象空间转换到裁剪空间
+    // output.Pos = mul(float4(input.Pos, 1.0f), World);
+    // output.Pos = mul(output.Pos, View);
+    // output.Pos = mul(output.Pos, Projection);
+    
     output.Color = input.Color; // 直接传递颜色到像素着色器
     return output;
 }
@@ -30,14 +39,4 @@ VertexOutput VS(VertexInput input)
 float4 PS(VertexOutput input) : SV_Target
 {
     return input.Color; // 使用顶点提供的颜色作为像素颜色
-}
-
-// 技术和通道定义（可用于简化应用程序中着色器的使用）
-technique10 Render
-{
-    pass P0
-    {
-        SetVertexShader(CompileShader(vs_4_0, VS()));
-        SetPixelShader(CompileShader(ps_4_0, PS()));
-    }
 }

@@ -32,7 +32,7 @@ public partial class Form1 : Form
 
         canvas.Resize += Form1_Resize;
 
-        var use3d = Environment.GetCommandLineArgs().Contains("--enbale-3d-render=true");
+        var use3d = !Environment.GetCommandLineArgs().Contains("--disbale-3d-render=true");
         if (use3d)
         {
             Debug.WriteLine("3D render enabled");

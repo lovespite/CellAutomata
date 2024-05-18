@@ -1,6 +1,11 @@
 #include "pch.h"
 #include "dc3drender.h"
 #include <vector>
+#include "DXTrace.h"
+
+#include <wrl/client.h>
+template <class T>
+using ComPtr = Microsoft::WRL::ComPtr<T>;
 
 void fatal(const char* msg, HRESULT hr, bool exit = true) {
 
@@ -13,7 +18,7 @@ void fatal(const char* msg, HRESULT hr, bool exit = true) {
 #endif
 }
 
-HRESULT CompileShaderFromFile(
+static HRESULT CompileShaderFromFile(
     const wchar_t* file,
     const char* entry,
     const char* model,
@@ -50,6 +55,113 @@ HRESULT CompileShaderFromFile(
     if (pErrorBlob) pErrorBlob->Release();
 
     return S_OK;
+}
+
+static bool InitDirect3D(
+    HWND m_hMainWnd,
+    int m_ClientWidth,
+    int m_ClientHeight,
+    ID3D11Device** g_pd3dDevice,
+    ID3D11DeviceContext** g_pd3dImmediateContext,
+    IDXGISwapChain** g_pSwapChain
+)
+{
+    ComPtr<ID3D11Device> m_pd3dDevice;
+    ComPtr<ID3D11DeviceContext> m_pd3dImmediateContext;
+    ComPtr<IDXGISwapChain> m_pSwapChain;
+
+    HRESULT hr = S_OK;
+
+    // 创建D3D设备 和 D3D设备上下文
+    UINT createDeviceFlags = D3D10_CREATE_DEVICE_BGRA_SUPPORT; // 添加 BGRA 支持标志
+#if defined(DEBUG) || defined(_DEBUG)  
+    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+    // 驱动类型数组
+    D3D_DRIVER_TYPE driverTypes[] =
+    {
+        D3D_DRIVER_TYPE_HARDWARE,
+        D3D_DRIVER_TYPE_WARP,
+        D3D_DRIVER_TYPE_REFERENCE,
+    };
+    UINT numDriverTypes = ARRAYSIZE(driverTypes);
+
+    // 特性等级数组
+    D3D_FEATURE_LEVEL featureLevels[] =
+    {
+        D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_0,
+    };
+    UINT numFeatureLevels = ARRAYSIZE(featureLevels);
+
+    D3D_FEATURE_LEVEL featureLevel;
+    D3D_DRIVER_TYPE d3dDriverType;
+    for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++)
+    {
+        d3dDriverType = driverTypes[driverTypeIndex];
+        hr = D3D11CreateDevice(nullptr, d3dDriverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
+            D3D11_SDK_VERSION, m_pd3dDevice.GetAddressOf(), &featureLevel, m_pd3dImmediateContext.GetAddressOf());
+
+        if (hr == E_INVALIDARG)
+        {
+            // Direct3D 11.0 的API不承认D3D_FEATURE_LEVEL_11_1，所以我们需要尝试特性等级11.0以及以下的版本
+            hr = D3D11CreateDevice(nullptr, d3dDriverType, nullptr, createDeviceFlags, &featureLevels[1], numFeatureLevels - 1,
+                D3D11_SDK_VERSION, m_pd3dDevice.GetAddressOf(), &featureLevel, m_pd3dImmediateContext.GetAddressOf());
+        }
+
+        if (SUCCEEDED(hr))
+            break;
+    }
+
+    if (FAILED(hr))
+    {
+        MessageBox(0, L"D3D11CreateDevice Failed.", 0, 0);
+        return false;
+    }
+
+    // 检测是否支持特性等级11.0或11.1
+    if (featureLevel != D3D_FEATURE_LEVEL_11_0 && featureLevel != D3D_FEATURE_LEVEL_11_1)
+    {
+        MessageBox(0, L"Direct3D Feature Level 11 unsupported.", 0, 0);
+        return false;
+    }
+
+    ComPtr<IDXGIDevice> dxgiDevice = nullptr;
+    ComPtr<IDXGIAdapter> dxgiAdapter = nullptr;
+    ComPtr<IDXGIFactory1> dxgiFactory1 = nullptr;	// D3D11.0(包含DXGI1.1)的接口类 
+
+    // 为了正确创建 DXGI交换链，首先我们需要获取创建 D3D设备 的 DXGI工厂，否则会引发报错：
+    // "IDXGIFactory::CreateSwapChain: This function is being called with a device from a different IDXGIFactory."
+    HR(m_pd3dDevice.As(&dxgiDevice));
+    HR(dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf()));
+    HR(dxgiAdapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(dxgiFactory1.GetAddressOf())));
+
+    // 填充DXGI_SWAP_CHAIN_DESC用以描述交换链
+    DXGI_SWAP_CHAIN_DESC sd;
+    ZeroMemory(&sd, sizeof(sd));
+    sd.BufferDesc.Width = m_ClientWidth;
+    sd.BufferDesc.Height = m_ClientHeight;
+    sd.BufferDesc.RefreshRate.Numerator = 60;
+    sd.BufferDesc.RefreshRate.Denominator = 1;
+    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+
+    sd.SampleDesc.Count = 1;
+    sd.SampleDesc.Quality = 0;
+    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    sd.BufferCount = 2;
+    sd.OutputWindow = m_hMainWnd;
+    sd.Windowed = TRUE;
+    sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    sd.Flags = 0;
+    HR(dxgiFactory1->CreateSwapChain(m_pd3dDevice.Get(), &sd, m_pSwapChain.GetAddressOf()));
+
+    *g_pd3dDevice = m_pd3dDevice.Detach();// 释放ComPtr对象的所有权
+    *g_pd3dImmediateContext = m_pd3dImmediateContext.Detach();
+    *g_pSwapChain = m_pSwapChain.Detach();
+
+    return true;
 }
 
 void dc3drender::CleanupDirect3D()
@@ -107,25 +219,43 @@ void dc3drender::CleanupDirect3D()
 
 void dc3drender::UpdateConstantBuffer() {
 
-    if (!g_pImmediateContext) return;
-    if (!g_pConstantBuffer) return;
+    //if (!g_pImmediateContext) return;
+    //if (!g_pConstantBuffer) return;
 
-    DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
-    DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(
-        DirectX::XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f),
-        DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
-        DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f)
-    );
+    //ConstantBuffer cb{};
 
-    DirectX::XMMATRIX projection = DirectX::XMMatrixPerspectiveFovLH(
-        DirectX::XM_PIDIV4,
-        static_cast<float>(currwd) / static_cast<float>(currht),
-        0.01f,
-        100.0f
-    );
+    //DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
+    //DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(
+    //    DirectX::XMVectorSet(0.0f, 0.0f, -5.0f, 0.0f),
+    //    DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
+    //    DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)
+    //);
 
-    auto wvp = world * view * projection;
-    g_pImmediateContext->UpdateSubresource(g_pConstantBuffer, 0, nullptr, &wvp, 0, 0);
+    //DirectX::XMMATRIX projection = DirectX::XMMatrixPerspectiveFovLH(
+    //    DirectX::XM_PIDIV4,
+    //    static_cast<float>(currwd) / static_cast<float>(currht),
+    //    0.01f,
+    //    100.0f
+    //);
+
+    //cb.World = DirectX::XMMatrixTranspose(world);
+    //cb.View = DirectX::XMMatrixTranspose(view);
+    //cb.Projection = DirectX::XMMatrixTranspose(projection);
+
+    //D3D11_MAPPED_SUBRESOURCE mappedResource;
+    //HRESULT hr = g_pImmediateContext->Map(g_pConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    //if (FAILED(hr)) {
+    //    fatal("Map constant buffer failed", hr);
+    //    return;
+    //}
+
+    //if (mappedResource.pData) {
+    //    memcpy(mappedResource.pData, &cb, sizeof(ConstantBuffer));
+    //    g_pImmediateContext->Unmap(g_pConstantBuffer, 0);
+    //}
+    //else {
+    //    fatal("Map failed", 0);
+    //}
 }
 
 HRESULT dc3drender::LoadShaders() {
@@ -133,8 +263,26 @@ HRESULT dc3drender::LoadShaders() {
 
     // 编译顶点着色器
     ID3DBlob* pVSBlob = nullptr;
-    hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "VS", "vs_4_0", 0, 0, &pVSBlob, nullptr);
+    ID3DBlob* errorBlob = nullptr;
+
+    DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+
+#if defined(DEBUG) || defined(_DEBUG)
+    dwShaderFlags |= D3DCOMPILE_DEBUG;
+    // 在Debug环境下禁用优化以避免出现一些不合理的情况
+    dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+    hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "VS", "vs_5_0", dwShaderFlags, 0, &pVSBlob, &errorBlob); // 编译顶点着色器
     if (FAILED(hr)) {
+        if (errorBlob != nullptr)
+        {
+            auto message = (char*)errorBlob->GetBufferPointer();
+            OutputDebugStringA(message);
+            fatal(message, hr);
+            errorBlob->Release();
+            return hr;
+        }
         fatal("VS: The FX file cannot be compiled. Please run this executable from the directory that contains the FX file.", hr);
         return hr;
     }
@@ -162,11 +310,20 @@ HRESULT dc3drender::LoadShaders() {
         return hr;
     }
 
-
     // 编译像素着色器
     ID3DBlob* pPSBlob = nullptr;
-    hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "PS", "ps_4_0", 0, 0, &pPSBlob, nullptr);
+    hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "PS", "ps_5_0", dwShaderFlags, 0, &pPSBlob, &errorBlob); // 编译像素着色器
     if (FAILED(hr)) {
+
+        if (errorBlob != nullptr)
+        {
+            auto message = (char*)errorBlob->GetBufferPointer();
+            OutputDebugStringA(message);
+            fatal(message, hr);
+            errorBlob->Release();
+            return hr;
+        }
+
         fatal("PS: The FX file cannot be compiled. Please run this executable from the directory that contains the FX file.", hr);
         return hr;
     }
@@ -181,61 +338,70 @@ HRESULT dc3drender::LoadShaders() {
 
     return S_OK;
 }
+
 HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
     HRESULT hr = S_OK;
 
-    // 创建交换链描述
-    DXGI_SWAP_CHAIN_DESC sd;
-    ZeroMemory(&sd, sizeof(sd));
-    sd.BufferCount = 2;
-    sd.BufferDesc.Width = currwd;
-    sd.BufferDesc.Height = currht;
-    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    sd.BufferDesc.RefreshRate.Numerator = 60;
-    sd.BufferDesc.RefreshRate.Denominator = 1;
-    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.OutputWindow = hWnd;
-    sd.SampleDesc.Count = 1;
-    sd.SampleDesc.Quality = 0;
-    sd.Windowed = TRUE;
-    sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-    // 创建设备、交换链和设备上下文    
-    UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;  // 添加 BGRA 支持标志
+    //
+    //    // 创建交换链描述
+    //    DXGI_SWAP_CHAIN_DESC sd;
+    //    ZeroMemory(&sd, sizeof(sd));
+    //    sd.BufferCount = 2;
+    //    sd.BufferDesc.Width = currwd;
+    //    sd.BufferDesc.Height = currht;
+    //    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    //    sd.BufferDesc.RefreshRate.Numerator = 60;
+    //    sd.BufferDesc.RefreshRate.Denominator = 1;
+    //    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    //    sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    //    sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+    //    sd.OutputWindow = hWnd;
+    //    sd.SampleDesc.Count = 1;
+    //    sd.SampleDesc.Quality = 0;
+    //    sd.Windowed = TRUE;
+    //    sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    //    // 创建设备、交换链和设备上下文    
+    //    UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;  // 添加 BGRA 支持标志
+    //
+    //#if defined(DEBUG) || defined(_DEBUG)
+    //
+    //    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+    //
+    //#endif // DEBUG 
+    //
+    //    D3D_FEATURE_LEVEL featureLevel;
+    //    hr = D3D11CreateDeviceAndSwapChain(
+    //        nullptr,
+    //        D3D_DRIVER_TYPE_HARDWARE,
+    //        nullptr,
+    //        createDeviceFlags,
+    //        nullptr,
+    //        0,
+    //        D3D11_SDK_VERSION,
+    //        &sd,
+    //        &g_pSwapChain,
+    //        &g_pDevice,
+    //        &featureLevel,
+    //        &g_pImmediateContext
+    //    );
+    //
+    //    if (renderinfo != nullptr) {
+    //        
+    //    }
+    //
+    //    // 检查结果
+    //    if (FAILED(hr)) {
+    //        fatal("D3D11CreateDeviceAndSwapChain failed", hr);
+    //        return hr;
+    //    }
 
-#if defined(DEBUG) || defined(_DEBUG)
+    bool ok = InitDirect3D(hWnd, currwd, currht, &g_pDevice, &g_pImmediateContext, &g_pSwapChain);
 
-    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-
-#endif // DEBUG
-
-
-
-    D3D_FEATURE_LEVEL featureLevel;
-    hr = D3D11CreateDeviceAndSwapChain(
-        nullptr,
-        D3D_DRIVER_TYPE_HARDWARE,
-        nullptr,
-        createDeviceFlags,
-        nullptr,
-        0,
-        D3D11_SDK_VERSION,
-        &sd,
-        &g_pSwapChain,
-        &g_pDevice,
-        &featureLevel,
-        &g_pImmediateContext
-    );
-
-    if (renderinfo != nullptr) {
-        swprintf((wchar_t*)renderinfo, 256, L"Direct3D 11.0, %s", featureLevel == D3D_FEATURE_LEVEL_11_0 ? L"Hardware" : L"Software");
+    if (!ok) {
+        fatal("InitDirect3D failed", 0);
+        return E_FAIL;
     }
-
-    // 检查结果
-    if (FAILED(hr)) {
-        fatal("D3D11CreateDeviceAndSwapChain failed", hr);
-        return hr;
-    }
-
+    swprintf((wchar_t*)renderinfo, 256, L"Direct3D 11.0");
     // 设置图元拓扑结构 -> 三角形列表
     g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -309,23 +475,25 @@ HRESULT dc3drender::InitializeVertexBuffer()
         return hr;
     }
 
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.ByteWidth = sizeof(DirectX::XMMATRIX);
-    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    bd.CPUAccessFlags = 0;
-    bd.MiscFlags = 0;
-    bd.StructureByteStride = 0;
-
-    hr = g_pDevice->CreateBuffer(&bd, nullptr, &g_pConstantBuffer);
-    if (FAILED(hr)) {
-        fatal("CreateConstantBuffer failed", hr);
-        return hr;
-    }
-
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
     g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
-    g_pImmediateContext->DSSetConstantBuffers(0, 1, &g_pConstantBuffer); // 设置常量缓冲区
+
+    // 设置常量缓冲区
+    //ZeroMemory(&bd, sizeof(bd)); // 清空 bd
+    //bd.Usage = D3D11_USAGE_DYNAMIC;
+    //bd.ByteWidth = sizeof(ConstantBuffer);
+    //bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    //bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // 允许 CPU 访问
+
+    //hr = g_pDevice->CreateBuffer(&bd, nullptr, &g_pConstantBuffer);
+    //if (FAILED(hr)) {
+    //    fatal("CreateConstantBuffer failed", hr);
+    //    return hr;
+    //}
+
+
+    // g_pImmediateContext->DSSetConstantBuffers(0, 1, &g_pConstantBuffer); 
 
     return S_OK;
 }
@@ -460,7 +628,7 @@ void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int 
     }
 
     g_2dpRenderTarget->BeginDraw();
-    g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    // g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
     // 绘制位图
     D2D1_RECT_F destinationRect = D2D1::RectF(
@@ -485,10 +653,12 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
         fatal("DrawCells failed", 0);
         return;
     }
-
+    using namespace DirectX;
     static std::vector<Vertex> vertices(6 * MAX_CELLS); // 将顶点缓冲区作为静态变量
     UINT64 vertexCount = 0;
-    Vertex* pVertices = vertices.data();
+
+    float csizew = static_cast<float>(pmscale) / currwd * 2;
+    float csizeh = static_cast<float>(pmscale) / currht * 2;
 
     // 生成顶点数据
     for (int i = 0; i < h; ++i) {
@@ -496,24 +666,18 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
             int index = i * w + j;
             if (pmdata[index] == 0) continue;
 
-            float startX = static_cast<float>(x + j * pmscale);
-            float startY = static_cast<float>(y + i * pmscale);
-            float endX = startX + static_cast<float>(pmscale);
-            float endY = startY + static_cast<float>(pmscale);
+            float startX = (static_cast<float>(x + j * pmscale) / currwd) * 2 - 1;
+            float startY = 1 - (static_cast<float>(y + (i + 1) * pmscale) / currht) * 2;
+            float endX = startX + csizew;
+            float endY = startY + csizeh;
 
-            // 左上角
-            pVertices[vertexCount++] = { DirectX::XMFLOAT3(startX, startY, 0.0f), *pLiveColor };
-            // 右上角
-            pVertices[vertexCount++] = { DirectX::XMFLOAT3(endX, startY, 0.0f), *pLiveColor };
-            // 右下角
-            pVertices[vertexCount++] = { DirectX::XMFLOAT3(endX, endY, 0.0f), *pLiveColor };
+            vertices[vertexCount++] = { XMFLOAT3(startX, startY, 0.0f), *pLiveColor };
+            vertices[vertexCount++] = { XMFLOAT3(endX, endY, 0.0f), *pLiveColor };
+            vertices[vertexCount++] = { XMFLOAT3(endX, startY, 0.0f), *pLiveColor };
 
-            // 左上角
-            pVertices[vertexCount++] = { DirectX::XMFLOAT3(startX, startY, 0.0f), *pLiveColor };
-            // 右下角
-            pVertices[vertexCount++] = { DirectX::XMFLOAT3(endX, endY, 0.0f), *pLiveColor };
-            // 左下角
-            pVertices[vertexCount++] = { DirectX::XMFLOAT3(startX, endY, 0.0f), *pLiveColor };
+            vertices[vertexCount++] = { XMFLOAT3(startX, startY, 0.0f), *pLiveColor };
+            vertices[vertexCount++] = { XMFLOAT3(startX, endY, 0.0f), *pLiveColor };
+            vertices[vertexCount++] = { XMFLOAT3(endX, endY, 0.0f), *pLiveColor };
         }
     }
 
@@ -530,7 +694,7 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
     }
 
     if (mappedResource.pData) {
-        memcpy(mappedResource.pData, pVertices, vertexCount * sizeof(Vertex));
+        memcpy(mappedResource.pData, vertices.data(), vertexCount * sizeof(Vertex));
         g_pImmediateContext->Unmap(g_pVertexBuffer, 0);
     }
     else {
@@ -588,6 +752,7 @@ void dc3drender::begindraw() {
 
     // 重新绑定渲染目标
     g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, nullptr);
+
     // 设置输入布局
     g_pImmediateContext->IASetInputLayout(g_pVertexLayout);
     // 设置顶点着色器
@@ -638,7 +803,7 @@ void dc3drender::drawtext(int x, int y, const wchar_t* text) {
     }
 
     g_2dpRenderTarget->BeginDraw();
-    g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    // g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
     // 根据文本尺寸设定矩形
     D2D1_RECT_F rectangle = D2D1::RectF(
@@ -673,7 +838,7 @@ void dc3drender::drawselection(VIEWINFO* pvi) {
     }
 
     g_2dpRenderTarget->BeginDraw();
-    g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    // g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
     // 创建选区矩形
     D2D1_RECT_F selectionRect = D2D1::RectF(
@@ -701,7 +866,7 @@ void dc3drender::drawgridlines(int cellsize)
 
 
     g_2dpRenderTarget->BeginDraw();
-    g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+    // g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
     // 0 -> ht
     for (float dy = 0.0f; dy <= currht; dy += cellsize) {
@@ -727,15 +892,27 @@ void dc3drender::drawgridlines(int cellsize)
 
 void dc3drender::drawlogo()
 {
+    return;
+    using namespace DirectX;
     static DirectX::XMFLOAT4  logoColor(1.0f, 1.0f, 0.0f, 1.0f); // RGB 黄色：1.0f, 1.0f, 0.0f
-    static std::vector<Vertex> vertices = {
-        { DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),  logoColor },
-        { DirectX::XMFLOAT3(0.0f, 100.0f, 0.0f), logoColor },
-        { DirectX::XMFLOAT3(100.0f, 100.0f, 0.0f), logoColor },
-        { DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f), logoColor },
-        { DirectX::XMFLOAT3(100.0f, 100.0f, 0.0f), logoColor },
-        { DirectX::XMFLOAT3(100.0f, 0.0f, 0.0f), logoColor }
-    }; // 6 个顶点, 矩形
+
+    int vertexCount = 0;
+    std::vector<Vertex> vertices(6);
+    // square 
+    // 顶点0
+    vertices[vertexCount++] = { XMFLOAT3(-0.5f, -0.5f, 0), logoColor };
+    // 顶点1
+    vertices[vertexCount++] = { XMFLOAT3(0.5f, 0.5f, 0), logoColor };
+    // 顶点2
+    vertices[vertexCount++] = { XMFLOAT3(0.5f, -0.5f, 0), logoColor };
+
+    // 顶点0
+    vertices[vertexCount++] = { XMFLOAT3(-0.5f, 0.5f, 0), logoColor };
+    // 顶点1
+    vertices[vertexCount++] = { XMFLOAT3(0.5f, -0.5f, 0), logoColor };
+    // 顶点2
+    vertices[vertexCount++] = { XMFLOAT3(-0.5f, -0.5f, 0), logoColor };
+
 
     // 更新顶点缓冲区
     D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -762,7 +939,9 @@ void dc3drender::drawlogo()
     g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 绘制顶点
-    g_pImmediateContext->Draw(static_cast<UINT>(vertices.size()), 0); // 6 个顶点
+    g_pImmediateContext->Draw(static_cast<UINT>(vertices.size()), 0);
+
+    vertices.clear();
 }
 
 void dc3drender::pixblit(int x, int y, int w, int h, unsigned char* pmdata, int pmscale)

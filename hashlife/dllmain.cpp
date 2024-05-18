@@ -13,8 +13,8 @@
 #include "dc3drender.h"
 #include "dllmain.h"
 
-std::string _version = "beta2.3";
-std::wstring _versionw = L"beta2.3";
+std::string _version = "beta2.4.2";
+std::wstring _versionw = L"beta2.4.2";
 typedef long long BigInt;
 
 static std::vector<lifealgo*> algos;
@@ -448,7 +448,7 @@ void drawframe(liferender* render, lifealgo* algo, viewport* vp, VIEWINFO* selec
     }
 
     render->drawtext(2, 2, text);
-    render->drawtext(2, vp->getheight() - 30, (std::wstring(L"Lib Ver.: ") + _versionw + L"\n" + std::wstring(L"Feature: ") + std::wstring(render->renderinfo)).c_str());
+    render->drawtext(2, vp->getheight() - 30, (std::wstring(L"Lib Ver.: ") + _versionw + L"\n" + std::wstring(L"Feature: ") + std::wstring(render->renderinfo ? render->renderinfo : L"Unknown")).c_str());
 
     render->drawlogo();
     render->enddraw();

@@ -159,12 +159,14 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="viewport.h" />
+    <ClInclude Include="DXTrace.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bigint.cpp" />
     <ClCompile Include="dc3drender.cpp" />
     <ClCompile Include="dcrender.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="DXTrace.cpp" />
     <ClCompile Include="hlifealgo.cpp" />
     <ClCompile Include="hlifedraw.cpp" />
     <ClCompile Include="liferender.cpp" />
