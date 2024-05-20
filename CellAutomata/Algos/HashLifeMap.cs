@@ -8,16 +8,16 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System;
 
-namespace CellAutomata;
+namespace CellAutomata.Algos;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct VIEWINFO
 {
-    public Int32 EMPTY;
-    public Int32 psl_x1; // selection rect point 1
-    public Int32 psl_y1; // selection rect point 1
-    public Int32 psl_x2; // selection rect point 2
-    public Int32 psl_y2; // selection rect point 2 
+    public int EMPTY;
+    public int psl_x1; // selection rect point 1
+    public int psl_y1; // selection rect point 1
+    public int psl_x2; // selection rect point 2
+    public int psl_y2; // selection rect point 2 
 }
 
 public partial class HashLifeMap : ILifeMap
@@ -58,7 +58,7 @@ public partial class HashLifeMap : ILifeMap
             _renderContextId,
             _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height,
             ref selection,
-            text + "\nD3D Render: " + (Use3dRender == 1 ? "On" : "Off"));
+            text);
     }
 
     private static readonly string _version;
@@ -73,13 +73,37 @@ public partial class HashLifeMap : ILifeMap
         Debug.WriteLine($"Hashlifelib Version: {_version}");
     }
 
-    private readonly string Rule;
+    private string _rule = null!;
+    public string Rule
+    {
+        get => _rule;
+        set
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                throw new ArgumentException("Rule cannot be null or empty.");
+            }
+            if (_rule != value)
+            {
+                if (_index >= 0)
+                {
+                    var ret = HashLifeMapStatic.SetUniverseRule(_index, value);
+                    if (ret != 0)
+                    {
+                        throw new InvalidOperationException($"Failed to set HashLife universe rule: {value}, code: {ret}");
+                    }
+                    _rule = value;
+                }
+            }
+        }
+    }
+
     private readonly int Use3dRender;
     public HashLifeMap(string rule = "B3/S23", bool use3dRender = false)
     {
         Use3dRender = use3dRender ? 1 : 0;
-        Rule = rule;
-        _index = HashLifeMapStatic.CreateNewUniverse(rule);
+        _rule = rule;
+        _index = HashLifeMapStatic.CreateNewUniverse(_rule);
         if (_index < 0)
         {
             throw new InvalidOperationException($"Failed to create HashLife universe: {rule}, code: {_index}");
@@ -117,6 +141,12 @@ public partial class HashLifeMap : ILifeMap
         }
     }
 
+    public byte this[int row, int col]
+    {
+        get => Get(row, col) ? (byte)1 : (byte)0;
+        set => Set(row, col, value != 0);
+    }
+
     private bool _isPopulationDirty = true;
 
     public bool Get(int row, int col)
@@ -148,7 +178,7 @@ public partial class HashLifeMap : ILifeMap
         Generation = 0;
     }
 
-    public void ClearRect(Rectangle rect)
+    public void ClearRect(ref Rectangle rect)
     {
         for (int row = rect.Top; row < rect.Bottom; row++)
         {
@@ -168,7 +198,7 @@ public partial class HashLifeMap : ILifeMap
 
     public RectangleL GetBounds()
     {
-        Int64 top = 0, left = 0, bottom = 0, right = 0;
+        long top = 0, left = 0, bottom = 0, right = 0;
         HashLifeMapStatic.FindEdges(_index, ref top, ref left, ref bottom, ref right);
 
         return new RectangleL(top, left, bottom, right);
@@ -269,7 +299,7 @@ public partial class HashLifeMap : ILifeMap
 
             for (bitIndex = 0; bitIndex < 8; bitIndex++)
             {
-                if ((b & (1 << bitIndex)) != 0)
+                if ((b & 1 << bitIndex) != 0)
                 {
                     points.Add(new Point((byteIndex * 8 + bitIndex) % rect.Width + rect.Left, (byteIndex * 8 + bitIndex) / rect.Width + rect.Top));
                 }
@@ -340,7 +370,7 @@ public partial class HashLifeMap : ILifeMap
                                              ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
 
         // 获取位图缓冲区的指针
-        IntPtr bitmapPtr = bmpData.Scan0;
+        nint bitmapPtr = bmpData.Scan0;
 
         // 获取每行字节跨度
         long stride = bmpData.Stride;
@@ -371,7 +401,7 @@ public partial class HashLifeMap : ILifeMap
 
         // 2. 创建Bitmap对象并锁定位图数据
         GCHandle handle = GCHandle.Alloc(bitmapData, GCHandleType.Pinned);
-        IntPtr bitmapPtr = handle.AddrOfPinnedObject();
+        nint bitmapPtr = handle.AddrOfPinnedObject();
         HashLifeMapStatic.
 
                 // 3. 调用C++ DLL函数

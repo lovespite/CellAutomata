@@ -1,58 +1,5 @@
-﻿namespace CellAutomata;
+﻿namespace CellAutomata.Algos;
 
-public enum CopyMode
-{
-    Overwrite,
-    Or,
-    And,
-    Xor
-}
-
-public struct SizeL
-{
-    public long Width;
-    public long Height;
-
-    public SizeL(long width, long height)
-    {
-        Width = width;
-        Height = height;
-    }
-
-    public static implicit operator Size(SizeL size)
-    {
-        return new Size((int)size.Width, (int)size.Height);
-    }
-}
-
-public struct PointL
-{
-    public long X;
-    public long Y;
-
-    public long Row
-    {
-        get => Y;
-        set => Y = value;
-    }
-
-    public long Column
-    {
-        get => X;
-        set => X = value;
-    }
-
-    public PointL(long x, long y)
-    {
-        X = x;
-        Y = y;
-    }
-
-    public static implicit operator Point(PointL point)
-    {
-        return new Point((int)point.X, (int)point.Y);
-    }
-}
 public struct RectangleL
 {
     public SizeL Size;
@@ -157,50 +104,5 @@ public struct RectangleL
     {
         return new RectangleL(rect.Top, rect.Left, rect.Bottom, rect.Right);
     }
-}
-
-public interface ILifeMap : IDisposable
-{
-    int ThreadCount { get; set; }
-    byte[] Bytes { get; }
-
-    long MsGenerationTime { get; }
-    long MsMemoryCopyTime { get; }
-    long MsCPUTime { get; }
-    long Generation { get; }
-    long Population { get; }
-
-    int GenInterval { get; set; }
-
-    bool Get(int row, int col);
-    void Set(int row, int col, bool value);
-
-    bool Get(ref Point point);
-    void Set(ref Point point, bool value);
-
-    void Clear();
-    void ClearRect(Rectangle rect);
-
-    ILifeMap CreateSnapshot();
-
-    ILifeMap CreateRegionSnapshot(Rectangle rect);
-
-    void BlockCopy(ILifeMap source, Size srcSize, Point dstLocation, CopyMode mode = CopyMode.Overwrite);
-
-    Point[] QueryRegion(bool val, Rectangle rect);
-    long QueryRegionCount(bool val, Rectangle rect);
-
-    Point[] GetLocations(bool val);
-    RectangleL GetBounds();
-
-    void NextGeneration();
-
-    void SaveRle(Stream stream);
-    void ReadRle(Stream stream);
-
-    Bitmap DrawRegionBitmap(Rectangle rectangle);
-    byte[] DrawRegionBitmapBGRA(Rectangle rectangle);
-
-    PointL At(int x, int y);
 }
 

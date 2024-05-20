@@ -1,4 +1,6 @@
-﻿using SharpDX;
+﻿using CellAutomata.Algos;
+using CellAutomata.Render;
+using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.DXGI;
@@ -101,7 +103,7 @@ public class ViewWindowDx2d : ViewWindowBase
     {
         var renderer = _ctx.GetRenderer();
 
-        var bitmap = _cellEnvironment.BitMap;
+        var bitmap = _cellEnvironment.LifeMap;
         var genText =
             $"Generation: {_cellEnvironment.Generation:#,0} Population: {_cellEnvironment.Population:#,0}\n" +
             $"Position: {MouseCellPoint}\n" +

@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using CellAutomata.Algos;
+using CellAutomata.Util;
 namespace CellAutomata;
 
 public partial class Form1 : Form
@@ -10,21 +12,19 @@ public partial class Form1 : Form
     private Thread? _evolutionThread = null;
     private CancellationTokenSource? _cts = null;
 
+    private CopyMode _mode = CopyMode.Overwrite;
+
+    private Point _dragStartPos;
+    private Point _dragStartViewPos;
+
+    private bool _isSelecting = false;
+    private bool _isDraggingView = false;
+
+    private (ILifeMap, Size)? _clipboard;
+
     private readonly Thread _painting;
 
     public const int ThreadCount = 16;
-
-    #region Properties
-    public float CellSize
-    {
-        get
-        {
-            return _view.CellSize;
-        }
-    }
-
-    #endregion 
-
     public Form1()
     {
         InitializeComponent();
@@ -39,6 +39,7 @@ public partial class Form1 : Form
         }
 
         var lifemap = new HashLifeMap(
+            rule: "B3/S23",
             use3dRender: use3d
             );
         _env = new CellEnvironment(lifemap)
@@ -51,7 +52,51 @@ public partial class Form1 : Form
         // g = canvas.CreateGraphics();
     }
 
-    public void Render()
+    #region Public Methods
+
+    public void Suspend(Action action, bool invokeRequired = false)
+    {
+        if (invokeRequired)
+        {
+            Invoke((MethodInvoker)delegate
+            {
+                Suspend(action, false);
+            });
+            return;
+        }
+
+        bool isRunning = _cts is not null;
+        Stop();
+
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            ShowException(ex);
+            Debug.WriteLine(ex.ToString());
+        }
+
+        if (isRunning)
+        {
+            Start();
+        }
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    protected void ShowException(Exception ex)
+    {
+        MessageBox.Show(ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+    protected void ShowMessage(string message)
+    {
+        MessageBox.Show(message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+    private void Render()
     {
         while (!IsDisposed)
         {
@@ -71,16 +116,76 @@ public partial class Form1 : Form
             }
         }
     }
-
-    public void RePaint()
+    private void EvolutionThread()
     {
-    }
+        var gens = 0ul;
+        var sw = Stopwatch.StartNew();
 
+        while (_cts is not null && !_cts.IsCancellationRequested)
+        {
+            _env.NextGeneration();
+            ++gens;
+
+            if (sw.ElapsedMilliseconds > 1000)
+            {
+                var genPerSec = gens / (float)sw.Elapsed.TotalSeconds;
+
+                gens = 0;
+                sw.Restart();
+                _view.Gps = genPerSec;
+            }
+
+            Thread.Sleep(_env.MsGenInterval);
+        }
+
+        Debug.WriteLine("EvolutionThread stopped");
+    }
+    private void Stop()
+    {
+        if (_cts is null) return;
+
+        _cts.Cancel();
+        _evolutionThread!.Join();
+        _evolutionThread = null;
+        _cts = null;
+
+        btnStartStop.Text = "Start";
+        Debug.WriteLine("Stopped");
+    }
+    private void Start()
+    {
+        _cts = new CancellationTokenSource();
+        _evolutionThread = new Thread(EvolutionThread);
+        btnStartStop.Text = "Stop";
+        _evolutionThread.Start();
+        Debug.WriteLine("Started");
+    }
+    private void SetClipboard(Rectangle selection)
+    {
+        var bitmap = _env.LifeMap.CreateRegionSnapshot(selection);
+        _clipboard = (bitmap, selection.Size);
+    }
+    private void RandomFill(Rectangle selection, float rate)
+    {
+        var rnd = new Random();
+        for (var row = selection.Top; row < selection.Bottom; row++)
+        {
+            for (var col = selection.Left; col < selection.Right; col++)
+            {
+                if (rnd.NextDouble() < rate)
+                {
+                    _env.ActivateCell(row, col);
+                }
+            }
+        }
+    }
+    #endregion 
+
+    #region Form Event Handlers
     private void Form1_Resize(object? sender, EventArgs e)
     {
         _view.Resize(canvas.Width, canvas.Height);
     }
-
     private void Form1_Load(object sender, EventArgs e)
     {
         label1.Text = $"GenInterval: {_env.MsGenInterval} ms";
@@ -98,7 +203,6 @@ public partial class Form1 : Form
 
         _painting.Start();
     }
-
     private void Form1_MouseWheel(object? sender, MouseEventArgs e)
     {
         var delta = e.Delta;
@@ -112,14 +216,16 @@ public partial class Form1 : Form
             _view.ZoomOut();
         }
     }
+    private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+    {
+        _cts?.Cancel();
+        _evolutionThread?.Join();
+    }
 
-    private Point _dragStartPos;
-    private Point _dragStartViewPos;
+    #endregion
 
-    private bool _isSelecting = false;
-    private bool _isDraggingView = false;
-
-    private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
+    #region Canvas Event Handlers  
+    private void Canvas_MouseDown(object sender, MouseEventArgs e)
     {
         _view.MousePoint = e.Location;
         // drag view [Ctrl + Left Mouse]
@@ -148,13 +254,11 @@ public partial class Form1 : Form
 
             _view.SetSelection(p, p);
 
-            RePaint();
             return;
         }
 
     }
-
-    private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
+    private void Canvas_MouseMove(object sender, MouseEventArgs e)
     {
         _view.MousePoint = e.Location;
         if (e.Button == MouseButtons.Left)
@@ -168,7 +272,7 @@ public partial class Form1 : Form
                 // drag view [Ctrl + Left Mouse] 
                 if (_isDraggingView)
                 {
-                    var cellSize = CellSize;
+                    var cellSize = _view.CellSize;
 
                     var deltaX = _dragStartPos.X - e.X;
                     var deltaY = _dragStartPos.Y - e.Y;
@@ -216,134 +320,18 @@ public partial class Form1 : Form
             return;
         }
     }
-
-
-    private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
+    private void Canvas_MouseUp(object sender, MouseEventArgs e)
     {
         canvas.Cursor = Cursors.Default;
         _isSelecting = false;
         _isDraggingView = false;
     }
-
-    private void inputSize_ValueChanged(object sender, EventArgs e)
-    {
-    }
-
-    private void EvolutionThread()
-    {
-        var gens = 0ul;
-        var sw = Stopwatch.StartNew();
-
-        while (_cts is not null && !_cts.IsCancellationRequested)
-        {
-            _env.NextGeneration();
-            ++gens;
-
-            if (sw.ElapsedMilliseconds > 1000)
-            {
-                var genPerSec = gens / (float)sw.Elapsed.TotalSeconds;
-
-                gens = 0;
-                sw.Restart();
-                _view.Gps = genPerSec;
-            }
-
-            Thread.Sleep(_env.MsGenInterval);
-        }
-
-        Debug.WriteLine("EvolutionThread stopped");
-    }
-
-
-    private void btnStartStop_Click(object sender, EventArgs e)
-    {
-        if (_evolutionThread is null)
-        {
-            Start();
-        }
-        else
-        {
-            Stop();
-        }
-    }
-
-    private void Stop()
-    {
-        if (_cts is null) return;
-
-        _cts.Cancel();
-        _evolutionThread!.Join();
-        _evolutionThread = null;
-        _cts = null;
-
-        btnStartStop.Text = "Start";
-        Debug.WriteLine("Stopped");
-    }
-
-    private void Start()
-    {
-        _cts = new CancellationTokenSource();
-        _evolutionThread = new Thread(EvolutionThread);
-        btnStartStop.Text = "Stop";
-        _evolutionThread.Start();
-        Debug.WriteLine("Started");
-    }
-
-    private void btnClear_Click(object sender, EventArgs e)
-    {
-        Stop();
-        _env.Clear();
-        RePaint();
-    }
-
-    private void Form1_FormClosed(object sender, FormClosedEventArgs e)
-    {
-        _cts?.Cancel();
-        _evolutionThread?.Join();
-    }
-
-    private async void btnLoad_Click(object sender, EventArgs e)
-    {
-        using var dialog = new OpenFileDialog();
-        dialog.Filter = "Binary BitMap|*.bbm|All|*.*";
-        dialog.InitialDirectory = Path.Combine(Application.StartupPath, "Conways");
-
-        if (dialog.ShowDialog() == DialogResult.OK)
-        {
-            var path = dialog.FileName;
-
-            await _env.LoadFrom(path);
-            RePaint();
-        }
-
-        await Task.Delay(10);
-        _view.ClearSelection();
-    }
-
-    private async void btnSave_Click(object sender, EventArgs e)
-    {
-        using var dialog = new SaveFileDialog();
-        dialog.Filter = "Binary BitMap|*.bbm|All|*.*";
-        dialog.DefaultExt = "bbm";
-        dialog.OverwritePrompt = true;
-        dialog.InitialDirectory = Path.Combine(Application.StartupPath, "Conways");
-        dialog.FileName = $"{DateTime.Now:yyMMddHHmmss}.bbm";
-
-        if (dialog.ShowDialog() == DialogResult.OK)
-        {
-            var path = dialog.FileName;
-
-            await _env.SaveTo(path);
-        }
-    }
-
-    private void pictureBox1_DragEnter(object sender, DragEventArgs e)
+    private void Canvas_DragEnter(object sender, DragEventArgs e)
     {
         if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
             e.Effect = DragDropEffects.Copy;
     }
-
-    private async void pictureBox1_DragDrop(object sender, DragEventArgs e)
+    private void Canvas_DragDrop(object sender, DragEventArgs e)
     {
         var files = (string[]?)e.Data?.GetData(DataFormats.FileDrop);
         if (files is null || files.Length == 0) return;
@@ -351,57 +339,149 @@ public partial class Form1 : Form
         var file = files[0];
         if (!File.Exists(file)) return;
 
-        await _env.LoadFrom(file);
-        RePaint();
+        Suspend(() => _env.LoadFrom(file).Wait());
+    }
+    private void Canvas_MouseLeave(object sender, EventArgs e)
+    {
+        _view.MousePoint = new Point(-1, -1);
     }
 
-    private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+    #endregion
+
+    #region Menu Event Handlers
+    private void File_Load_Click(object sender, EventArgs e)
+    {
+        Suspend(() =>
+        {
+            using var dialog = new OpenFileDialog();
+            dialog.Filter = "Binary BitMap|*.bbm|All|*.*";
+            dialog.InitialDirectory = Path.Combine(Application.StartupPath, "Conways");
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                var path = dialog.FileName;
+
+                _env.LoadFrom(path).Wait();
+            }
+        });
+    }
+    private void File_Save_Click(object sender, EventArgs e)
+    {
+        Suspend(() =>
+        {
+            using var dialog = new SaveFileDialog();
+            dialog.Filter = "Binary BitMap|*.bbm|All|*.*";
+            dialog.DefaultExt = "bbm";
+            dialog.OverwritePrompt = true;
+            dialog.InitialDirectory = Path.Combine(Application.StartupPath, "Conways");
+            dialog.FileName = $"{DateTime.Now:yyMMddHHmmss}.bbm";
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                var path = dialog.FileName;
+
+                _env.SaveTo(path).Wait();
+            }
+        });
+    }
+    private void File_Exit_Click(object sender, EventArgs e)
     {
         Close();
     }
 
-    private void clearSelectedCellsToolStripMenuItem_Click(object sender, EventArgs e)
+    private void Edit_Clear_Click(object sender, EventArgs e)
+    {
+        Stop();
+        Suspend(_env.Clear); // clear all cells
+    }
+    private void Edit_SelectAll_Click(object sender, EventArgs e)
+    {
+        var bounds = _env.LifeMap.GetBounds();
+        _view.SetSelection(bounds.Location, bounds.Location2);
+    }
+    private void Edit_ClearSelected_Click(object sender, EventArgs e)
     {
         if (!_view.IsSelected) return;
 
         var selection = _view.GetSelection();
 
-        for (var row = selection.Top; row < selection.Bottom; row++)
-        {
-            for (var col = selection.Left; col < selection.Right; col++)
-            {
-                _env.DeactivateCell(row, col);
-            }
-        }
-
-        RePaint();
+        Suspend(() => _env.LifeMap.ClearRect(ref selection));
     }
+    private void Edit_ClearUnselected_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
 
-    private (ILifeMap, Size)? _clipboard;
-    private void copyToolStripMenuItem_Click(object sender, EventArgs e)
+
+        Suspend(() =>
+        {
+            var bounds = _env.LifeMap.GetBounds();
+
+            for (var row = bounds.Top; row <= bounds.Bottom; row++)
+            {
+                for (var col = bounds.Left; col <= bounds.Right; col++)
+                {
+                    if (!selection.Contains((int)col, (int)row))
+                    {
+                        _env.DeactivateCell((int)row, (int)col);
+                    }
+                }
+            }
+        });
+    }
+    private void Edit_ClearSelection_Click(object sender, EventArgs e)
+    {
+        // clear selection region, not cells
+        _view.ClearSelection();
+    }
+    private void Edit_ShrinkSelection_Click(object sender, EventArgs e)
     {
         if (!_view.IsSelected) return;
 
-        try
-        {
-            var selection = _view.GetSelection();
+        var selection = _view.GetSelection();
 
-            var bitmap = _env.BitMap.CreateRegionSnapshot(selection);
-            _clipboard = (bitmap, selection.Size);
-        }
-        catch (Exception ex)
+        var aliveCells = _env.GetRegionAliveCells(selection);
+
+        if (aliveCells.Count != 0)
         {
-            MessageBox.Show(ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            var p1 = new Point(
+                x: aliveCells.Min(p => p.X),
+                y: aliveCells.Min(p => p.Y)
+                );
+
+            var p2 = new Point(
+                x: aliveCells.Max(p => p.X),
+                y: aliveCells.Max(p => p.Y)
+                );
+
+            _view.SetSelection(p1, p2);
+        }
+        else
+        {
+            _view.ClearSelection();
         }
     }
-
-    private void cutToolStripMenuItem_Click(object sender, EventArgs e)
+    private void Edit_Copy_Click(object sender, EventArgs e)
     {
-        copyToolStripMenuItem_Click(sender, e);
-        clearSelectedCellsToolStripMenuItem_Click(sender, e);// clear selected cells
-    }
+        if (!_view.IsSelected) return;
 
-    private void pasteToolStripMenuItem_Click(object sender, EventArgs e)
+        var selection = _view.GetSelection();
+
+        Suspend(() => SetClipboard(selection));
+    }
+    private void Edit_Cut_Click(object sender, EventArgs e)
+    {
+        if (!_view.IsSelected) return;
+
+        var selection = _view.GetSelection();
+
+        Suspend(() =>
+        {
+            SetClipboard(selection);
+            _env.LifeMap.ClearRect(ref selection);
+        });
+    }
+    private void Edit_Paste_Click(object sender, EventArgs e)
     {
         if (!_view.IsSelected) return;
         if (_clipboard is null) return;
@@ -416,77 +496,13 @@ public partial class Form1 : Form
 
         var p = _view.GetSelection().Location;
 
-        _env.Lock(b =>
-        {
-            b.BlockCopy(data, size, p, _mode);
-        });
+        Suspend(() => _env.LifeMap.BlockCopy(data, size, p, _mode));
 
         _view.SetSelection(p, new Point(p.X + size.Width - 1, p.Y + size.Height - 1));
-
-        RePaint();
-
     }
-
-    private void fillToolStripMenuItem_Click(object sender, EventArgs e)
+    private void Edit_ChangePasteMethods_Click(object sender, EventArgs e)
     {
-        if (!_view.IsSelected) return;
-
-        var selection = _view.GetSelection();
-
-        for (var row = selection.Top; row < selection.Bottom; row++)
-        {
-            for (var col = selection.Left; col < selection.Right; col++)
-            {
-                _env.ActivateCell(row, col);
-            }
-        }
-
-        RePaint();
-    }
-
-    private void clearSelectionToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-        _view.ClearSelection();
-        RePaint();
-    }
-
-    private void shrinkSelectionToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-        if (!_view.IsSelected) return;
-
-        var selection = _view.GetSelection();
-
-        var aliveCells = _env.GetRegionAliveCells(selection);
-
-        if (aliveCells.Any())
-        {
-            var p1 = new Point(
-                x: aliveCells.Min(p => p.X),
-                y: aliveCells.Min(p => p.Y)
-                );
-
-            var p2 = new Point(
-                x: aliveCells.Max(p => p.X),
-                y: aliveCells.Max(p => p.Y)
-                );
-
-
-            _view.SetSelection(p1, p2);
-        }
-        else
-        {
-            _view.ClearSelection();
-        }
-
-
-        RePaint();
-    }
-
-    private CopyMode _mode = CopyMode.Overwrite;
-    private void pasteMethods_Click(object sender, EventArgs e)
-    {
-        var item = sender as ToolStripMenuItem;
-        if (item is null) return;
+        if (sender is not ToolStripMenuItem item) return;
         var text = item.Text;
         if (text == null) return;
 
@@ -499,139 +515,243 @@ public partial class Form1 : Form
                 mItem.Checked = string.Equals(text, mItem.Text, StringComparison.OrdinalIgnoreCase);
             }
         }
+    }
+    private void Edit_FillSelectedRegion_Click(object sender, EventArgs e)
+    {
+        if (!_view.IsSelected) return;
 
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        Suspend(() =>
+        {
+            for (var row = selection.Top; row < selection.Bottom; row++)
+            {
+                for (var col = selection.Left; col < selection.Right; col++)
+                {
+                    _env.ActivateCell(row, col);
+                }
+            }
+        });
+    }
+    private void Edit_RotateSelected_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        Suspend(() =>
+        {
+            using var snapshot = _env.LifeMap.CreateRegionSnapshot(selection);
+
+            _env.LifeMap.ClearRect(ref selection);
+
+            // 获取选区中心点 
+            int centerX = selection.Left + (int)Math.Floor(selection.Width / 2.0);
+            int centerY = selection.Top + (int)Math.Floor(selection.Height / 2.0);
+
+            var prList = new List<Point>();
+
+            // 90度顺时针旋转
+            for (var row = selection.Top; row < selection.Bottom; row++)
+            {
+                for (var col = selection.Left; col < selection.Right; col++)
+                {
+                    // 相对于选区中心的坐标
+                    int relX = col - centerX;
+                    int relY = row - centerY;
+
+                    // 旋转坐标
+                    int rotatedX = -relY;
+                    int rotatedY = relX;
+
+                    // 计算新位置的绝对坐标
+                    var p2 = new Point(centerX + rotatedX, centerY + rotatedY);
+                    var p0 = new Point(col - selection.Left, row - selection.Top);
+
+                    _env.LifeMap.Set(ref p2, snapshot.Get(ref p0));
+
+                    if (
+                        row == selection.Top
+                        || row == selection.Bottom - 1
+                        || col == selection.Left
+                        || col == selection.Right - 1
+                        )
+                    {
+                        prList.Add(p2);
+                    }
+                }
+            }
+
+            var pr1 = prList.Min(p => p.X);
+            var pr2 = prList.Max(p => p.X);
+            var pc1 = prList.Min(p => p.Y);
+            var pc2 = prList.Max(p => p.Y);
+
+            _view.SetSelection(new Point(pr1, pc1), new Point(pr2, pc2));
+        });
+    }
+    private void Edit_FlipUpDownSelected_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        Suspend(() =>
+        {
+            using var snapshot = _env.LifeMap.CreateRegionSnapshot(selection);
+
+            _env.LifeMap.ClearRect(ref selection);
+
+            for (var row = selection.Top; row < selection.Bottom; row++)
+            {
+                for (var col = selection.Left; col < selection.Right; col++)
+                {
+                    var p0 = new Point(col - selection.Left, row - selection.Top);
+                    var p1 = new Point(col, selection.Bottom - 1 - (row - selection.Top));
+
+                    _env.LifeMap.Set(ref p1, snapshot.Get(ref p0));
+                }
+            }
+
+            _view.SetSelection(selection.Location, new Point(selection.Right - 1, selection.Bottom - 1));
+        });
+    }
+    private void Edit_FlipLeftRight_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        Suspend(() =>
+        {
+            using var snapshot = _env.LifeMap.CreateRegionSnapshot(selection);
+
+            _env.LifeMap.ClearRect(ref selection);
+
+            for (var row = selection.Top; row < selection.Bottom; row++)
+            {
+                for (var col = selection.Left; col < selection.Right; col++)
+                {
+                    var p0 = new Point(col - selection.Left, row - selection.Top);
+                    var p1 = new Point(selection.Right - 1 - (col - selection.Left), row);
+
+                    _env.LifeMap.Set(ref p1, snapshot.Get(ref p0));
+                }
+            }
+
+            _view.SetSelection(selection.Location, new Point(selection.Right - 1, selection.Bottom - 1));
+        });
+    }
+    private void Edit_RandomFill25_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        Suspend(() =>
+        {
+            _env.LifeMap.ClearRect(ref selection);
+            RandomFill(selection, 0.25f);
+        });
+    }
+    private void Edit_RandomFille50_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        Suspend(() =>
+        {
+            _env.LifeMap.ClearRect(ref selection);
+            RandomFill(selection, 0.5f);
+        });
+    }
+    private void Edit_FillBerlinNoise_Click(object sender, EventArgs e)
+    {
+
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        Suspend(() =>
+        {
+            _env.LifeMap.ClearRect(ref selection);
+            new BerlinNoise().Generate(ref selection, _env.LifeMap);
+        });
     }
 
-    private void nextGenerationToolStripMenuItem_Click(object sender, EventArgs e)
+    private void Action_StartStop_Click(object sender, EventArgs e)
+    {
+        if (_evolutionThread is null)
+        {
+            Start();
+        }
+        else
+        {
+            Stop();
+        }
+    }
+    private void Action_NextGeneration_Click(object sender, EventArgs e)
     {
         if (_cts is not null)
         {
-            // thread running...
             return;
         }
 
         _env.NextGeneration();
     }
-
-    private void homeToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-        _view.MoveTo(0, 0);
-    }
-
-    private void canvas_MouseLeave(object sender, EventArgs e)
-    {
-        _view.MousePoint = new Point(-1, -1);
-    }
-
-    private void selectAllToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-        var bounds = _env.BitMap.GetBounds();
-        _view.SetSelection(bounds.Location, bounds.Location2);
-    }
-
-    private void fitToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-        var bounds = _env.BitMap.GetBounds();
-        _view.MoveTo(
-            (int)bounds.Left + (int)bounds.Width / 2,
-            (int)bounds.Top + (int)bounds.Height / 2
-            );
-
-    }
-
-    private void clearUnselectedCellsToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-        var selection = _view.GetSelection();
-        if (selection.IsEmpty) return;
-
-        var bounds = _env.BitMap.GetBounds();
-
-        for (var row = bounds.Top; row <= bounds.Bottom; row++)
-        {
-            for (var col = bounds.Left; col <= bounds.Right; col++)
-            {
-                if (!selection.Contains((int)col, (int)row))
-                {
-                    _env.DeactivateCell((int)row, (int)col);
-                }
-            }
-        }
-    }
-
-    private void rotateToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-        var selection = _view.GetSelection();
-        if (selection.IsEmpty) return;
-
-        using var snapshot = _env.BitMap.CreateRegionSnapshot(selection);
-
-        _env.BitMap.ClearRect(selection);
-
-        // 获取选区中心点 
-        int centerX = selection.Left + (int)Math.Floor(selection.Width / 2.0);
-        int centerY = selection.Top + (int)Math.Floor(selection.Height / 2.0);
-
-        var prList = new List<Point>();
-
-        // 90度顺时针旋转
-        for (var row = selection.Top; row < selection.Bottom; row++)
-        {
-            for (var col = selection.Left; col < selection.Right; col++)
-            {
-                // 相对于选区中心的坐标
-                int relX = col - centerX;
-                int relY = row - centerY;
-
-                // 旋转坐标
-                int rotatedX = -relY;
-                int rotatedY = relX;
-
-                // 计算新位置的绝对坐标
-                var p2 = new Point(centerX + rotatedX, centerY + rotatedY);
-                var p0 = new Point(col - selection.Left, row - selection.Top);
-
-                _env.BitMap.Set(ref p2, snapshot.Get(ref p0));
-
-                if (
-                    row == selection.Top
-                    || row == selection.Bottom - 1
-                    || col == selection.Left
-                    || col == selection.Right - 1
-                    )
-                {
-                    prList.Add(p2);
-                }
-            }
-        }
-
-        var pr1 = prList.Min(p => p.X);
-        var pr2 = prList.Max(p => p.X);
-        var pc1 = prList.Min(p => p.Y);
-        var pc2 = prList.Max(p => p.Y);
-
-        _view.SetSelection(new Point(pr1, pc1), new Point(pr2, pc2));
-    }
-
-
-    private void flipUpDownToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-
-    }
-
-    private void flipLeftRightToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-
-    }
-
-    private void speedUpToolStripMenuItem_Click(object sender, EventArgs e)
+    private void Action_SpeedUp_Click(object sender, EventArgs e)
     {
         _env.MsGenInterval -= 10;
         label1.Text = $"GenInterval: {_env.MsGenInterval} ms";
     }
-
-    private void speedDownToolStripMenuItem_Click(object sender, EventArgs e)
+    private void Action_SpeedDown_Click(object sender, EventArgs e)
     {
         _env.MsGenInterval += 10;
         label1.Text = $"GenInterval: {_env.MsGenInterval} ms";
     }
+    private void Action_SetRule_Click(object sender, EventArgs e)
+    {
+        Suspend(() =>
+        {
+            var ret = Prompt.Show("Set Rule", "Rule string, like: b3/s23", out var newRule, _env.LifeMap.Rule);
+            if (ret != DialogResult.OK)
+            {
+                return;
+            }
+
+            _env.LifeMap.Rule = newRule!;
+        });
+    }
+
+    private void View_MoveToHome_Click(object sender, EventArgs e)
+    {
+        _view.MoveTo(0, 0);
+    }
+    private void View_MoveToCenterOfAllCells_Click(object sender, EventArgs e)
+    {
+        Suspend(() =>
+        {
+            var bounds = _env.LifeMap.GetBounds();
+            _view.MoveTo(
+                (int)bounds.Left + (int)bounds.Width / 2,
+                (int)bounds.Top + (int)bounds.Height / 2
+            );
+        });
+    }
+    private void View_MovePointedCellToCenter_Click(object sender, EventArgs e)
+    {
+        var mcp = _view.MouseCellPoint;
+        _view.MoveTo(mcp.X, mcp.Y);
+    }
+    private void View_MoveToCenterOfSelection_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        var center = new Point(
+            selection.Left + (int)Math.Floor(selection.Width / 2.0),
+            selection.Top + (int)Math.Floor(selection.Height / 2.0)
+            );
+
+        _view.MoveTo(center.X, center.Y);
+
+    }
+
+    #endregion
 }

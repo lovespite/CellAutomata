@@ -1,6 +1,6 @@
 ﻿using SharpDX.Direct2D1;
 
-namespace CellAutomata
+namespace CellAutomata.Render
 {
     public interface ID2dContext
     {

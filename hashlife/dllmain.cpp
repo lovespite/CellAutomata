@@ -40,6 +40,25 @@ extern "C" __declspec(dllexport) int CreateNewUniverse(const char* rule)
     return index;
 }
 
+extern "C" __declspec(dllexport) int SetUniverseRule(int algoindex, const char* rule)
+{
+    if (algoindex < 0 || algoindex >= algos.size())
+    {
+        return -1;
+    }
+
+    auto algo = algos[algoindex];
+
+    if (algo == nullptr)
+    {
+        return -2;
+    }
+
+    algo->setrule(rule);
+
+    return 0;
+}
+
 extern "C" __declspec(dllexport) void SetCell(int index, int x, int y, bool alive)
 {
     if (index < 0 || index >= algos.size())

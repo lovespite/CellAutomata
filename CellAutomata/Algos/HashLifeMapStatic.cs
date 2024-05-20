@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using CellAutomata.Algos;
 
 namespace CellAutomata
 {
@@ -11,6 +12,9 @@ namespace CellAutomata
 
         [LibraryImport(HashLifeLib, StringMarshalling = StringMarshalling.Utf8)]
         internal static partial int CreateNewUniverse(string rule);
+
+        [LibraryImport(HashLifeLib, StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial int SetUniverseRule(int index, string rule);
 
         [LibraryImport(HashLifeLib)]
         internal static partial int CreateRender(int w, int h, nint canvas, int use3d);

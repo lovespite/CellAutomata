@@ -1,4 +1,5 @@
-﻿using SharpDX.Mathematics.Interop;
+﻿using CellAutomata.Algos;
+using SharpDX.Mathematics.Interop;
 using System.Diagnostics;
 
 namespace CellAutomata;
@@ -9,7 +10,7 @@ public class ViewWindowDx2dRaw : ViewWindowBase
     public ViewWindowDx2dRaw(CellEnvironment cells, Size vwSize, nint canvas)
         : base(cells, vwSize.Width, vwSize.Height, 1)
     {
-        if (cells.BitMap is not HashLifeMap)
+        if (cells.LifeMap is not HashLifeMap)
             throw new ArgumentException("ViewWindowDx2dRaw is only support for HashLifeMap");
 
         _canvas = canvas;
@@ -38,7 +39,7 @@ public class ViewWindowDx2dRaw : ViewWindowBase
 
     public override void Draw(Graphics? graphics)
     {
-        DrawMainView4(_cellEnvironment.BitMap);
+        DrawMainView4(_cellEnvironment.LifeMap);
     }
     private ulong _frames = 0;
     private readonly Stopwatch _sw = Stopwatch.StartNew();
@@ -88,9 +89,9 @@ public class ViewWindowDx2dRaw : ViewWindowBase
         if (_sw2.ElapsedMilliseconds > 100)
         {
             text =
-                $"Generation: {_cellEnvironment.Generation:#,0}\n" +
-                $"Population: {_cellEnvironment.Population:#,0}\n" +
-                $"Position: {MouseCellPoint}  Mag: {mag}\n" +
+                $"{_cellEnvironment.LifeMap.GetType().Name}, {_cellEnvironment.LifeMap.Rule}\n" +
+                $"Population: {_cellEnvironment.Population:#,0}, Generation: {_cellEnvironment.Generation:#,0}\n" +
+                $"Position: {MouseCellPoint}  Mag: {mag}, View: {_center}\n" +
                 $"CPU Time: {_cellEnvironment.MsCPUTime:#,0} ms  FPS: {_fps:0.0}";
 
             _sw2.Restart();

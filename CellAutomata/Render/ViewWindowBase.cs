@@ -80,7 +80,7 @@ public abstract class ViewWindowBase
         {
             try
             {
-                return _cellEnvironment.BitMap.At(MousePoint.X, MousePoint.Y);
+                return _cellEnvironment.LifeMap.At(MousePoint.X, MousePoint.Y);
             }
             catch (NotImplementedException)
             {

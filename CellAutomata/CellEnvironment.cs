@@ -1,74 +1,73 @@
 ﻿using System.Diagnostics;
 using System.Drawing.Printing;
 using System.Runtime.InteropServices;
+using CellAutomata.Algos;
 
 namespace CellAutomata;
 
 public class CellEnvironment
 {
-    private readonly ILifeMap _bitmap;
+    private readonly ILifeMap _lifemap;
 
     /// <summary>
     /// Milliseconds
     /// </summary>
     public int MsGenInterval
     {
-        get => _bitmap.GenInterval;
+        get => _lifemap.GenInterval;
         set
         {
             if (value < 10)
             {
-                _bitmap.GenInterval = 10;
+                _lifemap.GenInterval = 10;
             }
             else if (value > 10_000)
             {
-                _bitmap.GenInterval = 10_000;
+                _lifemap.GenInterval = 10_000;
             }
             else
             {
-                _bitmap.GenInterval = value;
+                _lifemap.GenInterval = value;
             }
         }
     }
 
-    public ILifeMap BitMap => _bitmap;
+    public ILifeMap LifeMap => _lifemap;
 
     private readonly object _lock = new();
 
     public CellEnvironment(ILifeMap bitmap)
     {
-        _bitmap = bitmap;
+        _lifemap = bitmap;
     }
 
     public void Lock(Action<ILifeMap> action)
     {
         lock (_lock)
         {
-            action(_bitmap);
+            action(_lifemap);
         }
     }
 
-    public long Population => _bitmap.Population;
+    public long Population => _lifemap.Population;
     public long Generation
     {
-        get => _bitmap.Generation;
+        get => _lifemap.Generation;
     }
 
     public int ThreadCount
     {
-        get => _bitmap.ThreadCount;
-        set => _bitmap.ThreadCount = value;
+        get => _lifemap.ThreadCount;
+        set => _lifemap.ThreadCount = value;
     }
 
-    public long MsCPUTime => _bitmap.MsCPUTime; // milliseconds
-    public long MsMemoryCopyTime => _bitmap.MsMemoryCopyTime; // milliseconds
-    public long MsGenerationTime => _bitmap.MsGenerationTime; // milliseconds
+    public long MsCPUTime => _lifemap.MsCPUTime; // milliseconds 
 
     public bool IsAlive(int row, int col)
     {
         lock (_lock)
         {
-            return _bitmap.Get(row, col);
+            return _lifemap.Get(row, col);
         }
     }
 
@@ -76,7 +75,7 @@ public class CellEnvironment
     {
         lock (_lock)
         {
-            _bitmap.NextGeneration();
+            _lifemap.NextGeneration();
         }
     }
 
@@ -84,7 +83,7 @@ public class CellEnvironment
     {
         lock (_lock)
         {
-            return _bitmap.QueryRegion(true, rect);
+            return _lifemap.QueryRegion(true, rect);
         }
     }
 
@@ -110,8 +109,7 @@ public class CellEnvironment
         {
             ClearInternal();
         }
-    }
-
+    } 
 
     public ILifeMap CreateSnapshot()
     {
@@ -123,7 +121,7 @@ public class CellEnvironment
 
     public async Task SaveTo(string file)
     {
-        var cells = _bitmap.GetLocations(true);
+        var cells = _lifemap.GetLocations(true);
         using var fs = File.Create(file);
 
         var buffer = new byte[cells.Length * Marshal.SizeOf<int>() * 2];
@@ -169,22 +167,22 @@ public class CellEnvironment
 
     private void ActivateCellInternal(int row, int col)
     {
-        _bitmap.Set(row, col, true);
+        _lifemap.Set(row, col, true);
     }
 
     private void DeactivateCellInternal(int row, int col)
     {
-        _bitmap.Set(row, col, false);
+        _lifemap.Set(row, col, false);
     }
 
     private void ClearInternal()
     {
-        _bitmap.Clear();
+        _lifemap.Clear();
     }
 
     private ILifeMap CreateSnapshotInternal()
     {
-        return _bitmap.CreateSnapshot();
+        return _lifemap.CreateSnapshot();
     }
 
     #endregion
