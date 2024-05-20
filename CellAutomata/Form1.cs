@@ -56,26 +56,23 @@ public partial class Form1 : Form
 
     public void Suspend(Action action, bool invokeRequired = false)
     {
-        if (invokeRequired)
-        {
-            Invoke((MethodInvoker)delegate
-            {
-                Suspend(action, false);
-            });
-            return;
-        }
-
         bool isRunning = _cts is not null;
         Stop();
 
         try
         {
-            action();
+            if (invokeRequired)
+            {
+                Invoke(action);
+            }
+            else
+            {
+                action();
+            }
         }
         catch (Exception ex)
         {
-            ShowException(ex);
-            Debug.WriteLine(ex.ToString());
+            HandleException(ex);
         }
 
         if (isRunning)
@@ -83,17 +80,84 @@ public partial class Form1 : Form
             Start();
         }
     }
+    public async Task SuspendAsync(Func<Task> action, bool invokeRequired = false)
+    {
+        bool wasRunning = _cts != null;
+        Stop();  // 停止当前操作
+
+        try
+        {
+            if (invokeRequired)
+            {
+                await RunOnUIThread(action);
+            }
+            else
+            {
+                await action();
+            }
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex); // 处理异常
+        }
+
+        if (wasRunning)
+        {
+            Start(); // 如果之前在运行，重新启动
+        }
+    }
 
     #endregion
 
     #region Private Methods
-
+    private async Task RunOnUIThread(Func<Task> action)
+    {
+        var tcs = new TaskCompletionSource<object?>();
+        Invoke((MethodInvoker)async delegate
+        {
+            try
+            {
+                await action();
+                tcs.SetResult(null);
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex); // 传递异常
+            }
+        });
+        await tcs.Task;
+    }
+    private void HandleException(Exception ex, bool showMessageBox = true)
+    {
+        if (showMessageBox) ShowException(ex);
+        if (ex is AggregateException ae)
+        {
+            foreach (var e in ae.InnerExceptions)
+            {
+                Debug.WriteLine(e.ToString());
+            }
+        }
+        else
+        {
+            Debug.WriteLine(ex.ToString());
+        }
+    }
     protected void ShowException(Exception ex)
     {
-        MessageBox.Show(ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        if (InvokeRequired)
+        {
+            Invoke((MethodInvoker)delegate { ShowException(ex); }); return;
+        }
+
+        MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
     protected void ShowMessage(string message)
     {
+        if (InvokeRequired)
+        {
+            Invoke((MethodInvoker)delegate { ShowMessage(message); }); return;
+        }
+
         MessageBox.Show(message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
     private void Render()
@@ -165,21 +229,36 @@ public partial class Form1 : Form
         var bitmap = _env.LifeMap.CreateRegionSnapshot(selection);
         _clipboard = (bitmap, selection.Size);
     }
-    private void RandomFill(Rectangle selection, float rate)
+    private void RandomFill(Rectangle selection, float ratio)
     {
         var rnd = new Random();
         for (var row = selection.Top; row < selection.Bottom; row++)
         {
             for (var col = selection.Left; col < selection.Right; col++)
             {
-                if (rnd.NextDouble() < rate)
+                if (rnd.NextDouble() < ratio)
                 {
                     _env.ActivateCell(row, col);
                 }
             }
         }
     }
-    #endregion 
+
+    private void LoadBbmFile(string file)
+    {
+        using var reporter = new TaskProgressReporter("Loading", "Please wait ...");
+        var t = SuspendAsync(() => _env.LoadFrom(file, reporter));
+        reporter.Wait(t);
+    }
+
+    private void SaveBbmFile(string file)
+    {
+        using var reporter = new TaskProgressReporter("Saving", "Please wait ...");
+        var t = SuspendAsync(() => _env.SaveTo(file, reporter));
+        reporter.Wait(t);
+    }
+
+    #endregion
 
     #region Form Event Handlers
     private void Form1_Resize(object? sender, EventArgs e)
@@ -339,7 +418,7 @@ public partial class Form1 : Form
         var file = files[0];
         if (!File.Exists(file)) return;
 
-        Suspend(() => _env.LoadFrom(file).Wait());
+        LoadBbmFile(file);
     }
     private void Canvas_MouseLeave(object sender, EventArgs e)
     {
@@ -348,7 +427,7 @@ public partial class Form1 : Form
 
     #endregion
 
-    #region Menu Event Handlers
+    #region File Menu Event Handlers
     private void File_Load_Click(object sender, EventArgs e)
     {
         Suspend(() =>
@@ -357,12 +436,8 @@ public partial class Form1 : Form
             dialog.Filter = "Binary BitMap|*.bbm|All|*.*";
             dialog.InitialDirectory = Path.Combine(Application.StartupPath, "Conways");
 
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                var path = dialog.FileName;
-
-                _env.LoadFrom(path).Wait();
-            }
+            if (dialog.ShowDialog() != DialogResult.OK) return;
+            LoadBbmFile(dialog.FileName);
         });
     }
     private void File_Save_Click(object sender, EventArgs e)
@@ -376,19 +451,19 @@ public partial class Form1 : Form
             dialog.InitialDirectory = Path.Combine(Application.StartupPath, "Conways");
             dialog.FileName = $"{DateTime.Now:yyMMddHHmmss}.bbm";
 
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                var path = dialog.FileName;
-
-                _env.SaveTo(path).Wait();
-            }
+            if (dialog.ShowDialog() != DialogResult.OK) return;
+            SaveBbmFile(dialog.FileName);
         });
     }
+
     private void File_Exit_Click(object sender, EventArgs e)
     {
         Close();
     }
 
+    #endregion
+
+    #region Edit Menu Event Handlers
     private void Edit_Clear_Click(object sender, EventArgs e)
     {
         Stop();
@@ -651,7 +726,7 @@ public partial class Form1 : Form
             RandomFill(selection, 0.25f);
         });
     }
-    private void Edit_RandomFille50_Click(object sender, EventArgs e)
+    private void Edit_RandomFill50_Click(object sender, EventArgs e)
     {
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
@@ -675,6 +750,9 @@ public partial class Form1 : Form
         });
     }
 
+    #endregion
+
+    #region Action Menu Event Handlers
     private void Action_StartStop_Click(object sender, EventArgs e)
     {
         if (_evolutionThread is null)
@@ -719,6 +797,10 @@ public partial class Form1 : Form
         });
     }
 
+    #endregion
+
+    #region View Menu Event Handlers
+
     private void View_MoveToHome_Click(object sender, EventArgs e)
     {
         _view.MoveTo(0, 0);
@@ -752,6 +834,15 @@ public partial class Form1 : Form
         _view.MoveTo(center.X, center.Y);
 
     }
+    private void View_ZoomIn_Click(object sender, EventArgs e)
+    {
+        _view.ZoomIn(); // 放大
+    }
+    private void View_ZoomOut_Click(object sender, EventArgs e)
+    {
+        _view.ZoomOut(); // 缩小
+    }
 
     #endregion
+
 }

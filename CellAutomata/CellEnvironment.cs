@@ -2,6 +2,7 @@
 using System.Drawing.Printing;
 using System.Runtime.InteropServices;
 using CellAutomata.Algos;
+using CellAutomata.Util;
 
 namespace CellAutomata;
 
@@ -109,7 +110,7 @@ public class CellEnvironment
         {
             ClearInternal();
         }
-    } 
+    }
 
     public ILifeMap CreateSnapshot()
     {
@@ -119,12 +120,16 @@ public class CellEnvironment
         }
     }
 
-    public async Task SaveTo(string file)
+    public async Task SaveTo(string file, IProgressReporter? progress = null)
     {
+        progress?.ReportProgress(0, "Saving...", TimeSpan.Zero);
+
         var cells = _lifemap.GetLocations(true);
         using var fs = File.Create(file);
 
         var buffer = new byte[cells.Length * Marshal.SizeOf<int>() * 2];
+        float totalCount = cells.Length;
+        progress?.ReportProgress(0, "Transforming data...", TimeSpan.Zero);
         unsafe
         {
             fixed (byte* ptr = buffer)
@@ -135,19 +140,31 @@ public class CellEnvironment
                     var cell = cells[i];
                     p[i * 2] = cell.X;
                     p[i * 2 + 1] = cell.Y;
+
+                    if (i % 10000 == 0)
+                    {
+                        progress?.ReportProgress(i / totalCount, $"Transforming data... {i}", TimeSpan.Zero);
+                    }
                 }
             }
         }
 
+        progress?.ReportProgress(100, "Writing file...", TimeSpan.Zero);
         await fs.WriteAsync(buffer);
+
+        progress?.ReportProgress(100, "Done.", TimeSpan.Zero);
     }
 
-    public async Task LoadFrom(string file)
+    public async Task LoadFrom(string file, IProgressReporter? progress = null)
     {
+        progress?.ReportProgress(0, "Reading file...", TimeSpan.Zero);
         var buffer = new byte[Marshal.SizeOf<int>() * 2];
         using var fs = File.OpenRead(file);
         using var br = new BinaryReader(fs);
 
+        await Task.Delay(1000);
+        float totalCount = fs.Length / buffer.Length;
+        var count = 0;
         while (fs.Position < fs.Length)
         {
             await fs.ReadAsync(buffer);
@@ -158,9 +175,22 @@ public class CellEnvironment
                     var p = (int*)ptr;
 
                     ActivateCell(p[1], p[0]);
+                    count++;
+
+                    float prog = count / totalCount;
+                    progress?.ReportProgress(prog, $"Loading... {count}", TimeSpan.Zero);
                 }
             }
+
+            if (count % 10000 == 0)
+            {
+                await Task.Delay(100);
+            }
         }
+
+        progress?.ReportProgress(100, "Done.", TimeSpan.Zero);
+
+        await Task.Delay(1000);
     }
 
     #region Internal Methods 

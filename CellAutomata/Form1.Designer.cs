@@ -64,22 +64,25 @@
             randomFille50ToolStripMenuItem = new ToolStripMenuItem();
             berlinNoiseToolStripMenuItem = new ToolStripMenuItem();
             actionToolStripMenuItem = new ToolStripMenuItem();
+            setRuleToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator7 = new ToolStripSeparator();
             btnStartStop = new ToolStripMenuItem();
             nextGenerationToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator5 = new ToolStripSeparator();
             speedUpToolStripMenuItem = new ToolStripMenuItem();
             speedDownToolStripMenuItem = new ToolStripMenuItem();
-            toolStripSeparator7 = new ToolStripSeparator();
-            setRuleToolStripMenuItem = new ToolStripMenuItem();
             viewToolStripMenuItem = new ToolStripMenuItem();
             homeToolStripMenuItem = new ToolStripMenuItem();
             fitToolStripMenuItem = new ToolStripMenuItem();
             movePointToCenterToolStripMenuItem = new ToolStripMenuItem();
             moveSelectionToCenterToolStripMenuItem = new ToolStripMenuItem();
-            splitContainer1 = new SplitContainer();
-            panel1 = new Panel();
             toolStripSeparator8 = new ToolStripSeparator();
             createNewViewToolStripMenuItem = new ToolStripMenuItem();
+            zoomInToolStripMenuItem = new ToolStripMenuItem();
+            zoomOutToolStripMenuItem = new ToolStripMenuItem();
+            splitContainer1 = new SplitContainer();
+            panel1 = new Panel();
+            toolStripSeparator9 = new ToolStripSeparator();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -134,7 +137,7 @@
             // 
             loadFileToolStripMenuItem.Name = "loadFileToolStripMenuItem";
             loadFileToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Q;
-            loadFileToolStripMenuItem.Size = new Size(173, 22);
+            loadFileToolStripMenuItem.Size = new Size(180, 22);
             loadFileToolStripMenuItem.Text = "&Load file";
             loadFileToolStripMenuItem.Click += File_Load_Click;
             // 
@@ -142,20 +145,20 @@
             // 
             saveToToolStripMenuItem.Name = "saveToToolStripMenuItem";
             saveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
-            saveToToolStripMenuItem.Size = new Size(173, 22);
+            saveToToolStripMenuItem.Size = new Size(180, 22);
             saveToToolStripMenuItem.Text = "&Save to";
             saveToToolStripMenuItem.Click += File_Save_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(170, 6);
+            toolStripSeparator1.Size = new Size(177, 6);
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(173, 22);
-            exitToolStripMenuItem.Text = "Exit";
+            exitToolStripMenuItem.Size = new Size(180, 22);
+            exitToolStripMenuItem.Text = "&Exit";
             exitToolStripMenuItem.Click += File_Exit_Click;
             // 
             // editToolStripMenuItem
@@ -231,36 +234,36 @@
             pasteMethodToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { pasteOverwrite, pasteOr, pasteAnd, pasteXor });
             pasteMethodToolStripMenuItem.Name = "pasteMethodToolStripMenuItem";
             pasteMethodToolStripMenuItem.Size = new Size(280, 22);
-            pasteMethodToolStripMenuItem.Text = "Paste meth&od";
+            pasteMethodToolStripMenuItem.Text = "Paste metho&d";
             // 
             // pasteOverwrite
             // 
             pasteOverwrite.Checked = true;
             pasteOverwrite.CheckState = CheckState.Checked;
             pasteOverwrite.Name = "pasteOverwrite";
-            pasteOverwrite.Size = new Size(132, 22);
-            pasteOverwrite.Text = "Overwrite";
+            pasteOverwrite.Size = new Size(180, 22);
+            pasteOverwrite.Text = "&Overwrite";
             pasteOverwrite.Click += Edit_ChangePasteMethods_Click;
             // 
             // pasteOr
             // 
             pasteOr.Name = "pasteOr";
-            pasteOr.Size = new Size(132, 22);
-            pasteOr.Text = "Or";
+            pasteOr.Size = new Size(180, 22);
+            pasteOr.Text = "O&r";
             pasteOr.Click += Edit_ChangePasteMethods_Click;
             // 
             // pasteAnd
             // 
             pasteAnd.Name = "pasteAnd";
-            pasteAnd.Size = new Size(132, 22);
-            pasteAnd.Text = "And";
+            pasteAnd.Size = new Size(180, 22);
+            pasteAnd.Text = "&And";
             pasteAnd.Click += Edit_ChangePasteMethods_Click;
             // 
             // pasteXor
             // 
             pasteXor.Name = "pasteXor";
-            pasteXor.Size = new Size(132, 22);
-            pasteXor.Text = "Xor";
+            pasteXor.Size = new Size(180, 22);
+            pasteXor.Text = "&Xor";
             pasteXor.Click += Edit_ChangePasteMethods_Click;
             // 
             // toolStripSeparator2
@@ -310,7 +313,7 @@
             flipUpDownToolStripMenuItem.Name = "flipUpDownToolStripMenuItem";
             flipUpDownToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.Down;
             flipUpDownToolStripMenuItem.Size = new Size(280, 22);
-            flipUpDownToolStripMenuItem.Text = "Flip - Up&Down";
+            flipUpDownToolStripMenuItem.Text = "Flip - UpDo&wn";
             flipUpDownToolStripMenuItem.Click += Edit_FlipUpDownSelected_Click;
             // 
             // flipLeftRightToolStripMenuItem
@@ -331,37 +334,50 @@
             randomizeToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { randomFill25ToolStripMenuItem, randomFille50ToolStripMenuItem, berlinNoiseToolStripMenuItem });
             randomizeToolStripMenuItem.Name = "randomizeToolStripMenuItem";
             randomizeToolStripMenuItem.Size = new Size(280, 22);
-            randomizeToolStripMenuItem.Text = "Randomize";
+            randomizeToolStripMenuItem.Text = "R&andomize";
             // 
             // randomFill25ToolStripMenuItem
             // 
             randomFill25ToolStripMenuItem.Name = "randomFill25ToolStripMenuItem";
             randomFill25ToolStripMenuItem.Size = new Size(192, 22);
-            randomFill25ToolStripMenuItem.Text = "Random Fill(25%)";
+            randomFill25ToolStripMenuItem.Text = "&Random Fill(25%)";
             randomFill25ToolStripMenuItem.Click += Edit_RandomFill25_Click;
             // 
             // randomFille50ToolStripMenuItem
             // 
             randomFille50ToolStripMenuItem.Name = "randomFille50ToolStripMenuItem";
             randomFille50ToolStripMenuItem.Size = new Size(192, 22);
-            randomFille50ToolStripMenuItem.Text = "Random Fill(50%)";
-            randomFille50ToolStripMenuItem.Click += Edit_RandomFille50_Click;
+            randomFille50ToolStripMenuItem.Text = "Random &Fill(50%)";
+            randomFille50ToolStripMenuItem.Click += Edit_RandomFill50_Click;
             // 
             // berlinNoiseToolStripMenuItem
             // 
             berlinNoiseToolStripMenuItem.Name = "berlinNoiseToolStripMenuItem";
             berlinNoiseToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.B;
             berlinNoiseToolStripMenuItem.Size = new Size(192, 22);
-            berlinNoiseToolStripMenuItem.Text = "Berlin Noise";
+            berlinNoiseToolStripMenuItem.Text = "&Berlin Noise";
             berlinNoiseToolStripMenuItem.Click += Edit_FillBerlinNoise_Click;
             // 
             // actionToolStripMenuItem
             // 
-            actionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnStartStop, nextGenerationToolStripMenuItem, toolStripSeparator5, speedUpToolStripMenuItem, speedDownToolStripMenuItem, toolStripSeparator7, setRuleToolStripMenuItem });
+            actionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { setRuleToolStripMenuItem, toolStripSeparator7, btnStartStop, nextGenerationToolStripMenuItem, toolStripSeparator5, speedUpToolStripMenuItem, speedDownToolStripMenuItem });
             actionToolStripMenuItem.Name = "actionToolStripMenuItem";
             actionToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Up;
             actionToolStripMenuItem.Size = new Size(56, 21);
             actionToolStripMenuItem.Text = "&Action";
+            // 
+            // setRuleToolStripMenuItem
+            // 
+            setRuleToolStripMenuItem.Name = "setRuleToolStripMenuItem";
+            setRuleToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.D;
+            setRuleToolStripMenuItem.Size = new Size(219, 22);
+            setRuleToolStripMenuItem.Text = "Set &rule";
+            setRuleToolStripMenuItem.Click += Action_SetRule_Click;
+            // 
+            // toolStripSeparator7
+            // 
+            toolStripSeparator7.Name = "toolStripSeparator7";
+            toolStripSeparator7.Size = new Size(216, 6);
             // 
             // btnStartStop
             // 
@@ -376,7 +392,7 @@
             nextGenerationToolStripMenuItem.Name = "nextGenerationToolStripMenuItem";
             nextGenerationToolStripMenuItem.ShortcutKeys = Keys.F8;
             nextGenerationToolStripMenuItem.Size = new Size(219, 22);
-            nextGenerationToolStripMenuItem.Text = "Next generation";
+            nextGenerationToolStripMenuItem.Text = "&Next generation";
             nextGenerationToolStripMenuItem.Click += Action_NextGeneration_Click;
             // 
             // toolStripSeparator5
@@ -389,7 +405,7 @@
             speedUpToolStripMenuItem.Name = "speedUpToolStripMenuItem";
             speedUpToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Up;
             speedUpToolStripMenuItem.Size = new Size(219, 22);
-            speedUpToolStripMenuItem.Text = "Speed up";
+            speedUpToolStripMenuItem.Text = "Speed &up";
             speedUpToolStripMenuItem.Click += Action_SpeedUp_Click;
             // 
             // speedDownToolStripMenuItem
@@ -397,26 +413,14 @@
             speedDownToolStripMenuItem.Name = "speedDownToolStripMenuItem";
             speedDownToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Down;
             speedDownToolStripMenuItem.Size = new Size(219, 22);
-            speedDownToolStripMenuItem.Text = "Speed down";
+            speedDownToolStripMenuItem.Text = "Speed &down";
             speedDownToolStripMenuItem.Click += Action_SpeedDown_Click;
-            // 
-            // toolStripSeparator7
-            // 
-            toolStripSeparator7.Name = "toolStripSeparator7";
-            toolStripSeparator7.Size = new Size(216, 6);
-            // 
-            // setRuleToolStripMenuItem
-            // 
-            setRuleToolStripMenuItem.Name = "setRuleToolStripMenuItem";
-            setRuleToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.D;
-            setRuleToolStripMenuItem.Size = new Size(219, 22);
-            setRuleToolStripMenuItem.Text = "Set rule";
-            setRuleToolStripMenuItem.Click += Action_SetRule_Click;
             // 
             // viewToolStripMenuItem
             // 
-            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { homeToolStripMenuItem, fitToolStripMenuItem, movePointToCenterToolStripMenuItem, moveSelectionToCenterToolStripMenuItem, toolStripSeparator8, createNewViewToolStripMenuItem });
+            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { homeToolStripMenuItem, fitToolStripMenuItem, movePointToCenterToolStripMenuItem, moveSelectionToCenterToolStripMenuItem, toolStripSeparator8, createNewViewToolStripMenuItem, toolStripSeparator9, zoomInToolStripMenuItem, zoomOutToolStripMenuItem });
             viewToolStripMenuItem.Name = "viewToolStripMenuItem";
+            viewToolStripMenuItem.ShortcutKeyDisplayString = "";
             viewToolStripMenuItem.Size = new Size(47, 21);
             viewToolStripMenuItem.Text = "&View";
             // 
@@ -425,33 +429,62 @@
             homeToolStripMenuItem.Name = "homeToolStripMenuItem";
             homeToolStripMenuItem.ShortcutKeyDisplayString = "";
             homeToolStripMenuItem.ShortcutKeys = Keys.F1;
-            homeToolStripMenuItem.Size = new Size(263, 22);
-            homeToolStripMenuItem.Text = "Home";
+            homeToolStripMenuItem.Size = new Size(302, 22);
+            homeToolStripMenuItem.Text = "&Home";
             homeToolStripMenuItem.Click += View_MoveToHome_Click;
             // 
             // fitToolStripMenuItem
             // 
             fitToolStripMenuItem.Name = "fitToolStripMenuItem";
             fitToolStripMenuItem.ShortcutKeys = Keys.F2;
-            fitToolStripMenuItem.Size = new Size(263, 22);
-            fitToolStripMenuItem.Text = "Fit";
+            fitToolStripMenuItem.Size = new Size(302, 22);
+            fitToolStripMenuItem.Text = "&Fit";
             fitToolStripMenuItem.Click += View_MoveToCenterOfAllCells_Click;
             // 
             // movePointToCenterToolStripMenuItem
             // 
             movePointToCenterToolStripMenuItem.Name = "movePointToCenterToolStripMenuItem";
             movePointToCenterToolStripMenuItem.ShortcutKeys = Keys.F3;
-            movePointToCenterToolStripMenuItem.Size = new Size(263, 22);
-            movePointToCenterToolStripMenuItem.Text = "Move mouse point to center";
+            movePointToCenterToolStripMenuItem.Size = new Size(302, 22);
+            movePointToCenterToolStripMenuItem.Text = "&Move mouse point to center";
             movePointToCenterToolStripMenuItem.Click += View_MovePointedCellToCenter_Click;
             // 
             // moveSelectionToCenterToolStripMenuItem
             // 
             moveSelectionToCenterToolStripMenuItem.Name = "moveSelectionToCenterToolStripMenuItem";
             moveSelectionToCenterToolStripMenuItem.ShortcutKeys = Keys.F4;
-            moveSelectionToCenterToolStripMenuItem.Size = new Size(263, 22);
-            moveSelectionToCenterToolStripMenuItem.Text = "Move selection to center";
+            moveSelectionToCenterToolStripMenuItem.Size = new Size(302, 22);
+            moveSelectionToCenterToolStripMenuItem.Text = "Move &selection to center";
             moveSelectionToCenterToolStripMenuItem.Click += View_MoveToCenterOfSelection_Click;
+            // 
+            // toolStripSeparator8
+            // 
+            toolStripSeparator8.Name = "toolStripSeparator8";
+            toolStripSeparator8.Size = new Size(299, 6);
+            // 
+            // createNewViewToolStripMenuItem
+            // 
+            createNewViewToolStripMenuItem.Name = "createNewViewToolStripMenuItem";
+            createNewViewToolStripMenuItem.Size = new Size(302, 22);
+            createNewViewToolStripMenuItem.Text = "&Create a new view";
+            // 
+            // zoomInToolStripMenuItem
+            // 
+            zoomInToolStripMenuItem.Name = "zoomInToolStripMenuItem";
+            zoomInToolStripMenuItem.ShortcutKeyDisplayString = "Ctrl + Plus, Mouse Wheel";
+            zoomInToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Oemplus;
+            zoomInToolStripMenuItem.Size = new Size(302, 22);
+            zoomInToolStripMenuItem.Text = "Zoom &In";
+            zoomInToolStripMenuItem.Click += View_ZoomIn_Click;
+            // 
+            // zoomOutToolStripMenuItem
+            // 
+            zoomOutToolStripMenuItem.Name = "zoomOutToolStripMenuItem";
+            zoomOutToolStripMenuItem.ShortcutKeyDisplayString = "Ctrl + Minus, Mouse Wheel";
+            zoomOutToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.OemMinus;
+            zoomOutToolStripMenuItem.Size = new Size(302, 22);
+            zoomOutToolStripMenuItem.Text = "Zoom &Out";
+            zoomOutToolStripMenuItem.Click += View_ZoomOut_Click;
             // 
             // splitContainer1
             // 
@@ -477,16 +510,10 @@
             panel1.Size = new Size(1030, 641);
             panel1.TabIndex = 10;
             // 
-            // toolStripSeparator8
+            // toolStripSeparator9
             // 
-            toolStripSeparator8.Name = "toolStripSeparator8";
-            toolStripSeparator8.Size = new Size(260, 6);
-            // 
-            // createNewViewToolStripMenuItem
-            // 
-            createNewViewToolStripMenuItem.Name = "createNewViewToolStripMenuItem";
-            createNewViewToolStripMenuItem.Size = new Size(263, 22);
-            createNewViewToolStripMenuItem.Text = "Create a new view";
+            toolStripSeparator9.Name = "toolStripSeparator9";
+            toolStripSeparator9.Size = new Size(299, 6);
             // 
             // Form1
             // 
@@ -569,5 +596,8 @@
         private ToolStripMenuItem moveSelectionToCenterToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator8;
         private ToolStripMenuItem createNewViewToolStripMenuItem;
+        private ToolStripMenuItem zoomInToolStripMenuItem;
+        private ToolStripMenuItem zoomOutToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator9;
     }
 }
