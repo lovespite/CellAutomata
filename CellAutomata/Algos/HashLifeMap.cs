@@ -76,7 +76,23 @@ public partial class HashLifeMap : ILifeMap
     private string _rule = null!;
     public string Rule
     {
-        get => _rule;
+        get
+        {
+            if (string.IsNullOrEmpty(_rule))
+            {
+                try
+                {
+                    _rule = GetRule();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.ToString());
+                    _rule = string.Empty;
+                }
+            }
+
+            return _rule;
+        }
         set
         {
             if (string.IsNullOrEmpty(value))
@@ -92,9 +108,26 @@ public partial class HashLifeMap : ILifeMap
                     {
                         throw new InvalidOperationException($"Failed to set HashLife universe rule: {value}, code: {ret}");
                     }
-                    _rule = value;
+                    _rule = GetRule();
                 }
             }
+        }
+    }
+
+    const int BufferSize = 256;
+    private string GetRule()
+    {
+        nint bufferPtr = Marshal.AllocHGlobal(BufferSize);
+        try
+        {
+            HashLifeMapStatic.GetUniverseRule(_index, bufferPtr, BufferSize);
+            var rule = Marshal.PtrToStringAnsi(bufferPtr);
+
+            return rule ?? string.Empty;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(bufferPtr);
         }
     }
 
@@ -102,8 +135,14 @@ public partial class HashLifeMap : ILifeMap
     public HashLifeMap(string rule = "B3/S23", bool use3dRender = false)
     {
         Use3dRender = use3dRender ? 1 : 0;
-        _rule = rule;
-        _index = HashLifeMapStatic.CreateNewUniverse(_rule);
+        _index = HashLifeMapStatic.CreateNewUniverse(rule);
+
+        if (_index < 0)
+        {
+            throw new InvalidOperationException($"Failed to create HashLife universe: {rule}, code: {_index}");
+        }
+
+        _rule = GetRule();
         if (_index < 0)
         {
             throw new InvalidOperationException($"Failed to create HashLife universe: {rule}, code: {_index}");
@@ -348,15 +387,28 @@ public partial class HashLifeMap : ILifeMap
         GC.SuppressFinalize(this);
     }
 
-    public void SaveRle(Stream stream)
+
+    public void ReadRle(string filename)
     {
+        nint errBufferPtr = 0;
+        try
+        {
+            errBufferPtr = Marshal.AllocHGlobal(BufferSize);
+            var ret = HashLifeMapStatic.ReadRleFile(_index, filename, errBufferPtr, BufferSize);
+
+            if (ret != 0)
+            {
+                var errMsg = Marshal.PtrToStringAnsi(errBufferPtr);
+                throw new InvalidOperationException("File not supported." + errMsg);
+            }
+
+            _rule = GetRule();
+        }
+        finally
+        {
+            if (errBufferPtr != 0) Marshal.FreeHGlobal(errBufferPtr);
+        }
     }
-
-    public void ReadRle(Stream stream)
-    {
-    }
-
-
     // ======================
 
     #region Drawing

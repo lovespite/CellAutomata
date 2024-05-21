@@ -157,6 +157,7 @@
     <ClInclude Include="liferender.h" />
     <ClInclude Include="liferules.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="readpattern.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="viewport.h" />
     <ClInclude Include="DXTrace.h" />
@@ -177,6 +178,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="readpattern.cpp" />
     <ClCompile Include="util.cpp" />
     <ClCompile Include="viewport.cpp" />
   </ItemGroup>

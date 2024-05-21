@@ -157,7 +157,6 @@ class hlifealgo : public lifealgo {
 public:
     hlifealgo();
     virtual void init(int, int) {
-        // setrule("B3S23");
     }
     virtual BIGINT getpopulation() {
         if (inGC)
@@ -328,6 +327,8 @@ private:
     void unpack8x8(unsigned short nw, unsigned short ne,
         unsigned short sw, unsigned short se,
         unsigned int* top, unsigned int* bot);
+    node* make_internal_node(node* n);
+    const char* readmacrocell(char* line);
     liferules hliferules;
 };
 #endif

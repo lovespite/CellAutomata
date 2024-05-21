@@ -251,6 +251,23 @@ public partial class Form1 : Form
         reporter.Wait(t);
     }
 
+    private void LoadGollyRle(string file)
+    {
+        using var reporter = new TaskProgressReporter("Loading", "Please wait ...");
+
+        var task = SuspendAsync(async () =>
+        {
+            reporter.ReportProgress(0, "Reading file...", TimeSpan.Zero);
+            _env.Clear();
+
+            await Task.Run(() => _env.LifeMap.ReadRle(file));
+
+            reporter.ReportProgress(1, "Done.", TimeSpan.Zero);
+        });
+
+        reporter.Wait(task);
+    }
+
     private void SaveBbmFile(string file)
     {
         using var reporter = new TaskProgressReporter("Saving", "Please wait ...");
@@ -418,6 +435,7 @@ public partial class Form1 : Form
         var file = files[0];
         if (!File.Exists(file)) return;
 
+        Stop();// stop evolution 
         LoadBbmFile(file);
     }
     private void Canvas_MouseLeave(object sender, EventArgs e)
@@ -430,16 +448,46 @@ public partial class Form1 : Form
     #region File Menu Event Handlers
     private void File_Load_Click(object sender, EventArgs e)
     {
-        Suspend(() =>
-        {
-            using var dialog = new OpenFileDialog();
-            dialog.Filter = "Binary BitMap|*.bbm|All|*.*";
-            dialog.InitialDirectory = Path.Combine(Application.StartupPath, "Conways");
+        Stop();// stop evolution
 
-            if (dialog.ShowDialog() != DialogResult.OK) return;
-            LoadBbmFile(dialog.FileName);
-        });
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Load Binary BitMap File",
+            Filter = "Binary BitMap|*.bbm|All|*.*",
+            InitialDirectory = Path.Combine(Application.StartupPath, "Conways"),
+            Multiselect = false,
+        };
+
+        if (dialog.ShowDialog() != DialogResult.OK) return;
+        LoadBbmFile(dialog.FileName);
+
+        _view.ClearSelection();
+        View_MoveToCenterOfAllCells_Click(sender, e); // move to center
     }
+
+    private void File_LoadGollyFile_Click(object sender, EventArgs e)
+    {
+        Stop();// stop evolution
+
+        using var dialog = new OpenFileDialog
+        {
+            Filter = "Golly RLE|*.rle;*.mc;*.mc.gz|MCells|*.mcl|All|*.*",
+            Title = "Load Golly RLE File",
+            Multiselect = false,
+        };
+
+        var ret = dialog.ShowDialog();
+        if (ret != DialogResult.OK) return;
+
+        var file = dialog.FileName;
+        if (!File.Exists(file)) return;
+
+        LoadGollyRle(file);
+
+        _view.ClearSelection();
+        View_MoveToCenterOfAllCells_Click(sender, e); // move to center
+    }
+
     private void File_Save_Click(object sender, EventArgs e)
     {
         Suspend(() =>
@@ -455,11 +503,11 @@ public partial class Form1 : Form
             SaveBbmFile(dialog.FileName);
         });
     }
-
     private void File_Exit_Click(object sender, EventArgs e)
     {
         Close();
     }
+
 
     #endregion
 

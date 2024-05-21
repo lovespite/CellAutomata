@@ -123,34 +123,35 @@ public class CellEnvironment
     public async Task SaveTo(string file, IProgressReporter? progress = null)
     {
         progress?.ReportProgress(0, "Saving...", TimeSpan.Zero);
+        await Task.Delay(1000);
 
         var cells = _lifemap.GetLocations(true);
         using var fs = File.Create(file);
 
-        var buffer = new byte[cells.Length * Marshal.SizeOf<int>() * 2];
+        var buffer = new byte[Marshal.SizeOf<int>() * 2];
         float totalCount = cells.Length;
-        progress?.ReportProgress(0, "Transforming data...", TimeSpan.Zero);
-        unsafe
-        {
-            fixed (byte* ptr = buffer)
-            {
-                var p = (int*)ptr;
-                for (int i = 0; i < cells.Length; i++)
-                {
-                    var cell = cells[i];
-                    p[i * 2] = cell.X;
-                    p[i * 2 + 1] = cell.Y;
+        progress?.ReportProgress(0, "Transforming data...", TimeSpan.Zero); 
 
-                    if (i % 10000 == 0)
-                    {
-                        progress?.ReportProgress(i / totalCount, $"Transforming data... {i}", TimeSpan.Zero);
-                    }
+        for (int i = 0; i < cells.Length; i++)
+        {
+            var cell = cells[i];
+            unsafe
+            {
+                fixed (byte* ptr = buffer)
+                {
+                    var p = (int*)ptr;
+                    p[0] = cell.X;
+                    p[1] = cell.Y;
                 }
             }
-        }
 
-        progress?.ReportProgress(100, "Writing file...", TimeSpan.Zero);
-        await fs.WriteAsync(buffer);
+            await fs.WriteAsync(buffer);
+
+            if (i % 10000 == 0)
+            {
+                progress?.ReportProgress(i / totalCount, $"Transforming data... {i}", TimeSpan.Zero);
+            }
+        }
 
         progress?.ReportProgress(100, "Done.", TimeSpan.Zero);
     }
@@ -175,15 +176,13 @@ public class CellEnvironment
                     var p = (int*)ptr;
 
                     ActivateCell(p[1], p[0]);
-                    count++;
-
-                    float prog = count / totalCount;
-                    progress?.ReportProgress(prog, $"Loading... {count}", TimeSpan.Zero);
                 }
             }
 
+            count++;
             if (count % 10000 == 0)
             {
+                progress?.ReportProgress(count / totalCount, $"Loading... {count}", TimeSpan.Zero);
                 await Task.Delay(100);
             }
         }

@@ -35,9 +35,8 @@ public interface ILifeMap : I2DBitMutator, IDisposable
     RectangleL GetBounds();
 
     void NextGeneration();
-
-    void SaveRle(Stream stream);
-    void ReadRle(Stream stream);
+     
+    void ReadRle(string filename);
 
     Bitmap DrawRegionBitmap(Rectangle rectangle);
     byte[] DrawRegionBitmapBGRA(Rectangle rectangle);

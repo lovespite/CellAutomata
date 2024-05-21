@@ -584,6 +584,126 @@ void liferules::saveRule() {
     convertTo4x4Map(rule0);
 }
 
+// AKT: store valid rule in canonical format for getrule()
+void liferules::createCanonicalName(lifealgo* algo, const char* base64) {
+    int p = 0;
+    int np = 0;
+    int i = 0;
+
+    // the canonical version of a rule containing letters
+    // might be simply totalistic
+    bool stillnontotalistic = false;
+
+    // check for wolfram rule
+    if (wolfram >= 0) {
+        sprintf_s(canonrule, "W%d", wolfram);
+        while (canonrule[p]) p++;
+    }
+    else {
+        // check for map rule
+        if (using_map) {
+            // output map header
+            canonrule[p++] = 'M';
+            canonrule[p++] = 'A';
+            canonrule[p++] = 'P';
+
+            // compute number of base64 characters
+            int power2 = 1 << (neighbors + 1);
+            int fullchars = power2 / 6;
+            int remainbits = power2 % 6;
+
+            // copy base64 part
+            for (i = 0; i < fullchars; i++) {
+                if (*base64) {
+                    canonrule[p++] = *base64;
+                    base64++;
+                }
+            }
+
+            // copy final bits of last character
+            if (*base64) {
+                const char* index = strchr(base64_characters, *base64);
+                int c = index ? (char)(index - base64_characters) : 0;
+                int k = 0;
+                int m = 5;
+                for (i = 0; i < remainbits; i++) {
+                    k |= c & (1 << m);
+                    m--;
+                }
+                canonrule[p++] = base64_characters[k];
+            }
+        }
+        else {
+            // output birth part
+            canonrule[p++] = 'B';
+            for (i = 0; i <= neighbors; i++) {
+                if (rulebits & (1 << i)) {
+                    canonrule[p++] = '0' + (char)i;
+
+                    // check for non-totalistic
+                    if (!totalistic) {
+                        // add any defined letters
+                        np = addLetters(i, p);
+
+                        // check if letters were added
+                        if (np != p) {
+                            if (np > p) {
+                                stillnontotalistic = true;
+                            }
+                            p = np;   // confident?
+                        }
+                    }
+                }
+            }
+
+            // add slash
+            canonrule[p++] = '/';
+
+            // output survival part
+            canonrule[p++] = 'S';
+            for (i = 0; i <= neighbors; i++) {
+                if (rulebits & (1 << (survival_offset + i))) {
+                    canonrule[p++] = '0' + (char)i;
+
+                    // check for non-totalistic
+                    if (!totalistic) {
+                        // add any defined letters
+                        np = addLetters(survival_offset + i, p);
+
+                        // check if letters were added
+                        if (np != p) {
+                            if (np > p) {
+                                stillnontotalistic = true;
+                            }
+                            p = np;
+                        }
+                    }
+                }
+            }
+
+            // check if non-totalistic became totalistic
+            if (!totalistic && !stillnontotalistic) {
+                totalistic = true;
+            }
+
+            // add neighborhood
+            if (neighbormask == HEXAGONAL) canonrule[p++] = 'H';
+            if (neighbormask == VON_NEUMANN) canonrule[p++] = 'V';
+        }
+    }
+
+    // check for bounded grid
+    //if (algo->gridwd > 0 || algo->gridht > 0) {
+    //    // algo->setgridsize() was successfully called above, so append suffix
+    //    const char* bounds = algo->canonicalsuffix();
+    //    i = 0;
+    //    while (bounds[i]) canonrule[p++] = bounds[i++];
+    //}
+
+    // null terminate
+    canonrule[p] = 0;
+}
+
 // remove character from a string in place
 void liferules::removeChar(char* string, char skip) {
     int src = 0;
@@ -1047,6 +1167,9 @@ const char* liferules::setrule(const char* rulestring, lifealgo* algo) {
             createRuleMap(bpos, spos);
         }
     }
+
+    // save the canonical rule name
+    createCanonicalName(algo, bpos);
 
     // save the rule
     saveRule();

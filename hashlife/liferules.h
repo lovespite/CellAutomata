@@ -14,7 +14,7 @@
 #ifndef LIFERULES_H
 #define LIFERULES_H
 #include "lifealgo.h"
-const int MAXRULESIZE = 500;  // maximum number of characters in a rule
+const int MAXRULESIZE = 2000; // maximum number of characters in a rule
 const int ALL3X3 = 512;       // all possible 3x3 cell combinations
 const int ALL4X4 = 65536;     // all possible 4x4 cell combinations
 const int MAP512LENGTH = 86;  // number of base64 characters to encode 512bit map for Moore neighborhood
@@ -81,6 +81,7 @@ private:
     void createRuleMap(const char* birth, const char* survival);
     void convertTo4x4Map(char* which);
     void saveRule();
+    void createCanonicalName(lifealgo* algo, const char* base64);
     void removeChar(char* string, char skip);
     bool lettersValid(const char* part);
     int addLetters(int count, int p);

@@ -28,6 +28,8 @@
 #include <string.h>
 #include <iostream>
 #include <vector> 
+#include "readpattern.h"
+#include <inttypes.h>
 using namespace std;
 long long setmaxmem;
 /*
@@ -1656,13 +1658,169 @@ void hlifealgo::unpack8x8(unsigned short nw, unsigned short ne,
         (((se & 0xf0) | (sw & 0xf)) << 4) | (se & 0xf);
 }
 char hlifealgo::statusline[200];
-//static class hlifealgofactory : public lifealgofactory {
-//public:
-//    hlifealgofactory();
-//    virtual lifealgo* createInstance() {
-//        return new hlifealgo();
-//    }
-//} factory;
-//hlifealgofactory::hlifealgofactory() {
-//    registerAlgo("hlife", &factory);
-//}
+/* Returns an internal (i.e. non-leaf) node containing the given node. */
+node* hlifealgo::make_internal_node(node* n) {
+    if (is_node(n)) return n;
+    leaf* l = (leaf*)n;
+    return find_node((node*)find_leaf(0, 0, 0, l->nw),
+        (node*)find_leaf(0, 0, l->ne, 0),
+        (node*)find_leaf(0, l->sw, 0, 0),
+        (node*)find_leaf(l->se, 0, 0, 0));
+}
+/* Returns the center 4-square of an 8x8 leaf node. */
+static unsigned short unpack4x4center(leaf* leaf) {
+    return combine4(leaf->nw, leaf->ne, leaf->sw, leaf->se);
+}
+
+const char* hlifealgo::readmacrocell(char* line) {
+    int n = 0;
+    g_uintptr_t i = 1, nw = 0, ne = 0, sw = 0, se = 0, indlen = 0;
+    int r, d;
+    node** ind = 0;
+    root = 0;
+    while (getline(line, 10000)) {
+        if (i >= indlen) {
+            g_uintptr_t nlen = i + indlen + 10;
+            ind = (node**)realloc(ind, sizeof(node*) * nlen);
+            if (ind == 0)
+                lifefatal("Out of memory (4).");
+            while (indlen < nlen)
+                ind[indlen++] = 0;
+        }
+        if (line[0] == '.' || line[0] == '*' || line[0] == '$') {
+            int x = 0, y = 7;
+            unsigned short lnw = 0, lne = 0, lsw = 0, lse = 0;
+            char* p = 0;
+            for (p = line; *p > ' '; p++) {
+                switch (*p) {
+                case '*':      if (x > 7 || y < 0)
+                    return "Illegal coordinates in readmacrocell.";
+                    if (x < 4)
+                        if (y < 4)
+                            lsw |= 1 << (3 - (x & 3) + 4 * (y & 3));
+                        else
+                            lnw |= 1 << (3 - (x & 3) + 4 * (y & 3));
+                    else
+                        if (y < 4)
+                            lse |= 1 << (3 - (x & 3) + 4 * (y & 3));
+                        else
+                            lne |= 1 << (3 - (x & 3) + 4 * (y & 3));
+                    /* note: fall through here */
+                case '.':      x++;
+                    break;
+                case '$':      x = 0;
+                    y--;
+                    break;
+                default:       return "Illegal character in readmacrocell.";
+                }
+            }
+            clearstack();
+            root = ind[i++] = (node*)find_leaf(lnw, lne, lsw, lse);
+            depth = 2;
+        }
+        else if (line[0] == '#') {
+            char* p, * pp;
+            const char* err;
+            switch (line[1]) {
+            case 'R':
+                p = line + 2;
+                while (*p && *p <= ' ') p++;
+                pp = p;
+                while (*pp > ' ') pp++;
+                *pp = 0;
+
+                // AKT: need to check for B0-not-Smax rule
+                err = setrule(p);
+                if (err)
+                    return err;
+                if (hliferules.alternate_rules)
+                    return "B0-not-Smax rules are not allowed in HashLife.";
+
+                break;
+            case 'G': 
+            case 'F': 
+                break;
+            }
+        }
+        else {
+            // n = sscanf(line, "%d %" PRIuPTR " %" PRIuPTR " %" PRIuPTR " %" PRIuPTR " %d", &d, &nw, &ne, &sw, &se, &r);
+            n = sscanf_s(line, "%d %" PRIuPTR " %" PRIuPTR " %" PRIuPTR " %" PRIuPTR " %d", &d, &nw, &ne, &sw, &se, &r);
+            if (n < 0) // blank line; permit
+                continue;
+            if (n == 0) {
+                // conversion error in first argument; we allow only if the only
+                // content on the line is whitespace.
+                char* ws = line;
+                while (*ws && *ws <= ' ')
+                    ws++;
+                if (*ws > 0)
+                    return "Parse error in macrocell format.";
+                continue;
+            }
+            if (n < 5)
+                // AKT: best not to use lifefatal here because user won't see any
+                // error message when reading clipboard data starting with "[..."
+                return "Parse error in readmacrocell.";
+            if (d < 1)
+                return "Oops; bad depth in readmacrocell.";
+            if (d > 1) {
+                ind[0] = zeronode(d <= 4 ? 2 : d - 2); /* allow zeros to work right */
+                if (nw >= i || ind[nw] == 0 || ne >= i || ind[ne] == 0 ||
+                    sw >= i || ind[sw] == 0 || se >= i || ind[se] == 0) {
+                    return "Node out of range in readmacrocell.";
+                }
+            }
+            if (d < 4) {
+                /* Support macrocell nodes in multicell format (i.e. with 2-square
+                   leaf nodes) for compatibility. Cell values must be 0 or 1! */
+                unsigned short lnw = 0, lne = 0, lsw = 0, lse = 0;
+                if (d == 1) {
+                    if (nw > 1 || ne > 1 || sw > 1 || se > 1) {
+                        return "Cell value out of range in readmacrocell.";
+                    }
+                    lnw = nw ? 1 << 0 : 0;
+                    lne = ne ? 1 << 3 : 0;
+                    lsw = sw ? 1 << 12 : 0;
+                    lse = se ? 1 << 15 : 0;
+                }
+                else { // d == 2 || d == 3
+                    node* pnw = ind[nw], * pne = ind[ne], * psw = ind[sw], * pse = ind[se];
+                    if (is_node(pnw) || is_node(pne) || is_node(psw) || is_node(pse)) {
+                        return "Invalid leaf node reference in readmacrocell.";
+                    }
+                    lnw = unpack4x4center((leaf*)pnw);
+                    lne = unpack4x4center((leaf*)pne);
+                    lsw = unpack4x4center((leaf*)psw);
+                    lse = unpack4x4center((leaf*)pse);
+                    if (d == 2) {
+                        lnw >>= 5;
+                        lne >>= 3;
+                        lsw <<= 3;
+                        lse <<= 5;
+                    }
+                }
+                clearstack();
+                root = ind[i++] = (node*)find_leaf(lnw, lne, lsw, lse);
+            }
+            else {  // d >= 4
+                clearstack();
+                root = ind[i++] = find_node(ind[nw], ind[ne], ind[sw], ind[se]);
+            }
+            depth = d - 1;
+        }
+    }
+    if (ind)
+        free(ind);
+    if (root == 0) {
+        // AKT: allow empty macrocell pattern; note that endofpattern()
+        // will be called soon so don't set hashed here
+        // return "Invalid macrocell file: no nodes." ;
+        return 0;
+    }
+    if (depth < 3) {
+        root = make_internal_node(root);
+        depth = 3;
+    }
+    hashed = 1;
+    return 0;
+}

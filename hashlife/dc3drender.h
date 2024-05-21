@@ -70,7 +70,7 @@ private:
     ID2D1SolidColorBrush* g_pSelBrush = nullptr;
     ID2D1SolidColorBrush* g_pGridline = nullptr;
     ID2D1SolidColorBrush* g_pBackBrush = nullptr;
-    ID2D1SolidColorBrush* g_pFontBrush = nullptr; 
+    ID2D1SolidColorBrush* g_pFontBrush = nullptr;
 
     FLOAT* BackgroundColor;
     FLOAT* GridlineColor;
@@ -94,7 +94,6 @@ private:
     // 绘制 RGBA 数据
     void DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h);
     void DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int pmscale);
-    void DrawCells2D(unsigned char* pmdata, int x, int y, int w, int h, int pmscale);
 
     void WaitForGPU() {
 
@@ -104,6 +103,10 @@ private:
         queryDesc.Query = D3D11_QUERY_EVENT;
         queryDesc.MiscFlags = 0;
         g_pDevice->CreateQuery(&queryDesc, &g_pEventQuery); // 创建事件查询对象
+
+        if (g_pEventQuery == nullptr) {
+            return;
+        }
 
         // 等待 GPU 完成 
         g_pImmediateContext->End(g_pEventQuery); // 发出信号 

@@ -12,9 +12,10 @@
 #include "dcrender.h"
 #include "dc3drender.h"
 #include "dllmain.h"
+#include "readpattern.h"
 
-std::string _version = "beta2.4.3";
-std::wstring _versionw = L"beta2.4.3";
+std::string _version = "beta2.5.3";
+std::wstring _versionw = L"beta2.5.3";
 typedef long long BigInt;
 
 static std::vector<lifealgo*> algos;
@@ -26,13 +27,19 @@ extern "C" __declspec(dllexport) void Version(char* versionBuffer, int bufferSiz
     memcpy_s(versionBuffer, bufferSize, _version.c_str(), _version.size());
 }
 
-extern "C" __declspec(dllexport) int CreateNewUniverse(const char* rule)
+extern "C" __declspec(dllexport) size_t CreateNewUniverse(const char* rule)
 {
 
     auto algo = new hlifealgo();
     algo->init(0, 0);
-    algo->setrule(rule);
     algo->setinc(1);
+    auto e = algo->setrule(rule);
+
+    if (e != nullptr)
+    {
+        delete algo;
+        return -1;
+    }
 
     auto index = algos.size();
     algos.push_back(algo);
@@ -57,6 +64,28 @@ extern "C" __declspec(dllexport) int SetUniverseRule(int algoindex, const char* 
     algo->setrule(rule);
 
     return 0;
+}
+
+extern "C" __declspec(dllexport) void GetUniverseRule(int algoindex, char* ruleBuffer, int bufferSize)
+{
+    if (algoindex < 0 || algoindex >= algos.size())
+    {
+        return;
+    }
+
+    auto algo = algos[algoindex];
+
+    if (algo == nullptr)
+    {
+        return;
+    }
+
+    auto rule = algo->getrule();
+
+    if (rule != nullptr && ruleBuffer != nullptr && bufferSize > 0)
+    {
+        strncpy_s(ruleBuffer, bufferSize, rule, bufferSize - 1);
+    }
 }
 
 extern "C" __declspec(dllexport) void SetCell(int index, int x, int y, bool alive)
@@ -360,7 +389,7 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(int index, uint8_t * 
     }
 }
 
-extern "C" __declspec(dllexport) int CreateRender(int w, int h, HWND hWnd, int use3d)
+extern "C" __declspec(dllexport) size_t CreateRender(int w, int h, HWND hWnd, int use3d)
 {
     liferender* render = use3d != 0
         ? (liferender*)new dc3drender(w, h, hWnd)
@@ -371,6 +400,30 @@ extern "C" __declspec(dllexport) int CreateRender(int w, int h, HWND hWnd, int u
     views.push_back(view);
 
     return renderctxs.size() - 1;
+}
+
+extern "C" __declspec(dllexport) int ReadRleFile(int index, const char* filename, char* errbuffer, size_t errbufferlen) {
+    if (index < 0 || index >= algos.size())
+    {
+        return -1;
+    }
+
+    auto algo = algos[index];
+
+    if (algo == nullptr)
+    {
+        return -2;
+    }
+
+    auto err = readpattern(filename, *algo);
+
+    if (err != nullptr)
+    {
+        strncpy_s(errbuffer, errbufferlen, err, errbufferlen - 1);
+        return -3;
+    }
+
+    return 0;
 }
 
 extern "C" __declspec(dllexport) void DestroyRender(int index)
@@ -462,7 +515,7 @@ extern "C" __declspec(dllexport) void DrawViewport(int rctxindex, int algoindex,
 void drawframe(liferender* render, lifealgo* algo, viewport* vp, VIEWINFO* selection, const wchar_t* text)
 {
     int pmscale = 1 << vp->getmag(); // 2^mag, cell size 
-    render->setpmscale(pmscale);
+    render->setpmscale(float(pmscale));
     render->begindraw();
     render->clear();
 

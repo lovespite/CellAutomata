@@ -17,6 +17,9 @@ namespace CellAutomata
         internal static partial int SetUniverseRule(int index, string rule);
 
         [LibraryImport(HashLifeLib)]
+        internal static partial void GetUniverseRule(int index, IntPtr buffer, int bufferSize);
+
+        [LibraryImport(HashLifeLib)]
         internal static partial int CreateRender(int w, int h, nint canvas, int use3d);
 
         [LibraryImport(HashLifeLib)]
@@ -63,5 +66,8 @@ namespace CellAutomata
 
         [LibraryImport(HashLifeLib)]
         internal static partial void Version([In, Out] byte[] buffer, int bufferSize);
+
+        [LibraryImport(HashLifeLib, StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial int ReadRleFile(int index, string filename, IntPtr errbuffer, ulong errbufferSize);
     }
 }
