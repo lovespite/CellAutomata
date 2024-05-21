@@ -7,20 +7,11 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System;
+using CellAutomata.Render;
 
 namespace CellAutomata.Algos;
 
-[StructLayout(LayoutKind.Sequential)]
-public struct VIEWINFO
-{
-    public int EMPTY;
-    public int psl_x1; // selection rect point 1
-    public int psl_y1; // selection rect point 1
-    public int psl_x2; // selection rect point 2
-    public int psl_y2; // selection rect point 2 
-}
-
-public partial class HashLifeMap : ILifeMap
+public partial class HashLifeMap : ILifeMap, IDCRender
 {
     public int GenInterval { get; set; } = 10;
 
@@ -34,8 +25,29 @@ public partial class HashLifeMap : ILifeMap
         return new PointL(col, row);
     }
 
+    public IDCRender GetDCRender()
+    {
+        return this;
+    }
+
+    private bool _isSuspended = false;
+    public bool IsSuspended => _isSuspended;
+    public void Suspend()
+    {
+        _isSuspended = true;
+        HashLifeMapStatic.SuspendRender(_renderContextId);
+    }
+
+    public void Resume()
+    {
+        _isSuspended = false;
+        HashLifeMapStatic.ResumeRender(_renderContextId);
+    }
+
     public void DrawViewportDC(nint hWndCanvas, int mag, Size vwSize, Point center, ref VIEWINFO selection, string text)
     {
+        if (_isSuspended) return;
+
         if (_renderContextId < 0)
         {
             _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas, Use3dRender);
@@ -44,21 +56,18 @@ public partial class HashLifeMap : ILifeMap
         else if (_vwSize != vwSize)
         {
             HashLifeMapStatic.ResizeViewport(_renderContextId, vwSize.Width, vwSize.Height); // Resize render context
-            //HashLifeMapStatic.
-            //            // Resize render context
-            //            DestroyRender(_renderContextId);
-            //_renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas, Use3dRender);
+
             _vwSize = vwSize;
 
-            Debug.WriteLine("Resize render context: " + _renderContextId);
+            Debug.WriteLine($"Resize render to: {_vwSize}");
         }
 
-        HashLifeMapStatic.
-                DrawViewport(
+        HashLifeMapStatic.DrawViewport(
             _renderContextId,
             _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height,
             ref selection,
-            text);
+            text
+        );
     }
 
     private static readonly string _version;

@@ -713,6 +713,7 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
 void dc3drender::resize(int w, int h) {
 
     waitfordrawing(); // 等待绘制完成
+    bool wasSuspended = _suspend;
     suspend(); // 暂停绘制
 
     currwd = w;
@@ -742,7 +743,7 @@ void dc3drender::resize(int w, int h) {
 
     InitializeDirectWrite();
 
-    resume(); // 恢复绘制
+    if (!wasSuspended) resume(); // 恢复绘制
 }
 
 void dc3drender::begindraw() {

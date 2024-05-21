@@ -8,8 +8,7 @@
 #include <vector>
 #include <cmath> 
 #include <cstringt.h>
-#include "liferender.h"
-#include "dcrender.h"
+#include "liferender.h" 
 #include "dc3drender.h"
 #include "dllmain.h"
 #include "readpattern.h"
@@ -391,15 +390,44 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(int index, uint8_t * 
 
 extern "C" __declspec(dllexport) size_t CreateRender(int w, int h, HWND hWnd, int use3d)
 {
-    liferender* render = use3d != 0
-        ? (liferender*)new dc3drender(w, h, hWnd)
-        : (liferender*)new dcrender(w, h, hWnd);
+    liferender* render = (liferender*)new dc3drender(w, h, hWnd);
 
     auto view = new viewport(w, h);
     renderctxs.push_back(render);
     views.push_back(view);
 
     return renderctxs.size() - 1;
+}
+
+extern "C" __declspec(dllexport) void SuspendRender(int index)
+{
+    if (index < 0 || index >= renderctxs.size())
+    {
+        return;
+    }
+
+    auto render = renderctxs[index];
+
+    if (render != nullptr)
+    {
+        render->suspend();
+        render->waitfordrawing();
+    }
+}
+
+extern "C" __declspec(dllexport) void ResumeRender(int index)
+{
+    if (index < 0 || index >= renderctxs.size())
+    {
+        return;
+    }
+
+    auto render = renderctxs[index];
+
+    if (render != nullptr)
+    {
+        render->resume();
+    }
 }
 
 extern "C" __declspec(dllexport) int ReadRleFile(int index, const char* filename, char* errbuffer, size_t errbufferlen) {

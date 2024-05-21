@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using CellAutomata.Algos;
+using CellAutomata.Render;
 using CellAutomata.Util;
 namespace CellAutomata;
 
@@ -16,6 +17,10 @@ public partial class Form1 : Form
 
     private Point _dragStartPos;
     private Point _dragStartViewPos;
+
+    private PictureBox? _floatLayer;
+    private readonly Brush _foreBrush = new SolidBrush(Color.White);
+    private readonly Brush _backBrush = new SolidBrush(Color.Black);
 
     private bool _isSelecting = false;
     private bool _isDraggingView = false;
@@ -42,6 +47,7 @@ public partial class Form1 : Form
             rule: "B3/S23",
             use3dRender: use3d
             );
+
         _env = new CellEnvironment(lifemap)
         {
             ThreadCount = ThreadCount
@@ -56,8 +62,11 @@ public partial class Form1 : Form
 
     public void Suspend(Action action, bool invokeRequired = false)
     {
-        bool isRunning = _cts is not null;
+        bool wasRunning = _cts != null;
+        bool wasSuspended = _env.GetDCRender().IsSuspended;
+
         Stop();
+        _env.GetDCRender().Suspend();
 
         try
         {
@@ -75,15 +84,39 @@ public partial class Form1 : Form
             HandleException(ex);
         }
 
-        if (isRunning)
-        {
-            Start();
-        }
+        if (!wasSuspended) _env.GetDCRender().Resume();
+        if (wasRunning) Start();
     }
+
+    public Task SuspendAsync(Action action, bool invokeRequired = false)
+    {
+        bool wasRunning = _cts != null;
+        bool wasSuspended = _env.GetDCRender().IsSuspended;
+        Stop();  // 停止当前操作
+        _env.GetDCRender().Suspend();
+
+        Task t = invokeRequired
+            ? Task.Run(() => Invoke(action))
+            : Task.Run(action);
+
+        return t.ContinueWith(task =>
+        {
+            if (task.IsFaulted)
+            {
+                HandleException(task.Exception!);
+            }
+
+            if (!wasSuspended) _env.GetDCRender().Resume();
+            if (wasRunning) Start();
+        });
+    }
+
     public async Task SuspendAsync(Func<Task> action, bool invokeRequired = false)
     {
         bool wasRunning = _cts != null;
+        bool wasSuspended = _env.GetDCRender().IsSuspended;
         Stop();  // 停止当前操作
+        _env.GetDCRender().Suspend();
 
         try
         {
@@ -101,10 +134,8 @@ public partial class Form1 : Form
             HandleException(ex); // 处理异常
         }
 
-        if (wasRunning)
-        {
-            Start(); // 如果之前在运行，重新启动
-        }
+        if (!wasSuspended) _env.GetDCRender().Resume();
+        if (wasRunning) Start();
     }
 
     #endregion
@@ -258,7 +289,7 @@ public partial class Form1 : Form
         var task = SuspendAsync(async () =>
         {
             reporter.ReportProgress(0, "Reading file...", TimeSpan.Zero);
-            _env.Clear();
+            // _env.Clear();
 
             await Task.Run(() => _env.LifeMap.ReadRle(file));
 
@@ -281,6 +312,7 @@ public partial class Form1 : Form
     private void Form1_Resize(object? sender, EventArgs e)
     {
         _view.Resize(canvas.Width, canvas.Height);
+        _floatLayer?.Invalidate();
     }
     private void Form1_Load(object sender, EventArgs e)
     {
@@ -294,7 +326,7 @@ public partial class Form1 : Form
         //    CanvasHandle = canvas.Handle,
         //};
 
-        _view = new ViewWindowDx2dRaw(_env, new Size(vw, vh), canvas.Handle);
+        _view = new ViewWindow(_env, new Size(vw, vh), canvas.Handle);
         MouseWheel += Form1_MouseWheel;
 
         _painting.Start();
@@ -512,10 +544,10 @@ public partial class Form1 : Form
     #endregion
 
     #region Edit Menu Event Handlers
-    private void Edit_Clear_Click(object sender, EventArgs e)
+    private void Edit_Reset_Click(object sender, EventArgs e)
     {
         Stop();
-        Suspend(_env.Clear); // clear all cells
+        Suspend(_env.Reset); // clear all cells
     }
     private void Edit_SelectAll_Click(object sender, EventArgs e)
     {
@@ -527,8 +559,19 @@ public partial class Form1 : Form
         if (!_view.IsSelected) return;
 
         var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
 
-        Suspend(() => _env.LifeMap.ClearRect(ref selection));
+        if (selection.Width * selection.Height > 50_000)
+        {
+            using var reporter = new TaskProgressReporter("Clearing", "Please wait ...");
+            var t = SuspendAsync(() => _env.LifeMap.ClearRect(ref selection));
+            reporter.Wait(t);
+        }
+        else
+        {
+            Suspend(() => _env.LifeMap.ClearRect(ref selection));
+        }
+
     }
     private void Edit_ClearUnselected_Click(object sender, EventArgs e)
     {
@@ -911,6 +954,73 @@ public partial class Form1 : Form
     private void View_ZoomOut_Click(object sender, EventArgs e)
     {
         _view.ZoomOut(); // 缩小
+    }
+
+    private void View_Suspend_Click(object? sender, EventArgs e)
+    {
+        if (_env.GetDCRender().IsSuspended)
+        {
+            var wasRunning = _floatLayer?.Tag as bool? ?? false;
+
+            _floatLayer?.Dispose();
+            _floatLayer = null;
+            _env.GetDCRender().Resume();
+
+            if (wasRunning) Start();
+            BtnSuspendView.Text = "Suspend";
+        }
+        else
+        {
+            var wasRunning = _cts != null;
+            Stop();
+            _env.GetDCRender().Suspend();
+            BtnSuspendView.Text = "Resume";
+
+            _floatLayer = new PictureBox
+            {
+                BackColor = Color.Black,
+                Width = canvas.Width,
+                Height = canvas.Height,
+                Location = canvas.Location,
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
+                Tag = wasRunning,
+            };
+
+            _floatLayer.Click += View_Suspend_Click;
+
+            _floatLayer.Paint += (sender, e) =>
+            {
+                var g = e.Graphics;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.Clear(Color.Black);
+                int vw = _floatLayer.Width;
+                int vh = _floatLayer.Height;
+
+                int circleSize = 100;
+                int symbolSize = 30;
+
+                // draw a circle
+                g.FillEllipse(_foreBrush, vw / 2 - circleSize / 2, vh / 2 - circleSize / 2, circleSize, circleSize);
+
+                // draw a pause symbol
+                g.FillRectangle(_backBrush, vw / 2 - symbolSize / 2, vh / 2 - symbolSize / 2, symbolSize, symbolSize);
+                g.FillRectangle(_foreBrush, vw / 2 - symbolSize / 3 / 2, vh / 2 - symbolSize / 2 - 1, symbolSize / 3, symbolSize + 2);
+
+                // draw a text 
+                var text = "Click To Resume";
+                var size = g.MeasureString(text, Font);
+                g.DrawString(text, Font, _foreBrush, vw / 2 - size.Width / 2, vh / 2 + circleSize / 2 + 10);
+            };
+
+            canvas.Parent!.Controls.Add(_floatLayer);
+            _floatLayer.BringToFront();
+        }
+    }
+
+    private void _floatLayer_Paint(object? sender, PaintEventArgs e)
+    {
+        throw new NotImplementedException();
     }
 
     #endregion

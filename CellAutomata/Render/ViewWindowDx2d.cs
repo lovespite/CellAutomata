@@ -9,7 +9,7 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Drawing;
 
-namespace CellAutomata;
+namespace CellAutomata.Render;
 
 public class ViewWindowDx2d : ViewWindowBase
 {

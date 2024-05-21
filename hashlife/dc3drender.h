@@ -156,6 +156,11 @@ public:
 
     void resume() {
         _suspend = false;
+
+    }
+
+    bool isdrawing() {
+        return _isDrawing;
     }
 
     ~dc3drender() {
@@ -163,11 +168,13 @@ public:
     }
 
     void waitfordrawing() {
+        OutputDebugString(L"Waiting for drawing\n");
         while (_isDrawing)
         {
             Sleep(1);
         }
         WaitForGPU();
+        OutputDebugString(L"Drawing finished\n");
     }
 
     void initialize()

@@ -2,13 +2,14 @@
 using System.Drawing.Printing;
 using System.Runtime.InteropServices;
 using CellAutomata.Algos;
+using CellAutomata.Render;
 using CellAutomata.Util;
 
 namespace CellAutomata;
 
-public class CellEnvironment
+public class CellEnvironment(ILifeMap bitmap)
 {
-    private readonly ILifeMap _lifemap;
+    private readonly ILifeMap _lifemap = bitmap;
 
     /// <summary>
     /// Milliseconds
@@ -33,14 +34,14 @@ public class CellEnvironment
         }
     }
 
+    public IDCRender GetDCRender()
+    {
+        return LifeMap.GetDCRender();
+    }
+
     public ILifeMap LifeMap => _lifemap;
 
     private readonly object _lock = new();
-
-    public CellEnvironment(ILifeMap bitmap)
-    {
-        _lifemap = bitmap;
-    }
 
     public void Lock(Action<ILifeMap> action)
     {
@@ -64,13 +65,6 @@ public class CellEnvironment
 
     public long MsCPUTime => _lifemap.MsCPUTime; // milliseconds 
 
-    public bool IsAlive(int row, int col)
-    {
-        lock (_lock)
-        {
-            return _lifemap.Get(row, col);
-        }
-    }
 
     public void NextGeneration()
     {
@@ -104,11 +98,11 @@ public class CellEnvironment
         }
     }
 
-    public void Clear()
+    public void Reset()
     {
         lock (_lock)
         {
-            ClearInternal();
+            ResetInternal();
         }
     }
 
@@ -130,7 +124,7 @@ public class CellEnvironment
 
         var buffer = new byte[Marshal.SizeOf<int>() * 2];
         float totalCount = cells.Length;
-        progress?.ReportProgress(0, "Transforming data...", TimeSpan.Zero); 
+        progress?.ReportProgress(0, "Transforming data...", TimeSpan.Zero);
 
         for (int i = 0; i < cells.Length; i++)
         {
@@ -204,7 +198,7 @@ public class CellEnvironment
         _lifemap.Set(row, col, false);
     }
 
-    private void ClearInternal()
+    private void ResetInternal()
     {
         _lifemap.Clear();
     }

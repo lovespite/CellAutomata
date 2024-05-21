@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
 
-namespace CellAutomata;
+namespace CellAutomata.Render;
 public abstract class ViewWindowBase
 {
     protected readonly CellEnvironment _cellEnvironment;

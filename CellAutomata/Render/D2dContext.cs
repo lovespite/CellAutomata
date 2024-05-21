@@ -9,7 +9,7 @@ using AlphaMode = SharpDX.Direct2D1.AlphaMode;
 using Device = SharpDX.Direct3D11.Device;
 using Factory = SharpDX.DXGI.Factory;
 
-namespace CellAutomata;
+namespace CellAutomata.Render;
 
 public class D2dWindowContext : ID2dContext, IDisposable
 {

@@ -101,6 +101,11 @@ public:
 
     virtual void destroy() = 0;
 
+    virtual void suspend() = 0;
+    virtual void resume() = 0;
+
+    virtual bool isdrawing() = 0;
+    virtual void waitfordrawing() = 0;
 };
 const unsigned char colors[] = {
     0, 255, // r: dead, alive 

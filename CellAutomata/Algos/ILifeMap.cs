@@ -1,4 +1,6 @@
-﻿namespace CellAutomata.Algos;
+﻿using CellAutomata.Render;
+
+namespace CellAutomata.Algos;
 
 public enum CopyMode
 {
@@ -22,6 +24,8 @@ public interface ILifeMap : I2DBitMutator, IDisposable
     int GenInterval { get; set; }
     string Rule { get; set; }
 
+    IDCRender GetDCRender();
+
     ILifeMap CreateSnapshot();
 
     ILifeMap CreateRegionSnapshot(Rectangle rect);
@@ -35,7 +39,7 @@ public interface ILifeMap : I2DBitMutator, IDisposable
     RectangleL GetBounds();
 
     void NextGeneration();
-     
+
     void ReadRle(string filename);
 
     Bitmap DrawRegionBitmap(Rectangle rectangle);

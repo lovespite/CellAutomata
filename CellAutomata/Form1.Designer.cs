@@ -42,7 +42,6 @@
             fillToolStripMenuItem = new ToolStripMenuItem();
             clearCellsToolStripMenuItem = new ToolStripMenuItem();
             clearUnselectedCellsToolStripMenuItem = new ToolStripMenuItem();
-            clearAllToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator3 = new ToolStripSeparator();
             copyToolStripMenuItem = new ToolStripMenuItem();
             cutToolStripMenuItem = new ToolStripMenuItem();
@@ -65,6 +64,8 @@
             randomFill25ToolStripMenuItem = new ToolStripMenuItem();
             randomFille50ToolStripMenuItem = new ToolStripMenuItem();
             berlinNoiseToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator10 = new ToolStripSeparator();
+            clearAllToolStripMenuItem = new ToolStripMenuItem();
             actionToolStripMenuItem = new ToolStripMenuItem();
             setRuleToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator7 = new ToolStripSeparator();
@@ -78,14 +79,16 @@
             fitToolStripMenuItem = new ToolStripMenuItem();
             movePointToCenterToolStripMenuItem = new ToolStripMenuItem();
             moveSelectionToCenterToolStripMenuItem = new ToolStripMenuItem();
+            moveToToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator8 = new ToolStripSeparator();
             createNewViewToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator9 = new ToolStripSeparator();
             zoomInToolStripMenuItem = new ToolStripMenuItem();
             zoomOutToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator11 = new ToolStripSeparator();
+            BtnSuspendView = new ToolStripMenuItem();
             splitContainer1 = new SplitContainer();
             panel1 = new Panel();
-            moveToToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -181,7 +184,7 @@
             // 
             // editToolStripMenuItem
             // 
-            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, clearUnselectedCellsToolStripMenuItem, clearAllToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, pasteMethodToolStripMenuItem, toolStripSeparator2, selectAllToolStripMenuItem, shrinkSelectionToolStripMenuItem, clearSelectionToolStripMenuItem, toolStripSeparator4, rotateToolStripMenuItem, flipUpDownToolStripMenuItem, flipLeftRightToolStripMenuItem, toolStripSeparator6, randomizeToolStripMenuItem });
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, clearUnselectedCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, pasteMethodToolStripMenuItem, toolStripSeparator2, selectAllToolStripMenuItem, shrinkSelectionToolStripMenuItem, clearSelectionToolStripMenuItem, toolStripSeparator4, rotateToolStripMenuItem, flipUpDownToolStripMenuItem, flipLeftRightToolStripMenuItem, toolStripSeparator6, randomizeToolStripMenuItem, toolStripSeparator10, clearAllToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(42, 21);
             editToolStripMenuItem.Text = "&Edit";
@@ -190,7 +193,7 @@
             // 
             fillToolStripMenuItem.Name = "fillToolStripMenuItem";
             fillToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.F;
-            fillToolStripMenuItem.Size = new Size(280, 22);
+            fillToolStripMenuItem.Size = new Size(270, 22);
             fillToolStripMenuItem.Text = "&Fill";
             fillToolStripMenuItem.Click += Edit_FillSelectedRegion_Click;
             // 
@@ -198,36 +201,28 @@
             // 
             clearCellsToolStripMenuItem.Name = "clearCellsToolStripMenuItem";
             clearCellsToolStripMenuItem.ShortcutKeys = Keys.Delete;
-            clearCellsToolStripMenuItem.Size = new Size(280, 22);
+            clearCellsToolStripMenuItem.Size = new Size(270, 22);
             clearCellsToolStripMenuItem.Text = "&Clear selected cells";
             clearCellsToolStripMenuItem.Click += Edit_ClearSelected_Click;
             // 
             // clearUnselectedCellsToolStripMenuItem
             // 
             clearUnselectedCellsToolStripMenuItem.Name = "clearUnselectedCellsToolStripMenuItem";
-            clearUnselectedCellsToolStripMenuItem.ShortcutKeys = Keys.Shift | Keys.Delete;
-            clearUnselectedCellsToolStripMenuItem.Size = new Size(280, 22);
+            clearUnselectedCellsToolStripMenuItem.ShortcutKeys = Keys.Alt | Keys.Delete;
+            clearUnselectedCellsToolStripMenuItem.Size = new Size(270, 22);
             clearUnselectedCellsToolStripMenuItem.Text = "C&lear unselected cells";
             clearUnselectedCellsToolStripMenuItem.Click += Edit_ClearUnselected_Click;
-            // 
-            // clearAllToolStripMenuItem
-            // 
-            clearAllToolStripMenuItem.Name = "clearAllToolStripMenuItem";
-            clearAllToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.Delete;
-            clearAllToolStripMenuItem.Size = new Size(280, 22);
-            clearAllToolStripMenuItem.Text = "Clea&r all";
-            clearAllToolStripMenuItem.Click += Edit_Clear_Click;
             // 
             // toolStripSeparator3
             // 
             toolStripSeparator3.Name = "toolStripSeparator3";
-            toolStripSeparator3.Size = new Size(277, 6);
+            toolStripSeparator3.Size = new Size(267, 6);
             // 
             // copyToolStripMenuItem
             // 
             copyToolStripMenuItem.Name = "copyToolStripMenuItem";
             copyToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.C;
-            copyToolStripMenuItem.Size = new Size(280, 22);
+            copyToolStripMenuItem.Size = new Size(270, 22);
             copyToolStripMenuItem.Text = "C&opy";
             copyToolStripMenuItem.Click += Edit_Copy_Click;
             // 
@@ -235,7 +230,7 @@
             // 
             cutToolStripMenuItem.Name = "cutToolStripMenuItem";
             cutToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.X;
-            cutToolStripMenuItem.Size = new Size(280, 22);
+            cutToolStripMenuItem.Size = new Size(270, 22);
             cutToolStripMenuItem.Text = "C&ut";
             cutToolStripMenuItem.Click += Edit_Cut_Click;
             // 
@@ -243,7 +238,7 @@
             // 
             pasteToolStripMenuItem.Name = "pasteToolStripMenuItem";
             pasteToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.V;
-            pasteToolStripMenuItem.Size = new Size(280, 22);
+            pasteToolStripMenuItem.Size = new Size(270, 22);
             pasteToolStripMenuItem.Text = "&Paste";
             pasteToolStripMenuItem.Click += Edit_Paste_Click;
             // 
@@ -251,7 +246,7 @@
             // 
             pasteMethodToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { pasteOverwrite, pasteOr, pasteAnd, pasteXor });
             pasteMethodToolStripMenuItem.Name = "pasteMethodToolStripMenuItem";
-            pasteMethodToolStripMenuItem.Size = new Size(280, 22);
+            pasteMethodToolStripMenuItem.Size = new Size(270, 22);
             pasteMethodToolStripMenuItem.Text = "Paste metho&d";
             // 
             // pasteOverwrite
@@ -287,13 +282,13 @@
             // toolStripSeparator2
             // 
             toolStripSeparator2.Name = "toolStripSeparator2";
-            toolStripSeparator2.Size = new Size(277, 6);
+            toolStripSeparator2.Size = new Size(267, 6);
             // 
             // selectAllToolStripMenuItem
             // 
             selectAllToolStripMenuItem.Name = "selectAllToolStripMenuItem";
             selectAllToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.A;
-            selectAllToolStripMenuItem.Size = new Size(280, 22);
+            selectAllToolStripMenuItem.Size = new Size(270, 22);
             selectAllToolStripMenuItem.Text = "S&elect all";
             selectAllToolStripMenuItem.Click += Edit_SelectAll_Click;
             // 
@@ -301,7 +296,7 @@
             // 
             shrinkSelectionToolStripMenuItem.Name = "shrinkSelectionToolStripMenuItem";
             shrinkSelectionToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.A;
-            shrinkSelectionToolStripMenuItem.Size = new Size(280, 22);
+            shrinkSelectionToolStripMenuItem.Size = new Size(270, 22);
             shrinkSelectionToolStripMenuItem.Text = "S&hrink selection";
             shrinkSelectionToolStripMenuItem.Click += Edit_ShrinkSelection_Click;
             // 
@@ -309,20 +304,20 @@
             // 
             clearSelectionToolStripMenuItem.Name = "clearSelectionToolStripMenuItem";
             clearSelectionToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.A;
-            clearSelectionToolStripMenuItem.Size = new Size(280, 22);
+            clearSelectionToolStripMenuItem.Size = new Size(270, 22);
             clearSelectionToolStripMenuItem.Text = "Clear &selection";
             clearSelectionToolStripMenuItem.Click += Edit_ClearSelection_Click;
             // 
             // toolStripSeparator4
             // 
             toolStripSeparator4.Name = "toolStripSeparator4";
-            toolStripSeparator4.Size = new Size(277, 6);
+            toolStripSeparator4.Size = new Size(267, 6);
             // 
             // rotateToolStripMenuItem
             // 
             rotateToolStripMenuItem.Name = "rotateToolStripMenuItem";
             rotateToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.R;
-            rotateToolStripMenuItem.Size = new Size(280, 22);
+            rotateToolStripMenuItem.Size = new Size(270, 22);
             rotateToolStripMenuItem.Text = "Ro&tate";
             rotateToolStripMenuItem.Click += Edit_RotateSelected_Click;
             // 
@@ -330,7 +325,7 @@
             // 
             flipUpDownToolStripMenuItem.Name = "flipUpDownToolStripMenuItem";
             flipUpDownToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.Down;
-            flipUpDownToolStripMenuItem.Size = new Size(280, 22);
+            flipUpDownToolStripMenuItem.Size = new Size(270, 22);
             flipUpDownToolStripMenuItem.Text = "Flip - UpDo&wn";
             flipUpDownToolStripMenuItem.Click += Edit_FlipUpDownSelected_Click;
             // 
@@ -338,20 +333,20 @@
             // 
             flipLeftRightToolStripMenuItem.Name = "flipLeftRightToolStripMenuItem";
             flipLeftRightToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.Right;
-            flipLeftRightToolStripMenuItem.Size = new Size(280, 22);
+            flipLeftRightToolStripMenuItem.Size = new Size(270, 22);
             flipLeftRightToolStripMenuItem.Text = "Flip - LeftRi&ght";
             flipLeftRightToolStripMenuItem.Click += Edit_FlipLeftRight_Click;
             // 
             // toolStripSeparator6
             // 
             toolStripSeparator6.Name = "toolStripSeparator6";
-            toolStripSeparator6.Size = new Size(277, 6);
+            toolStripSeparator6.Size = new Size(267, 6);
             // 
             // randomizeToolStripMenuItem
             // 
             randomizeToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { randomFill25ToolStripMenuItem, randomFille50ToolStripMenuItem, berlinNoiseToolStripMenuItem });
             randomizeToolStripMenuItem.Name = "randomizeToolStripMenuItem";
-            randomizeToolStripMenuItem.Size = new Size(280, 22);
+            randomizeToolStripMenuItem.Size = new Size(270, 22);
             randomizeToolStripMenuItem.Text = "R&andomize";
             // 
             // randomFill25ToolStripMenuItem
@@ -375,6 +370,19 @@
             berlinNoiseToolStripMenuItem.Size = new Size(192, 22);
             berlinNoiseToolStripMenuItem.Text = "&Berlin Noise";
             berlinNoiseToolStripMenuItem.Click += Edit_FillBerlinNoise_Click;
+            // 
+            // toolStripSeparator10
+            // 
+            toolStripSeparator10.Name = "toolStripSeparator10";
+            toolStripSeparator10.Size = new Size(267, 6);
+            // 
+            // clearAllToolStripMenuItem
+            // 
+            clearAllToolStripMenuItem.Name = "clearAllToolStripMenuItem";
+            clearAllToolStripMenuItem.ShortcutKeys = Keys.F12;
+            clearAllToolStripMenuItem.Size = new Size(270, 22);
+            clearAllToolStripMenuItem.Text = "&Reset";
+            clearAllToolStripMenuItem.Click += Edit_Reset_Click;
             // 
             // actionToolStripMenuItem
             // 
@@ -436,7 +444,7 @@
             // 
             // viewToolStripMenuItem
             // 
-            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { homeToolStripMenuItem, fitToolStripMenuItem, movePointToCenterToolStripMenuItem, moveSelectionToCenterToolStripMenuItem, moveToToolStripMenuItem, toolStripSeparator8, createNewViewToolStripMenuItem, toolStripSeparator9, zoomInToolStripMenuItem, zoomOutToolStripMenuItem });
+            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { homeToolStripMenuItem, fitToolStripMenuItem, movePointToCenterToolStripMenuItem, moveSelectionToCenterToolStripMenuItem, moveToToolStripMenuItem, toolStripSeparator8, createNewViewToolStripMenuItem, toolStripSeparator9, zoomInToolStripMenuItem, zoomOutToolStripMenuItem, toolStripSeparator11, BtnSuspendView });
             viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             viewToolStripMenuItem.ShortcutKeyDisplayString = "";
             viewToolStripMenuItem.Size = new Size(47, 21);
@@ -475,6 +483,14 @@
             moveSelectionToCenterToolStripMenuItem.Text = "Move &selection to center";
             moveSelectionToCenterToolStripMenuItem.Click += View_MoveToCenterOfSelection_Click;
             // 
+            // moveToToolStripMenuItem
+            // 
+            moveToToolStripMenuItem.Name = "moveToToolStripMenuItem";
+            moveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.F1;
+            moveToToolStripMenuItem.Size = new Size(302, 22);
+            moveToToolStripMenuItem.Text = "Move &to";
+            moveToToolStripMenuItem.Click += View_MoveTo_Click;
+            // 
             // toolStripSeparator8
             // 
             toolStripSeparator8.Name = "toolStripSeparator8";
@@ -509,6 +525,19 @@
             zoomOutToolStripMenuItem.Text = "Zoom &Out";
             zoomOutToolStripMenuItem.Click += View_ZoomOut_Click;
             // 
+            // toolStripSeparator11
+            // 
+            toolStripSeparator11.Name = "toolStripSeparator11";
+            toolStripSeparator11.Size = new Size(299, 6);
+            // 
+            // BtnSuspendView
+            // 
+            BtnSuspendView.Name = "BtnSuspendView";
+            BtnSuspendView.ShortcutKeys = Keys.Control | Keys.F11;
+            BtnSuspendView.Size = new Size(302, 22);
+            BtnSuspendView.Text = "S&uspend";
+            BtnSuspendView.Click += View_Suspend_Click;
+            // 
             // splitContainer1
             // 
             splitContainer1.BorderStyle = BorderStyle.Fixed3D;
@@ -532,14 +561,6 @@
             panel1.Name = "panel1";
             panel1.Size = new Size(1030, 641);
             panel1.TabIndex = 10;
-            // 
-            // moveToToolStripMenuItem
-            // 
-            moveToToolStripMenuItem.Name = "moveToToolStripMenuItem";
-            moveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.F1;
-            moveToToolStripMenuItem.Size = new Size(302, 22);
-            moveToToolStripMenuItem.Text = "Move to";
-            moveToToolStripMenuItem.Click += View_MoveTo_Click;
             // 
             // Form1
             // 
@@ -628,5 +649,8 @@
         private ToolStripMenuItem readGollyFileToolStripMenuItem;
         private ToolStripMenuItem loadBmpImageToolStripMenuItem;
         private ToolStripMenuItem moveToToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator10;
+        private ToolStripSeparator toolStripSeparator11;
+        private ToolStripMenuItem BtnSuspendView;
     }
 }

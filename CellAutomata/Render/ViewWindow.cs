@@ -2,12 +2,12 @@
 using SharpDX.Mathematics.Interop;
 using System.Diagnostics;
 
-namespace CellAutomata;
+namespace CellAutomata.Render;
 
-public class ViewWindowDx2dRaw : ViewWindowBase
+public class ViewWindow : ViewWindowBase
 {
     private readonly nint _canvas;
-    public ViewWindowDx2dRaw(CellEnvironment cells, Size vwSize, nint canvas)
+    public ViewWindow(CellEnvironment cells, Size vwSize, nint canvas)
         : base(cells, vwSize.Width, vwSize.Height, 1)
     {
         if (cells.LifeMap is not HashLifeMap)
@@ -39,7 +39,7 @@ public class ViewWindowDx2dRaw : ViewWindowBase
 
     public override void Draw(Graphics? graphics)
     {
-        DrawMainView4(_cellEnvironment.LifeMap);
+        DrawMainView4(_cellEnvironment.LifeMap.GetDCRender());
     }
     private ulong _frames = 0;
     private readonly Stopwatch _sw = Stopwatch.StartNew();
@@ -47,17 +47,14 @@ public class ViewWindowDx2dRaw : ViewWindowBase
 
     private float _fps; // frames per second 
     private string text = string.Empty;
-    private void DrawMainView4(ILifeMap bitmap)
+    private void DrawMainView4(IDCRender render)
     {
-        if (bitmap is not HashLifeMap hlm) return;
         if (_canvas == 0) return;
 
         var mag = _cellSize > 0
             ? (int)Math.Log2(_cellSize)
             : 0;
 
-        var viewCX = _pxViewWidth * 0.5F;
-        var viewCY = _pxViewHeight * 0.5F;
         var selection = GetSelection();
 
         VIEWINFO selview = new();
@@ -76,7 +73,7 @@ public class ViewWindowDx2dRaw : ViewWindowBase
             selview.psl_y2 = selection.Bottom;
         }
 
-        hlm.DrawViewportDC(_canvas, mag, _vwSize, _center, ref selview, text);
+        render.DrawViewportDC(_canvas, mag, _vwSize, _center, ref selview, text);
 
         if (_sw.ElapsedMilliseconds > 500)
         {

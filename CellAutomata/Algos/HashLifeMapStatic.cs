@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using CellAutomata.Algos;
+using CellAutomata.Render;
 
 namespace CellAutomata
 {
@@ -21,6 +22,12 @@ namespace CellAutomata
 
         [LibraryImport(HashLifeLib)]
         internal static partial int CreateRender(int w, int h, nint canvas, int use3d);
+
+        [LibraryImport(HashLifeLib)]
+        internal static partial void SuspendRender(int index);
+
+        [LibraryImport(HashLifeLib)]
+        internal static partial void ResumeRender(int index);
 
         [LibraryImport(HashLifeLib)]
         internal static partial void DestroyRender(int renderCtx);
