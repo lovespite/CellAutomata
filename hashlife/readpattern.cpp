@@ -229,6 +229,7 @@ const char* readrle(lifealgo& imp, char* line) {
                 ruleptr = p;
                 int slashCount = 0;
                 while (*p > ' ') {
+                    if (*p == ':') break;
                     if (*p == '/') slashCount++;
                     if (slashCount == 2) break; // Only one slash is allowed
                     p++;

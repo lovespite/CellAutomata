@@ -32,8 +32,10 @@
             label1 = new Label();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
-            loadFileToolStripMenuItem = new ToolStripMenuItem();
             saveToToolStripMenuItem = new ToolStripMenuItem();
+            loadFileToolStripMenuItem = new ToolStripMenuItem();
+            readGollyFileToolStripMenuItem = new ToolStripMenuItem();
+            loadBmpImageToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
             exitToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
@@ -83,8 +85,7 @@
             zoomOutToolStripMenuItem = new ToolStripMenuItem();
             splitContainer1 = new SplitContainer();
             panel1 = new Panel();
-            readGollyFileToolStripMenuItem = new ToolStripMenuItem();
-            loadBmpImageToolStripMenuItem = new ToolStripMenuItem();
+            moveToToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
@@ -135,31 +136,46 @@
             fileToolStripMenuItem.Size = new Size(39, 21);
             fileToolStripMenuItem.Text = "&File";
             // 
-            // loadFileToolStripMenuItem
-            // 
-            loadFileToolStripMenuItem.Name = "loadFileToolStripMenuItem";
-            loadFileToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Q;
-            loadFileToolStripMenuItem.Size = new Size(205, 22);
-            loadFileToolStripMenuItem.Text = "&Load file";
-            loadFileToolStripMenuItem.Click += File_Load_Click;
-            // 
             // saveToToolStripMenuItem
             // 
             saveToToolStripMenuItem.Name = "saveToToolStripMenuItem";
             saveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
-            saveToToolStripMenuItem.Size = new Size(205, 22);
+            saveToToolStripMenuItem.Size = new Size(204, 22);
             saveToToolStripMenuItem.Text = "&Save to";
             saveToToolStripMenuItem.Click += File_Save_Click;
+            // 
+            // loadFileToolStripMenuItem
+            // 
+            loadFileToolStripMenuItem.Name = "loadFileToolStripMenuItem";
+            loadFileToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Q;
+            loadFileToolStripMenuItem.Size = new Size(204, 22);
+            loadFileToolStripMenuItem.Text = "&Load file";
+            loadFileToolStripMenuItem.Click += File_Load_Click;
+            // 
+            // readGollyFileToolStripMenuItem
+            // 
+            readGollyFileToolStripMenuItem.Name = "readGollyFileToolStripMenuItem";
+            readGollyFileToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.G;
+            readGollyFileToolStripMenuItem.Size = new Size(204, 22);
+            readGollyFileToolStripMenuItem.Text = "Load golly file";
+            readGollyFileToolStripMenuItem.Click += File_LoadGollyFile_Click;
+            // 
+            // loadBmpImageToolStripMenuItem
+            // 
+            loadBmpImageToolStripMenuItem.Name = "loadBmpImageToolStripMenuItem";
+            loadBmpImageToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.I;
+            loadBmpImageToolStripMenuItem.Size = new Size(204, 22);
+            loadBmpImageToolStripMenuItem.Text = "Load image";
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(202, 6);
+            toolStripSeparator1.Size = new Size(201, 6);
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(205, 22);
+            exitToolStripMenuItem.Size = new Size(204, 22);
             exitToolStripMenuItem.Text = "&Exit";
             exitToolStripMenuItem.Click += File_Exit_Click;
             // 
@@ -420,7 +436,7 @@
             // 
             // viewToolStripMenuItem
             // 
-            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { homeToolStripMenuItem, fitToolStripMenuItem, movePointToCenterToolStripMenuItem, moveSelectionToCenterToolStripMenuItem, toolStripSeparator8, createNewViewToolStripMenuItem, toolStripSeparator9, zoomInToolStripMenuItem, zoomOutToolStripMenuItem });
+            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { homeToolStripMenuItem, fitToolStripMenuItem, movePointToCenterToolStripMenuItem, moveSelectionToCenterToolStripMenuItem, moveToToolStripMenuItem, toolStripSeparator8, createNewViewToolStripMenuItem, toolStripSeparator9, zoomInToolStripMenuItem, zoomOutToolStripMenuItem });
             viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             viewToolStripMenuItem.ShortcutKeyDisplayString = "";
             viewToolStripMenuItem.Size = new Size(47, 21);
@@ -517,20 +533,13 @@
             panel1.Size = new Size(1030, 641);
             panel1.TabIndex = 10;
             // 
-            // readGollyFileToolStripMenuItem
+            // moveToToolStripMenuItem
             // 
-            readGollyFileToolStripMenuItem.Name = "readGollyFileToolStripMenuItem";
-            readGollyFileToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.G;
-            readGollyFileToolStripMenuItem.Size = new Size(204, 22);
-            readGollyFileToolStripMenuItem.Text = "Load golly file";
-            readGollyFileToolStripMenuItem.Click += File_LoadGollyFile_Click;
-            // 
-            // loadBmpImageToolStripMenuItem
-            // 
-            loadBmpImageToolStripMenuItem.Name = "loadBmpImageToolStripMenuItem";
-            loadBmpImageToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.I;
-            loadBmpImageToolStripMenuItem.Size = new Size(204, 22);
-            loadBmpImageToolStripMenuItem.Text = "Load image";
+            moveToToolStripMenuItem.Name = "moveToToolStripMenuItem";
+            moveToToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.F1;
+            moveToToolStripMenuItem.Size = new Size(302, 22);
+            moveToToolStripMenuItem.Text = "Move to";
+            moveToToolStripMenuItem.Click += View_MoveTo_Click;
             // 
             // Form1
             // 
@@ -618,5 +627,6 @@
         private ToolStripSeparator toolStripSeparator9;
         private ToolStripMenuItem readGollyFileToolStripMenuItem;
         private ToolStripMenuItem loadBmpImageToolStripMenuItem;
+        private ToolStripMenuItem moveToToolStripMenuItem;
     }
 }

@@ -882,6 +882,28 @@ public partial class Form1 : Form
         _view.MoveTo(center.X, center.Y);
 
     }
+    private void View_MoveTo_Click(object sender, EventArgs e)
+    {
+        var ret = Prompt.Show("Move To", "Enter x, y (column, row)", out var coordStr, "0, 0");
+        if (ret != DialogResult.OK) return;
+
+        try
+        {
+            var coord = coordStr!
+                .Split(',')
+                .Select(x => x.Trim())
+                .Select(int.Parse)
+                .ToArray();
+
+            if (coord.Length != 2) throw new FormatException();
+
+            _view.MoveTo(coord[0], coord[1]);
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
+    }
     private void View_ZoomIn_Click(object sender, EventArgs e)
     {
         _view.ZoomIn(); // ·Å´ó

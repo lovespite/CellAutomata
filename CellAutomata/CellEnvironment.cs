@@ -153,7 +153,7 @@ public class CellEnvironment
             }
         }
 
-        progress?.ReportProgress(100, "Done.", TimeSpan.Zero);
+        progress?.ReportProgress(1, "Done.", TimeSpan.Zero);
     }
 
     public async Task LoadFrom(string file, IProgressReporter? progress = null)
@@ -187,7 +187,7 @@ public class CellEnvironment
             }
         }
 
-        progress?.ReportProgress(100, "Done.", TimeSpan.Zero);
+        progress?.ReportProgress(1, "Done.", TimeSpan.Zero);
 
         await Task.Delay(1000);
     }
