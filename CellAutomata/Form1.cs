@@ -955,7 +955,6 @@ public partial class Form1 : Form
     {
         _view.ZoomOut(); // Àı–°
     }
-
     private void View_Suspend_Click(object? sender, EventArgs e)
     {
         if (_env.GetDCRender().IsSuspended)
@@ -1016,11 +1015,6 @@ public partial class Form1 : Form
             canvas.Parent!.Controls.Add(_floatLayer);
             _floatLayer.BringToFront();
         }
-    }
-
-    private void _floatLayer_Paint(object? sender, PaintEventArgs e)
-    {
-        throw new NotImplementedException();
     }
 
     #endregion
