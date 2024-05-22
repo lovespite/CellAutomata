@@ -993,7 +993,7 @@ public partial class Form1 : Form
 
         RandomFill(selection, BerlinNoise.Create(0.1f));
     }
-    private void View_FillGaborNoise_Click(object sender, EventArgs e)
+    private void Edit_FillGabor_Click(object sender, EventArgs e)
     {
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
@@ -1001,6 +1001,13 @@ public partial class Form1 : Form
         RandomFill(selection, GaborFillAlgorithm.Create(selection));
     }
 
+    private void Edit_FillWorly_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        RandomFill(selection, new WorlyFillAlgorithm(10, selection));
+    }
     #endregion
 
     #region Action Menu Event Handlers
@@ -1177,6 +1184,5 @@ public partial class Form1 : Form
         }
     }
 
-    #endregion
-
+    #endregion 
 }

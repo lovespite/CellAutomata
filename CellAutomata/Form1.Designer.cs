@@ -107,6 +107,7 @@
             BtnSuspendView = new ToolStripMenuItem();
             splitContainer1 = new SplitContainer();
             panel1 = new Panel();
+            worlyToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
             canvasContextMenuStrip1.SuspendLayout();
             menuStrip1.SuspendLayout();
@@ -296,7 +297,7 @@
             // 
             // randomizeToolStripMenuItem
             // 
-            randomizeToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fullFillToolStripMenuItem, toolStripSeparator12, randomFill25ToolStripMenuItem, randomFille50ToolStripMenuItem, randomFill75ToolStripMenuItem, toolStripSeparator13, berlinNoiseToolStripMenuItem, fillGaborToolStripMenuItem });
+            randomizeToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fullFillToolStripMenuItem, toolStripSeparator12, randomFill25ToolStripMenuItem, randomFille50ToolStripMenuItem, randomFill75ToolStripMenuItem, toolStripSeparator13, berlinNoiseToolStripMenuItem, fillGaborToolStripMenuItem, worlyToolStripMenuItem });
             randomizeToolStripMenuItem.Name = "randomizeToolStripMenuItem";
             randomizeToolStripMenuItem.Size = new Size(270, 22);
             randomizeToolStripMenuItem.Text = "&Fill";
@@ -354,7 +355,7 @@
             fillGaborToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.G;
             fillGaborToolStripMenuItem.Size = new Size(216, 22);
             fillGaborToolStripMenuItem.Text = "&Gabor";
-            fillGaborToolStripMenuItem.Click += View_FillGaborNoise_Click;
+            fillGaborToolStripMenuItem.Click += Edit_FillGabor_Click;
             // 
             // toolStripSeparator6
             // 
@@ -692,6 +693,14 @@
             panel1.Size = new Size(1030, 641);
             panel1.TabIndex = 10;
             // 
+            // worlyToolStripMenuItem
+            // 
+            worlyToolStripMenuItem.Name = "worlyToolStripMenuItem";
+            worlyToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.W;
+            worlyToolStripMenuItem.Size = new Size(216, 22);
+            worlyToolStripMenuItem.Text = "&Worly";
+            worlyToolStripMenuItem.Click += Edit_FillWorly_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 18F);
@@ -800,5 +809,6 @@
         private ToolStripMenuItem flipUpDownToolStripMenuItem1;
         private ToolStripMenuItem flipLeftRightToolStripMenuItem1;
         private ToolStripMenuItem fillGaborToolStripMenuItem;
+        private ToolStripMenuItem worlyToolStripMenuItem;
     }
 }
