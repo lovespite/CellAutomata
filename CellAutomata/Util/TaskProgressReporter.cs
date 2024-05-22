@@ -1,12 +1,17 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.SymbolStore;
 using Timer = System.Threading.Timer;
 
 namespace CellAutomata.Util;
 
 public partial class TaskProgressReporter : Form, IProgressReporter
 {
-    public event EventHandler? Canceled;
     private readonly TaskCompletionSource<object?> _formInit;
+    private readonly CancellationTokenSource? _cts;
+
+    public bool IsAborted => _cts?.IsCancellationRequested ?? false;
+
+    public CancellationToken CancelToken => _cts?.Token ?? CancellationToken.None;
 
     public TaskProgressReporter(string title = "Task", string description = "Please wait ...", bool allowAbort = false)
     {
@@ -14,6 +19,7 @@ public partial class TaskProgressReporter : Form, IProgressReporter
 
         _formInit = new TaskCompletionSource<object?>();
 
+        _cts = allowAbort ? new CancellationTokenSource() : null;
         btnAbort.Enabled = allowAbort;
         ControlBox = false; // hide close button
 
@@ -66,7 +72,8 @@ public partial class TaskProgressReporter : Form, IProgressReporter
             return;
         }
 
-        progressBar1.Value = (int)Math.Clamp(progress, 0f, 1f) * 1000;
+        progressBar1.Value = (int)(Math.Clamp(progress, 0f, 1f) * 1000);
+        lbPercentage.Text = string.Format("{0:0.0%}", progress);
     }
 
     public void ReportTimeRemaining(TimeSpan timeRemaining)
@@ -119,8 +126,33 @@ public partial class TaskProgressReporter : Form, IProgressReporter
     private void BtnAbort_Click(object sender, EventArgs e)
     {
         if (IsDisposed) return; // already disposed
-        Canceled?.Invoke(this, EventArgs.Empty);
+        _cts?.Cancel();
         Dispose();
+    }
+
+
+    public static void Watch(Func<IProgressReporter, Task> func, string title = "Task", string description = "Please wait ...")
+    {
+        using var reporter = new TaskProgressReporter(title, description, true);
+        reporter.Wait(func(reporter));
+    }
+
+    public static void Watch(Action<IProgressReporter> action, string title = "Task", string description = "Please wait ...")
+    {
+        using var reporter = new TaskProgressReporter(title, description, true);
+        reporter.Wait(Task.Run(() => action(reporter)));
+    }
+
+    public static void WatchNoAbort(Func<IProgressReporter, Task> func, string title = "Task", string description = "Please wait ...")
+    {
+        using var reporter = new TaskProgressReporter(title, description, false);
+        reporter.Wait(func(reporter));
+    }
+
+    public static void WatchNoAbort(Action<IProgressReporter> action, string title = "Task", string description = "Please wait ...")
+    {
+        using var reporter = new TaskProgressReporter(title, description, false);
+        reporter.Wait(Task.Run(() => action(reporter)));
     }
 }
 

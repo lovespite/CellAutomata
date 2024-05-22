@@ -28,7 +28,21 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             canvas = new PictureBox();
+            canvasContextMenuStrip1 = new ContextMenuStrip(components);
+            fillToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator15 = new ToolStripSeparator();
+            copyToolStripMenuItem1 = new ToolStripMenuItem();
+            cutToolStripMenuItem1 = new ToolStripMenuItem();
+            pasteToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripSeparator14 = new ToolStripSeparator();
+            clearSelectedCellsToolStripMenuItem = new ToolStripMenuItem();
+            clearUnselectedCellsToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripSeparator16 = new ToolStripSeparator();
+            rotateToolStripMenuItem1 = new ToolStripMenuItem();
+            flipUpDownToolStripMenuItem1 = new ToolStripMenuItem();
+            flipLeftRightToolStripMenuItem1 = new ToolStripMenuItem();
             label1 = new Label();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
@@ -39,7 +53,16 @@
             toolStripSeparator1 = new ToolStripSeparator();
             exitToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
-            fillToolStripMenuItem = new ToolStripMenuItem();
+            randomizeToolStripMenuItem = new ToolStripMenuItem();
+            fullFillToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator12 = new ToolStripSeparator();
+            randomFill25ToolStripMenuItem = new ToolStripMenuItem();
+            randomFille50ToolStripMenuItem = new ToolStripMenuItem();
+            randomFill75ToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator13 = new ToolStripSeparator();
+            berlinNoiseToolStripMenuItem = new ToolStripMenuItem();
+            fillGaborToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator6 = new ToolStripSeparator();
             clearCellsToolStripMenuItem = new ToolStripMenuItem();
             clearUnselectedCellsToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator3 = new ToolStripSeparator();
@@ -59,11 +82,6 @@
             rotateToolStripMenuItem = new ToolStripMenuItem();
             flipUpDownToolStripMenuItem = new ToolStripMenuItem();
             flipLeftRightToolStripMenuItem = new ToolStripMenuItem();
-            toolStripSeparator6 = new ToolStripSeparator();
-            randomizeToolStripMenuItem = new ToolStripMenuItem();
-            randomFill25ToolStripMenuItem = new ToolStripMenuItem();
-            randomFille50ToolStripMenuItem = new ToolStripMenuItem();
-            berlinNoiseToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator10 = new ToolStripSeparator();
             clearAllToolStripMenuItem = new ToolStripMenuItem();
             actionToolStripMenuItem = new ToolStripMenuItem();
@@ -90,6 +108,7 @@
             splitContainer1 = new SplitContainer();
             panel1 = new Panel();
             ((System.ComponentModel.ISupportInitialize)canvas).BeginInit();
+            canvasContextMenuStrip1.SuspendLayout();
             menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel2.SuspendLayout();
@@ -101,6 +120,7 @@
             // 
             canvas.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             canvas.BackColor = Color.White;
+            canvas.ContextMenuStrip = canvasContextMenuStrip1;
             canvas.Location = new Point(-1, -2);
             canvas.Name = "canvas";
             canvas.Size = new Size(800, 640);
@@ -112,6 +132,91 @@
             canvas.MouseLeave += Canvas_MouseLeave;
             canvas.MouseMove += Canvas_MouseMove;
             canvas.MouseUp += Canvas_MouseUp;
+            // 
+            // canvasContextMenuStrip1
+            // 
+            canvasContextMenuStrip1.Items.AddRange(new ToolStripItem[] { fillToolStripMenuItem, toolStripSeparator15, copyToolStripMenuItem1, cutToolStripMenuItem1, pasteToolStripMenuItem1, toolStripSeparator14, clearSelectedCellsToolStripMenuItem, clearUnselectedCellsToolStripMenuItem1, toolStripSeparator16, rotateToolStripMenuItem1, flipUpDownToolStripMenuItem1, flipLeftRightToolStripMenuItem1 });
+            canvasContextMenuStrip1.Name = "canvasContextMenuStrip1";
+            canvasContextMenuStrip1.RenderMode = ToolStripRenderMode.System;
+            canvasContextMenuStrip1.Size = new Size(202, 220);
+            // 
+            // fillToolStripMenuItem
+            // 
+            fillToolStripMenuItem.Name = "fillToolStripMenuItem";
+            fillToolStripMenuItem.Size = new Size(201, 22);
+            fillToolStripMenuItem.Text = "&Fill";
+            fillToolStripMenuItem.Click += Edit_FillSelectedRegion_Click;
+            // 
+            // toolStripSeparator15
+            // 
+            toolStripSeparator15.Name = "toolStripSeparator15";
+            toolStripSeparator15.Size = new Size(198, 6);
+            // 
+            // copyToolStripMenuItem1
+            // 
+            copyToolStripMenuItem1.Name = "copyToolStripMenuItem1";
+            copyToolStripMenuItem1.Size = new Size(201, 22);
+            copyToolStripMenuItem1.Text = "&Copy";
+            copyToolStripMenuItem1.Click += Edit_Copy_Click;
+            // 
+            // cutToolStripMenuItem1
+            // 
+            cutToolStripMenuItem1.Name = "cutToolStripMenuItem1";
+            cutToolStripMenuItem1.Size = new Size(201, 22);
+            cutToolStripMenuItem1.Text = "C&ut";
+            cutToolStripMenuItem1.Click += Edit_Cut_Click;
+            // 
+            // pasteToolStripMenuItem1
+            // 
+            pasteToolStripMenuItem1.Name = "pasteToolStripMenuItem1";
+            pasteToolStripMenuItem1.Size = new Size(201, 22);
+            pasteToolStripMenuItem1.Text = "&Paste";
+            pasteToolStripMenuItem1.Click += Edit_Paste_Click;
+            // 
+            // toolStripSeparator14
+            // 
+            toolStripSeparator14.Name = "toolStripSeparator14";
+            toolStripSeparator14.Size = new Size(198, 6);
+            // 
+            // clearSelectedCellsToolStripMenuItem
+            // 
+            clearSelectedCellsToolStripMenuItem.Name = "clearSelectedCellsToolStripMenuItem";
+            clearSelectedCellsToolStripMenuItem.Size = new Size(201, 22);
+            clearSelectedCellsToolStripMenuItem.Text = "C&lear selected cells";
+            clearSelectedCellsToolStripMenuItem.Click += Edit_ClearSelected_Click;
+            // 
+            // clearUnselectedCellsToolStripMenuItem1
+            // 
+            clearUnselectedCellsToolStripMenuItem1.Name = "clearUnselectedCellsToolStripMenuItem1";
+            clearUnselectedCellsToolStripMenuItem1.Size = new Size(201, 22);
+            clearUnselectedCellsToolStripMenuItem1.Text = "Cl&ear unselected cells";
+            clearUnselectedCellsToolStripMenuItem1.Click += Edit_ClearUnselected_Click;
+            // 
+            // toolStripSeparator16
+            // 
+            toolStripSeparator16.Name = "toolStripSeparator16";
+            toolStripSeparator16.Size = new Size(198, 6);
+            // 
+            // rotateToolStripMenuItem1
+            // 
+            rotateToolStripMenuItem1.Name = "rotateToolStripMenuItem1";
+            rotateToolStripMenuItem1.Size = new Size(201, 22);
+            rotateToolStripMenuItem1.Text = "&Rotate";
+            rotateToolStripMenuItem1.Click += Edit_RotateSelected_Click;
+            // 
+            // flipUpDownToolStripMenuItem1
+            // 
+            flipUpDownToolStripMenuItem1.Name = "flipUpDownToolStripMenuItem1";
+            flipUpDownToolStripMenuItem1.Size = new Size(201, 22);
+            flipUpDownToolStripMenuItem1.Text = "Fl&ip - UpDown";
+            flipUpDownToolStripMenuItem1.Click += Edit_FlipUpDownSelected_Click;
+            // 
+            // flipLeftRightToolStripMenuItem1
+            // 
+            flipLeftRightToolStripMenuItem1.Name = "flipLeftRightToolStripMenuItem1";
+            flipLeftRightToolStripMenuItem1.Size = new Size(201, 22);
+            flipLeftRightToolStripMenuItem1.Text = "Fli&p - LeftRight";
+            flipLeftRightToolStripMenuItem1.Click += Edit_FlipLeftRight_Click;
             // 
             // label1
             // 
@@ -184,18 +289,77 @@
             // 
             // editToolStripMenuItem
             // 
-            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fillToolStripMenuItem, clearCellsToolStripMenuItem, clearUnselectedCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, pasteMethodToolStripMenuItem, toolStripSeparator2, selectAllToolStripMenuItem, shrinkSelectionToolStripMenuItem, clearSelectionToolStripMenuItem, toolStripSeparator4, rotateToolStripMenuItem, flipUpDownToolStripMenuItem, flipLeftRightToolStripMenuItem, toolStripSeparator6, randomizeToolStripMenuItem, toolStripSeparator10, clearAllToolStripMenuItem });
+            editToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { randomizeToolStripMenuItem, toolStripSeparator6, clearCellsToolStripMenuItem, clearUnselectedCellsToolStripMenuItem, toolStripSeparator3, copyToolStripMenuItem, cutToolStripMenuItem, pasteToolStripMenuItem, pasteMethodToolStripMenuItem, toolStripSeparator2, selectAllToolStripMenuItem, shrinkSelectionToolStripMenuItem, clearSelectionToolStripMenuItem, toolStripSeparator4, rotateToolStripMenuItem, flipUpDownToolStripMenuItem, flipLeftRightToolStripMenuItem, toolStripSeparator10, clearAllToolStripMenuItem });
             editToolStripMenuItem.Name = "editToolStripMenuItem";
             editToolStripMenuItem.Size = new Size(42, 21);
             editToolStripMenuItem.Text = "&Edit";
             // 
-            // fillToolStripMenuItem
+            // randomizeToolStripMenuItem
             // 
-            fillToolStripMenuItem.Name = "fillToolStripMenuItem";
-            fillToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.F;
-            fillToolStripMenuItem.Size = new Size(270, 22);
-            fillToolStripMenuItem.Text = "&Fill";
-            fillToolStripMenuItem.Click += Edit_FillSelectedRegion_Click;
+            randomizeToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fullFillToolStripMenuItem, toolStripSeparator12, randomFill25ToolStripMenuItem, randomFille50ToolStripMenuItem, randomFill75ToolStripMenuItem, toolStripSeparator13, berlinNoiseToolStripMenuItem, fillGaborToolStripMenuItem });
+            randomizeToolStripMenuItem.Name = "randomizeToolStripMenuItem";
+            randomizeToolStripMenuItem.Size = new Size(270, 22);
+            randomizeToolStripMenuItem.Text = "&Fill";
+            // 
+            // fullFillToolStripMenuItem
+            // 
+            fullFillToolStripMenuItem.Name = "fullFillToolStripMenuItem";
+            fullFillToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.F;
+            fullFillToolStripMenuItem.Size = new Size(216, 22);
+            fullFillToolStripMenuItem.Text = "F&ull";
+            fullFillToolStripMenuItem.Click += Edit_FillSelectedRegion_Click;
+            // 
+            // toolStripSeparator12
+            // 
+            toolStripSeparator12.Name = "toolStripSeparator12";
+            toolStripSeparator12.Size = new Size(213, 6);
+            // 
+            // randomFill25ToolStripMenuItem
+            // 
+            randomFill25ToolStripMenuItem.Name = "randomFill25ToolStripMenuItem";
+            randomFill25ToolStripMenuItem.Size = new Size(216, 22);
+            randomFill25ToolStripMenuItem.Text = "&Random Fill(25%)";
+            randomFill25ToolStripMenuItem.Click += Edit_RandomFill25_Click;
+            // 
+            // randomFille50ToolStripMenuItem
+            // 
+            randomFille50ToolStripMenuItem.Name = "randomFille50ToolStripMenuItem";
+            randomFille50ToolStripMenuItem.Size = new Size(216, 22);
+            randomFille50ToolStripMenuItem.Text = "Random &Fill(50%)";
+            randomFille50ToolStripMenuItem.Click += Edit_RandomFill50_Click;
+            // 
+            // randomFill75ToolStripMenuItem
+            // 
+            randomFill75ToolStripMenuItem.Name = "randomFill75ToolStripMenuItem";
+            randomFill75ToolStripMenuItem.Size = new Size(216, 22);
+            randomFill75ToolStripMenuItem.Text = "R&andom Fill(75%)";
+            randomFill75ToolStripMenuItem.Click += Edit_RandomFill75_Click;
+            // 
+            // toolStripSeparator13
+            // 
+            toolStripSeparator13.Name = "toolStripSeparator13";
+            toolStripSeparator13.Size = new Size(213, 6);
+            // 
+            // berlinNoiseToolStripMenuItem
+            // 
+            berlinNoiseToolStripMenuItem.Name = "berlinNoiseToolStripMenuItem";
+            berlinNoiseToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.B;
+            berlinNoiseToolStripMenuItem.Size = new Size(216, 22);
+            berlinNoiseToolStripMenuItem.Text = "&Berlin Noise";
+            berlinNoiseToolStripMenuItem.Click += Edit_FillBerlinNoise_Click;
+            // 
+            // fillGaborToolStripMenuItem
+            // 
+            fillGaborToolStripMenuItem.Name = "fillGaborToolStripMenuItem";
+            fillGaborToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.G;
+            fillGaborToolStripMenuItem.Size = new Size(216, 22);
+            fillGaborToolStripMenuItem.Text = "&Gabor";
+            fillGaborToolStripMenuItem.Click += View_FillGaborNoise_Click;
+            // 
+            // toolStripSeparator6
+            // 
+            toolStripSeparator6.Name = "toolStripSeparator6";
+            toolStripSeparator6.Size = new Size(267, 6);
             // 
             // clearCellsToolStripMenuItem
             // 
@@ -336,40 +500,6 @@
             flipLeftRightToolStripMenuItem.Size = new Size(270, 22);
             flipLeftRightToolStripMenuItem.Text = "Flip - LeftRi&ght";
             flipLeftRightToolStripMenuItem.Click += Edit_FlipLeftRight_Click;
-            // 
-            // toolStripSeparator6
-            // 
-            toolStripSeparator6.Name = "toolStripSeparator6";
-            toolStripSeparator6.Size = new Size(267, 6);
-            // 
-            // randomizeToolStripMenuItem
-            // 
-            randomizeToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { randomFill25ToolStripMenuItem, randomFille50ToolStripMenuItem, berlinNoiseToolStripMenuItem });
-            randomizeToolStripMenuItem.Name = "randomizeToolStripMenuItem";
-            randomizeToolStripMenuItem.Size = new Size(270, 22);
-            randomizeToolStripMenuItem.Text = "R&andomize";
-            // 
-            // randomFill25ToolStripMenuItem
-            // 
-            randomFill25ToolStripMenuItem.Name = "randomFill25ToolStripMenuItem";
-            randomFill25ToolStripMenuItem.Size = new Size(192, 22);
-            randomFill25ToolStripMenuItem.Text = "&Random Fill(25%)";
-            randomFill25ToolStripMenuItem.Click += Edit_RandomFill25_Click;
-            // 
-            // randomFille50ToolStripMenuItem
-            // 
-            randomFille50ToolStripMenuItem.Name = "randomFille50ToolStripMenuItem";
-            randomFille50ToolStripMenuItem.Size = new Size(192, 22);
-            randomFille50ToolStripMenuItem.Text = "Random &Fill(50%)";
-            randomFille50ToolStripMenuItem.Click += Edit_RandomFill50_Click;
-            // 
-            // berlinNoiseToolStripMenuItem
-            // 
-            berlinNoiseToolStripMenuItem.Name = "berlinNoiseToolStripMenuItem";
-            berlinNoiseToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.B;
-            berlinNoiseToolStripMenuItem.Size = new Size(192, 22);
-            berlinNoiseToolStripMenuItem.Text = "&Berlin Noise";
-            berlinNoiseToolStripMenuItem.Click += Edit_FillBerlinNoise_Click;
             // 
             // toolStripSeparator10
             // 
@@ -579,6 +709,7 @@
             FormClosed += Form1_FormClosed;
             Load += Form1_Load;
             ((System.ComponentModel.ISupportInitialize)canvas).EndInit();
+            canvasContextMenuStrip1.ResumeLayout(false);
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             splitContainer1.Panel2.ResumeLayout(false);
@@ -608,7 +739,6 @@
         private ToolStripSeparator toolStripSeparator2;
         private ToolStripMenuItem clearSelectionToolStripMenuItem;
         private ToolStripMenuItem shrinkSelectionToolStripMenuItem;
-        private ToolStripMenuItem fillToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator4;
         private ToolStripMenuItem clearAllToolStripMenuItem;
         private ToolStripMenuItem actionToolStripMenuItem;
@@ -652,5 +782,23 @@
         private ToolStripSeparator toolStripSeparator10;
         private ToolStripSeparator toolStripSeparator11;
         private ToolStripMenuItem BtnSuspendView;
+        private ToolStripMenuItem fullFillToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator12;
+        private ToolStripMenuItem randomFill75ToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator13;
+        private ContextMenuStrip canvasContextMenuStrip1;
+        private ToolStripMenuItem fillToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator15;
+        private ToolStripMenuItem copyToolStripMenuItem1;
+        private ToolStripMenuItem cutToolStripMenuItem1;
+        private ToolStripMenuItem pasteToolStripMenuItem1;
+        private ToolStripSeparator toolStripSeparator14;
+        private ToolStripMenuItem clearSelectedCellsToolStripMenuItem;
+        private ToolStripMenuItem clearUnselectedCellsToolStripMenuItem1;
+        private ToolStripSeparator toolStripSeparator16;
+        private ToolStripMenuItem rotateToolStripMenuItem1;
+        private ToolStripMenuItem flipUpDownToolStripMenuItem1;
+        private ToolStripMenuItem flipLeftRightToolStripMenuItem1;
+        private ToolStripMenuItem fillGaborToolStripMenuItem;
     }
 }

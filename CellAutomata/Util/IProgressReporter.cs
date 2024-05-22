@@ -12,6 +12,7 @@ public interface IProgressReporter
 
     void ReportProgress(float progress, string status, TimeSpan timeRemaining);
 
-    event EventHandler Canceled;
+    bool IsAborted { get; }
+    CancellationToken CancelToken { get; }
 }
 

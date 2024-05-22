@@ -1,10 +1,13 @@
-﻿namespace CellAutomata.Algos;
+﻿using CellAutomata.Util;
+
+namespace CellAutomata.Algos;
 
 public interface I2DBitMutator
 {
     byte this[int x, int y] { get; set; }
     void Clear();
-    void ClearRect(ref Rectangle rect);
+    void ClearRegion(Rectangle rect);
+    Task ClearRegionAsync(Rectangle rect, IProgressReporter? reporter = null);
 
     bool Get(int row, int col);
     void Set(int row, int col, bool value);

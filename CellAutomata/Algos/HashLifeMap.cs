@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System;
 using CellAutomata.Render;
+using CellAutomata.Util;
 
 namespace CellAutomata.Algos;
 
@@ -226,7 +227,7 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         Generation = 0;
     }
 
-    public void ClearRect(ref Rectangle rect)
+    public void ClearRegion(Rectangle rect)
     {
         for (int row = rect.Top; row < rect.Bottom; row++)
         {
@@ -237,11 +238,39 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         }
     }
 
+
+    public async Task ClearRegionAsync(Rectangle rect, IProgressReporter? reporter = null)
+    {
+        double total = rect.Width * rect.Height;
+        double count = 0;
+        for (int row = rect.Top; row < rect.Bottom; row++)
+        {
+            for (int col = rect.Left; col < rect.Right; col++)
+            {
+                if (reporter?.IsAborted ?? false) return;
+
+                Set(row, col, false);
+
+                if (reporter is null) continue;
+
+                if ((++count) % 100_000 == 0)
+                {
+                    reporter.ReportProgress((float)(count / total));
+                    await Task.Delay(1);
+                }
+            }
+        }
+    }
+
+
     public ILifeMap CreateSnapshot()
     {
-        var bounds = GetBounds();
+        return CreateRegionSnapshot(GetBounds());
+    }
 
-        return CreateRegionSnapshot(bounds);
+    public Task<ILifeMap> CreateSnapshotAsync(IProgressReporter reporter)
+    {
+        return CreateRegionSnapshotAsync(GetBounds(), reporter);
     }
 
     public RectangleL GetBounds()
@@ -252,7 +281,6 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         return new RectangleL(top, left, bottom, right);
     }
 
-
     public ILifeMap CreateRegionSnapshot(Rectangle rect)
     {
         var snapshot = new HashLifeMap(Rule);
@@ -262,6 +290,35 @@ public partial class HashLifeMap : ILifeMap, IDCRender
             for (int col = rect.Left; col < rect.Right; col++)
             {
                 snapshot.Set(row - rect.Top, col - rect.Left, Get(row, col));
+            }
+        }
+
+        return snapshot;
+    }
+
+    public async Task<ILifeMap> CreateRegionSnapshotAsync(Rectangle rect, IProgressReporter? reporter = null)
+    {
+        var snapshot = new HashLifeMap(Rule);
+
+        double total = rect.Area();
+        double count = 0;
+
+        for (int row = rect.Top; row < rect.Bottom; row++)
+        {
+            for (int col = rect.Left; col < rect.Right; col++)
+            {
+                snapshot.Set(row - rect.Top, col - rect.Left, Get(row, col));
+
+                if (reporter is null) continue;
+
+                if (reporter.IsAborted) return snapshot;
+
+                if ((++count) % 100_000 == 0)
+                {
+                    reporter.ReportProgress((float)(count / total), "Copying...", TimeSpan.Zero);
+                    await Task.Delay(1);
+                }
+
             }
         }
 
@@ -294,6 +351,50 @@ public partial class HashLifeMap : ILifeMap, IDCRender
                     case CopyMode.Xor:
                         Set(ref dstPoint, srcValue ^ dstValue);
                         break;
+                }
+            }
+        }
+    }
+
+    public async Task BlockCopyAsync(ILifeMap source, Size srcSize, Point dstLocation, CopyMode mode = CopyMode.Overwrite, IProgressReporter? reporter = null)
+    {
+        double total = srcSize.Width * srcSize.Height;
+        double count = 0;
+
+        for (int row = 0; row < srcSize.Height; row++)
+        {
+            for (int col = 0; col < srcSize.Width; col++)
+            {
+                var srcPoint = new Point(col, row);
+                var dstPoint = new Point(col + dstLocation.X, row + dstLocation.Y);
+
+                bool srcValue = source.Get(ref srcPoint);
+                bool dstValue = Get(ref dstPoint);
+
+                switch (mode)
+                {
+                    case CopyMode.Overwrite:
+                        Set(ref dstPoint, srcValue);
+                        break;
+                    case CopyMode.Or:
+                        Set(ref dstPoint, srcValue || dstValue);
+                        break;
+                    case CopyMode.And:
+                        Set(ref dstPoint, srcValue && dstValue);
+                        break;
+                    case CopyMode.Xor:
+                        Set(ref dstPoint, srcValue ^ dstValue);
+                        break;
+                }
+
+                if (reporter is null) continue;
+
+                if (reporter.IsAborted) return;
+
+                if ((++count) % 100_000 == 0)
+                {
+                    reporter.ReportProgress((float)(count / total));
+                    await Task.Delay(1);
                 }
             }
         }
@@ -472,6 +573,21 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         handle.Free();
 
         return bitmapData;
+    }
+
+    public Task<Point[]> QueryRegionAsync(bool val, Rectangle rect, IProgressReporter? reporter = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<long> QueryRegionCountAsync(bool val, Rectangle rect, IProgressReporter? reporter = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Point[]> GetLocationsAsync(bool val, IProgressReporter? reporter = null)
+    {
+        throw new NotImplementedException();
     }
 
     #endregion

@@ -15,6 +15,9 @@ public partial class Form1 : Form
 
     private CopyMode _mode = CopyMode.Overwrite;
 
+    public const int AsyncAreaThreshold = 1_000_000; // 5M cells
+    public const int ReportInterval = 100_000; // 100K cells
+
     private Point _dragStartPos;
     private Point _dragStartViewPos;
 
@@ -255,21 +258,205 @@ public partial class Form1 : Form
         _evolutionThread.Start();
         Debug.WriteLine("Started");
     }
-    private void SetClipboard(Rectangle selection)
+    private void SetClipboard(Rectangle rect)
     {
-        var bitmap = _env.LifeMap.CreateRegionSnapshot(selection);
-        _clipboard = (bitmap, selection.Size);
+        if (rect.Area() > AsyncAreaThreshold)
+        {
+            Debug.WriteLine("Async copy");
+            TaskProgressReporter.Watch(async reporter =>
+            {
+                var bitmap = await _env.LifeMap.CreateRegionSnapshotAsync(rect, reporter);
+                _clipboard = (bitmap, rect.Size);
+            }, "Copying", "Please wait ...");
+        }
+        else
+        {
+            var bitmap = _env.LifeMap.CreateRegionSnapshot(rect);
+            _clipboard = (bitmap, rect.Size);
+        }
+
     }
-    private void RandomFill(Rectangle selection, float ratio)
+    private void ClearRegion(Rectangle rect)
     {
-        var rnd = new Random();
+        if (rect.IsEmpty) return;
+
+        if (rect.Area() > AsyncAreaThreshold)
+        {
+            TaskProgressReporter.Watch(async reporter =>
+            {
+                await SuspendAsync(() => _env.LifeMap.ClearRegionAsync(rect, reporter));
+            }, "Clearing", "Please wait ...");
+        }
+        else
+        {
+            Suspend(() => _env.LifeMap.ClearRegion(rect));
+        }
+    }
+    private async Task RotateRegionAsync(Rectangle selection, IProgressReporter? reporter)
+    {
+        var snapshot = await _env.LifeMap.CreateRegionSnapshotAsync(selection, reporter);
+
+        _env.LifeMap.ClearRegion(selection);
+
+        // 获取选区中心点 
+        int centerX = selection.Left + (int)Math.Floor(selection.Width / 2.0);
+        int centerY = selection.Top + (int)Math.Floor(selection.Height / 2.0);
+
+        var prList = new List<Point>();
+
+        double total = selection.Area();
+        double count = 0;
+
+        // 90度顺时针旋转
         for (var row = selection.Top; row < selection.Bottom; row++)
         {
             for (var col = selection.Left; col < selection.Right; col++)
             {
-                if (rnd.NextDouble() < ratio)
+                if (reporter?.IsAborted == true) return;
+
+                // 相对于选区中心的坐标
+                int relX = col - centerX;
+                int relY = row - centerY;
+
+                // 旋转坐标
+                int rotatedX = -relY;
+                int rotatedY = relX;
+
+                // 计算新位置的绝对坐标
+                var p2 = new Point(centerX + rotatedX, centerY + rotatedY);
+                var p0 = new Point(col - selection.Left, row - selection.Top);
+
+                _env.LifeMap.Set(ref p2, snapshot.Get(ref p0));
+
+                if (
+                    row == selection.Top
+                    || row == selection.Bottom - 1
+                    || col == selection.Left
+                    || col == selection.Right - 1
+                    )
                 {
-                    _env.ActivateCell(row, col);
+                    prList.Add(p2);
+                }
+                if (reporter is null) continue;
+
+                if ((++count) % ReportInterval == 0)
+                {
+                    reporter.ReportProgress((float)(count / total), "Rotating ...", TimeSpan.Zero);
+                    await Task.Delay(1);
+                }
+            }
+        }
+
+        var pr1 = prList.Min(p => p.X);
+        var pr2 = prList.Max(p => p.X);
+        var pc1 = prList.Min(p => p.Y);
+        var pc2 = prList.Max(p => p.Y);
+
+        _view.SetSelection(new Point(pr1, pc1), new Point(pr2, pc2));
+    }
+
+    private async Task FlipRegionUpDown(Rectangle selection, IProgressReporter? reporter)
+    {
+        var snapshot = await _env.LifeMap.CreateRegionSnapshotAsync(selection, reporter);
+
+        _env.LifeMap.ClearRegion(selection);
+
+        double total = selection.Area();
+        double count = 0;
+
+        for (var row = selection.Top; row < selection.Bottom; row++)
+        {
+            for (var col = selection.Left; col < selection.Right; col++)
+            {
+                if (reporter?.IsAborted == true) return;
+
+                var p0 = new Point(col - selection.Left, row - selection.Top);
+                var p1 = new Point(col, selection.Bottom - 1 - (row - selection.Top));
+
+                _env.LifeMap.Set(ref p1, snapshot.Get(ref p0));
+
+                if (reporter is null) continue;
+
+                if ((++count) % ReportInterval == 0)
+                {
+                    reporter.ReportProgress((float)(count / total), "Flipping ...", TimeSpan.Zero);
+                    await Task.Delay(1);
+                }
+            }
+        }
+    }
+
+    private async Task FlipRegionLeftRight(Rectangle selection, IProgressReporter? reporter)
+    {
+        var snapshot = await _env.LifeMap.CreateRegionSnapshotAsync(selection, reporter);
+
+        _env.LifeMap.ClearRegion(selection);
+
+        double total = selection.Area();
+        double count = 0;
+
+        for (var row = selection.Top; row < selection.Bottom; row++)
+        {
+            for (var col = selection.Left; col < selection.Right; col++)
+            {
+                if (reporter?.IsAborted == true) return;
+
+                var p0 = new Point(col - selection.Left, row - selection.Top);
+                var p1 = new Point(selection.Right - 1 - (col - selection.Left), row);
+
+                _env.LifeMap.Set(ref p1, snapshot.Get(ref p0));
+
+                if (reporter is null) continue;
+
+                if ((++count) % ReportInterval == 0)
+                {
+                    reporter.ReportProgress((float)(count / total), "Flipping ...", TimeSpan.Zero);
+                    await Task.Delay(1);
+                }
+            }
+        }
+    }
+
+    private void RandomFill(Rectangle selection, IRandomFillAlgorithm algo)
+    {
+        if (selection.IsEmpty) return;
+        var rnd = new Random();
+
+        if (selection.Area() > AsyncAreaThreshold)
+        {
+            TaskProgressReporter.Watch(async reporter =>
+            {
+                await Task.Delay(100);
+                await SuspendAsync(() => Fill(reporter));
+            }, "Filling", "Please wait ...");
+        }
+        else
+        {
+            Suspend(() => algo.Generate(selection, _env.LifeMap));
+        }
+
+        async Task Fill(IProgressReporter? reporter = null)
+        {
+            double total = selection.Area();
+            double count = 0;
+            for (var row = selection.Top; row < selection.Bottom; row++)
+            {
+                for (var col = selection.Left; col < selection.Right; col++)
+                {
+                    if (reporter?.IsAborted == true) return;
+
+                    if (algo.GetNoise(col, row, 0))
+                    {
+                        _env.ActivateCell(row, col);
+                    }
+
+                    if (reporter is null) continue;
+
+                    if ((++count) % ReportInterval == 0)
+                    {
+                        reporter.ReportProgress((float)(count / total), "Filling ...", TimeSpan.Zero);
+                        await Task.Delay(1);
+                    }
                 }
             }
         }
@@ -277,33 +464,36 @@ public partial class Form1 : Form
 
     private void LoadBbmFile(string file)
     {
-        using var reporter = new TaskProgressReporter("Loading", "Please wait ...");
-        var t = SuspendAsync(() => _env.LoadFrom(file, reporter));
-        reporter.Wait(t);
+        TaskProgressReporter.Watch(async reporter =>
+        {
+            await Task.Delay(100);
+            await SuspendAsync(() => _env.LoadFrom(file, reporter));
+        }, "Loading", "Please wait ...");
     }
 
     private void LoadGollyRle(string file)
     {
-        using var reporter = new TaskProgressReporter("Loading", "Please wait ...");
-
-        var task = SuspendAsync(async () =>
+        TaskProgressReporter.WatchNoAbort(async reporter =>
         {
-            reporter.ReportProgress(0, "Reading file...", TimeSpan.Zero);
-            // _env.Clear();
-
-            await Task.Run(() => _env.LifeMap.ReadRle(file));
+            await Task.Delay(100);
+            await SuspendAsync(() => _env.LifeMap.ReadRle(file), false);
+            await Task.Delay(100);
 
             reporter.ReportProgress(1, "Done.", TimeSpan.Zero);
-        });
-
-        reporter.Wait(task);
+        }, "Loading", "Please wait ...");
     }
 
     private void SaveBbmFile(string file)
     {
-        using var reporter = new TaskProgressReporter("Saving", "Please wait ...");
-        var t = SuspendAsync(() => _env.SaveTo(file, reporter));
-        reporter.Wait(t);
+        //using var reporter = new TaskProgressReporter("Saving", "Please wait ...");
+        //var t = SuspendAsync(() => _env.SaveTo(file, reporter));
+        //reporter.Wait(t);
+
+        TaskProgressReporter.Watch(async reporter =>
+        {
+            await Task.Delay(100);
+            await SuspendAsync(() => _env.SaveTo(file, reporter));
+        }, "Saving", "Please wait ...");
     }
 
     #endregion
@@ -352,10 +542,18 @@ public partial class Form1 : Form
 
     #endregion
 
-    #region Canvas Event Handlers  
+    #region Canvas Event Handlers   
     private void Canvas_MouseDown(object sender, MouseEventArgs e)
     {
         _view.MousePoint = e.Location;
+
+        if (e.Button == MouseButtons.Right)
+        {
+            // show context menu 
+            return;
+        }
+
+
         // drag view [Ctrl + Left Mouse]
         if (e.Button == MouseButtons.Left && ModifierKeys.HasFlag(Keys.Control))
         {
@@ -558,42 +756,53 @@ public partial class Form1 : Form
     {
         if (!_view.IsSelected) return;
 
-        var selection = _view.GetSelection();
-        if (selection.IsEmpty) return;
-
-        if (selection.Width * selection.Height > 50_000)
-        {
-            using var reporter = new TaskProgressReporter("Clearing", "Please wait ...");
-            var t = SuspendAsync(() => _env.LifeMap.ClearRect(ref selection));
-            reporter.Wait(t);
-        }
-        else
-        {
-            Suspend(() => _env.LifeMap.ClearRect(ref selection));
-        }
-
+        ClearRegion(_view.GetSelection());
     }
+
     private void Edit_ClearUnselected_Click(object sender, EventArgs e)
     {
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
 
+        var bounds = _env.LifeMap.GetBounds();
 
-        Suspend(() =>
+        if (bounds.Size.Area > AsyncAreaThreshold)
         {
-            var bounds = _env.LifeMap.GetBounds();
+            TaskProgressReporter.Watch(async reporter =>
+            {
+                await Task.Delay(100);
+                await SuspendAsync(() => Clear(reporter));
+            }, "Clearing", "Please wait ...");
+        }
+        else
+        {
+            _ = SuspendAsync(() => Clear());
+        }
 
+        async Task Clear(IProgressReporter? reporter = null)
+        {
+            double total = bounds.Size.Area;
+            double count = 0;
             for (var row = bounds.Top; row <= bounds.Bottom; row++)
             {
                 for (var col = bounds.Left; col <= bounds.Right; col++)
                 {
+                    if (reporter?.IsAborted == true) return;
+
                     if (!selection.Contains((int)col, (int)row))
                     {
                         _env.DeactivateCell((int)row, (int)col);
                     }
+
+                    if (reporter is null) continue;
+                    if ((++count) % ReportInterval == 0)
+                    {
+                        reporter?.ReportProgress((float)(count / total), "Clearing ...", TimeSpan.Zero);
+                        await Task.Delay(1);
+                    }
                 }
             }
-        });
+        }
     }
     private void Edit_ClearSelection_Click(object sender, EventArgs e)
     {
@@ -644,7 +853,7 @@ public partial class Form1 : Form
         Suspend(() =>
         {
             SetClipboard(selection);
-            _env.LifeMap.ClearRect(ref selection);
+            ClearRegion(selection);
         });
     }
     private void Edit_Paste_Click(object sender, EventArgs e)
@@ -662,7 +871,18 @@ public partial class Form1 : Form
 
         var p = _view.GetSelection().Location;
 
-        Suspend(() => _env.LifeMap.BlockCopy(data, size, p, _mode));
+        if (size.Area() > AsyncAreaThreshold)
+        {
+            TaskProgressReporter.Watch(async reporter =>
+            {
+                await Task.Delay(100);
+                await SuspendAsync(() => _env.LifeMap.BlockCopyAsync(data, size, p, _mode, reporter));
+            }, "Pasting", "Please wait ...");
+        }
+        else
+        {
+            Suspend(() => _env.LifeMap.BlockCopy(data, size, p, _mode));
+        }
 
         _view.SetSelection(p, new Point(p.X + size.Width - 1, p.Y + size.Height - 1));
     }
@@ -689,156 +909,96 @@ public partial class Form1 : Form
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
 
-        Suspend(() =>
-        {
-            for (var row = selection.Top; row < selection.Bottom; row++)
-            {
-                for (var col = selection.Left; col < selection.Right; col++)
-                {
-                    _env.ActivateCell(row, col);
-                }
-            }
-        });
+        RandomFill(selection, RandomFillAlgorithm.Shared100);
     }
     private void Edit_RotateSelected_Click(object sender, EventArgs e)
     {
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
-
-        Suspend(() =>
+        if (selection.Area() > AsyncAreaThreshold)
         {
-            using var snapshot = _env.LifeMap.CreateRegionSnapshot(selection);
-
-            _env.LifeMap.ClearRect(ref selection);
-
-            // 获取选区中心点 
-            int centerX = selection.Left + (int)Math.Floor(selection.Width / 2.0);
-            int centerY = selection.Top + (int)Math.Floor(selection.Height / 2.0);
-
-            var prList = new List<Point>();
-
-            // 90度顺时针旋转
-            for (var row = selection.Top; row < selection.Bottom; row++)
+            TaskProgressReporter.Watch(async reporter =>
             {
-                for (var col = selection.Left; col < selection.Right; col++)
-                {
-                    // 相对于选区中心的坐标
-                    int relX = col - centerX;
-                    int relY = row - centerY;
-
-                    // 旋转坐标
-                    int rotatedX = -relY;
-                    int rotatedY = relX;
-
-                    // 计算新位置的绝对坐标
-                    var p2 = new Point(centerX + rotatedX, centerY + rotatedY);
-                    var p0 = new Point(col - selection.Left, row - selection.Top);
-
-                    _env.LifeMap.Set(ref p2, snapshot.Get(ref p0));
-
-                    if (
-                        row == selection.Top
-                        || row == selection.Bottom - 1
-                        || col == selection.Left
-                        || col == selection.Right - 1
-                        )
-                    {
-                        prList.Add(p2);
-                    }
-                }
-            }
-
-            var pr1 = prList.Min(p => p.X);
-            var pr2 = prList.Max(p => p.X);
-            var pc1 = prList.Min(p => p.Y);
-            var pc2 = prList.Max(p => p.Y);
-
-            _view.SetSelection(new Point(pr1, pc1), new Point(pr2, pc2));
-        });
+                await Task.Delay(100);
+                await SuspendAsync(() => RotateRegionAsync(selection, reporter));
+            }, "Rotating", "Please wait ...");
+        }
+        else
+        {
+            Suspend(() => RotateRegionAsync(selection, null).Wait());
+        }
     }
     private void Edit_FlipUpDownSelected_Click(object sender, EventArgs e)
     {
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
 
-        Suspend(() =>
+        if (selection.Area() > AsyncAreaThreshold)
         {
-            using var snapshot = _env.LifeMap.CreateRegionSnapshot(selection);
-
-            _env.LifeMap.ClearRect(ref selection);
-
-            for (var row = selection.Top; row < selection.Bottom; row++)
+            TaskProgressReporter.Watch(async reporter =>
             {
-                for (var col = selection.Left; col < selection.Right; col++)
-                {
-                    var p0 = new Point(col - selection.Left, row - selection.Top);
-                    var p1 = new Point(col, selection.Bottom - 1 - (row - selection.Top));
-
-                    _env.LifeMap.Set(ref p1, snapshot.Get(ref p0));
-                }
-            }
-
-            _view.SetSelection(selection.Location, new Point(selection.Right - 1, selection.Bottom - 1));
-        });
+                await Task.Delay(100);
+                await SuspendAsync(() => FlipRegionUpDown(selection, reporter));
+            }, "Flipping", "Please wait ...");
+        }
+        else
+        {
+            Suspend(() => FlipRegionUpDown(selection, null).Wait());
+        }
     }
     private void Edit_FlipLeftRight_Click(object sender, EventArgs e)
     {
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
 
-        Suspend(() =>
+        if (selection.Area() > AsyncAreaThreshold)
         {
-            using var snapshot = _env.LifeMap.CreateRegionSnapshot(selection);
-
-            _env.LifeMap.ClearRect(ref selection);
-
-            for (var row = selection.Top; row < selection.Bottom; row++)
+            TaskProgressReporter.Watch(async reporter =>
             {
-                for (var col = selection.Left; col < selection.Right; col++)
-                {
-                    var p0 = new Point(col - selection.Left, row - selection.Top);
-                    var p1 = new Point(selection.Right - 1 - (col - selection.Left), row);
-
-                    _env.LifeMap.Set(ref p1, snapshot.Get(ref p0));
-                }
-            }
-
-            _view.SetSelection(selection.Location, new Point(selection.Right - 1, selection.Bottom - 1));
-        });
+                await Task.Delay(100);
+                await SuspendAsync(() => FlipRegionLeftRight(selection, reporter));
+            }, "Flipping", "Please wait ...");
+        }
+        else
+        {
+            Suspend(() => FlipRegionLeftRight(selection, null).Wait());
+        }
     }
     private void Edit_RandomFill25_Click(object sender, EventArgs e)
     {
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
 
-        Suspend(() =>
-        {
-            _env.LifeMap.ClearRect(ref selection);
-            RandomFill(selection, 0.25f);
-        });
+        RandomFill(selection, RandomFillAlgorithm.Shared25);
     }
     private void Edit_RandomFill50_Click(object sender, EventArgs e)
     {
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
 
-        Suspend(() =>
-        {
-            _env.LifeMap.ClearRect(ref selection);
-            RandomFill(selection, 0.5f);
-        });
+        RandomFill(selection, RandomFillAlgorithm.Shared50);
     }
-    private void Edit_FillBerlinNoise_Click(object sender, EventArgs e)
+    private void Edit_RandomFill75_Click(object sender, EventArgs e)
     {
-
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
 
-        Suspend(() =>
-        {
-            _env.LifeMap.ClearRect(ref selection);
-            new BerlinNoise().Generate(ref selection, _env.LifeMap);
-        });
+        RandomFill(selection, RandomFillAlgorithm.Shared75);
+
+    }
+    private void Edit_FillBerlinNoise_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        RandomFill(selection, BerlinNoise.Create(0.1f));
+    }
+    private void View_FillGaborNoise_Click(object sender, EventArgs e)
+    {
+        var selection = _view.GetSelection();
+        if (selection.IsEmpty) return;
+
+        RandomFill(selection, GaborFillAlgorithm.Create(selection));
     }
 
     #endregion

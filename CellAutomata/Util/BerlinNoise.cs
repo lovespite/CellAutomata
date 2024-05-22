@@ -4,23 +4,26 @@ using System.Linq;
 
 namespace CellAutomata.Util;
 
-public class BerlinNoise
+public class BerlinNoise : IRandomFillAlgorithm
 {
+    public static readonly BerlinNoise Shared = new();
+    public static BerlinNoise Create(float threshold = 0.1f) => new BerlinNoise(threshold);
+
     private readonly Random random = new();
+    private readonly float _threshold = 0.1f;
 
     private int[] _permutation = Enumerable.Range(0, 512).ToArray();
 
-    public BerlinNoise()
+    public BerlinNoise(float threshold = 0.1f)
     {
         for (int i = 0; i < 256; i++)
         {
             int j = random.Next(256);
-            int temp = _permutation[i];
-            _permutation[i] = _permutation[j];
-            _permutation[j] = temp;
+            (_permutation[j], _permutation[i]) = (_permutation[i], _permutation[j]);
         }
 
         Array.Copy(_permutation, 0, _permutation, 256, 256); // Duplicate the permutation to avoid buffer overflow
+        _threshold = threshold;
     }
 
     private double Noise(double x, double y, double z)
@@ -92,15 +95,20 @@ public class BerlinNoise
         return total / maxValue;
     }
 
-    public void Generate(ref Rectangle rect, I2DBitMutator bitmap)
+    public void Generate(Rectangle rect, I2DBitMutator bitmap)
     {
         for (int y = 0; y < rect.Height; y++)
         {
             for (int x = 0; x < rect.Width; x++)
             {
                 double value = OctaveNoise(x * 0.1, y * 0.1, 0, 8, 0.5);
-                bitmap.Set(y + rect.Top, x + rect.Left, value > 0.1);
+                bitmap.Set(y + rect.Top, x + rect.Left, value >= _threshold);
             }
         }
+    }
+
+    public bool GetNoise(int x, int y, int z)
+    {
+        return OctaveNoise(x * 0.1, y * 0.1, z * 0.1, 8, 0.5) >= _threshold;
     }
 }

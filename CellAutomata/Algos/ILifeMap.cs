@@ -1,4 +1,5 @@
 ﻿using CellAutomata.Render;
+using CellAutomata.Util;
 
 namespace CellAutomata.Algos;
 
@@ -27,15 +28,23 @@ public interface ILifeMap : I2DBitMutator, IDisposable
     IDCRender GetDCRender();
 
     ILifeMap CreateSnapshot();
+    Task<ILifeMap> CreateSnapshotAsync(IProgressReporter reporter);
 
     ILifeMap CreateRegionSnapshot(Rectangle rect);
+    Task<ILifeMap> CreateRegionSnapshotAsync(Rectangle rect, IProgressReporter? reporter = null);
 
     void BlockCopy(ILifeMap source, Size srcSize, Point dstLocation, CopyMode mode = CopyMode.Overwrite);
+    Task BlockCopyAsync(ILifeMap source, Size srcSize, Point dstLocation, CopyMode mode = CopyMode.Overwrite, IProgressReporter? reporter = null);
 
     Point[] QueryRegion(bool val, Rectangle rect);
+    Task<Point[]> QueryRegionAsync(bool val, Rectangle rect, IProgressReporter? reporter = null);
+
     long QueryRegionCount(bool val, Rectangle rect);
+    Task<long> QueryRegionCountAsync(bool val, Rectangle rect, IProgressReporter? reporter = null);
 
     Point[] GetLocations(bool val);
+    Task<Point[]> GetLocationsAsync(bool val, IProgressReporter? reporter = null);
+
     RectangleL GetBounds();
 
     void NextGeneration();

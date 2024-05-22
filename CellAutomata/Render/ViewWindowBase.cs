@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using CellAutomata.Algos;
+using System.Diagnostics;
 using System.Drawing;
 
 namespace CellAutomata.Render;

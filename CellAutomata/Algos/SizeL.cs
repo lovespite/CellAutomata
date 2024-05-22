@@ -5,6 +5,8 @@ public struct SizeL
     public long Width;
     public long Height;
 
+    public readonly long Area => Width * Height;
+
     public SizeL(long width, long height)
     {
         Width = width;

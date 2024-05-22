@@ -4,6 +4,9 @@ public struct RectangleL
 {
     public SizeL Size;
     public PointL Location;
+    internal static readonly RectangleL Empty = new(0, 0, 0, 0);
+
+    public readonly bool IsEmpty => Size.Width == 0 && Size.Height == 0;
 
     public readonly PointL Location2 => new(Location.X + Size.Width - 1, Location.Y + Size.Height - 1);
 
@@ -81,6 +84,21 @@ public struct RectangleL
 
             Size.Height = value;
         }
+    }
+
+    public bool Contains(long x, long y)
+    {
+        return x >= Location.X && x < Location.X + Size.Width && y >= Location.Y && y < Location.Y + Size.Height;
+    }
+
+    public bool Contains(PointL pt)
+    {
+        return Contains(pt.X, pt.Y);
+    }
+
+    public bool Contains(RectangleL rect)
+    {
+        return (Location.X <= rect.Location.X) && (rect.Location.X + rect.Size.Width <= Location.X + Size.Width) && (Location.Y <= rect.Location.Y) && (rect.Location.Y + rect.Size.Height <= Location.Y + Size.Height);
     }
 
     public RectangleL(PointL location, SizeL size)

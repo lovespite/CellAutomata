@@ -116,18 +116,20 @@ public class CellEnvironment(ILifeMap bitmap)
 
     public async Task SaveTo(string file, IProgressReporter? progress = null)
     {
-        progress?.ReportProgress(0, "Saving...", TimeSpan.Zero);
-        await Task.Delay(1000);
+        progress?.ReportProgress(0, "Collecting...", TimeSpan.Zero);
+        await Task.Delay(100);
 
         var cells = _lifemap.GetLocations(true);
         using var fs = File.Create(file);
 
         var buffer = new byte[Marshal.SizeOf<int>() * 2];
         float totalCount = cells.Length;
-        progress?.ReportProgress(0, "Transforming data...", TimeSpan.Zero);
+        progress?.ReportProgress(0, "Saving data...", TimeSpan.Zero);
 
         for (int i = 0; i < cells.Length; i++)
         {
+            if (progress?.IsAborted ?? false) return;
+
             var cell = cells[i];
             unsafe
             {
@@ -141,9 +143,10 @@ public class CellEnvironment(ILifeMap bitmap)
 
             await fs.WriteAsync(buffer);
 
-            if (i % 10000 == 0)
+            if (i % 10_000 == 0)
             {
-                progress?.ReportProgress(i / totalCount, $"Transforming data... {i}", TimeSpan.Zero);
+                progress?.ReportProgress(i / totalCount, $"Saving data... {i}", TimeSpan.Zero);
+                await Task.Delay(1);
             }
         }
 
@@ -162,6 +165,8 @@ public class CellEnvironment(ILifeMap bitmap)
         var count = 0;
         while (fs.Position < fs.Length)
         {
+            if (progress?.IsAborted ?? false) return;
+
             await fs.ReadAsync(buffer);
             unsafe
             {
@@ -177,13 +182,13 @@ public class CellEnvironment(ILifeMap bitmap)
             if (count % 10000 == 0)
             {
                 progress?.ReportProgress(count / totalCount, $"Loading... {count}", TimeSpan.Zero);
-                await Task.Delay(100);
+                await Task.Delay(1);
             }
         }
 
         progress?.ReportProgress(1, "Done.", TimeSpan.Zero);
 
-        await Task.Delay(1000);
+        await Task.Delay(100);
     }
 
     #region Internal Methods 
