@@ -5,6 +5,10 @@ public struct SizeL
     public long Width;
     public long Height;
 
+    public static readonly SizeL Empty = new(0, 0);
+
+    public bool IsEmpty => Width == 0 && Height == 0;
+    
     public override string ToString()
     {
         return $"width={Width}, height={Height}";

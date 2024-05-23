@@ -97,9 +97,9 @@ public class BerlinNoise : IRandomFillAlgorithm
 
     public void Generate(RectangleL rect, I2DBitMutator bitmap)
     {
-        for (var y = 0; y < rect.Height - 1; y++)
+        for (var y = 0; y < rect.Height; y++)
         {
-            for (var x = 0; x < rect.Width - 1; x++)
+            for (var x = 0; x < rect.Width; x++)
             {
                 double value = OctaveNoise(x * 0.1, y * 0.1, 0, 8, 0.5);
                 bitmap.Set(y + rect.Top, x + rect.Left, value >= _threshold);

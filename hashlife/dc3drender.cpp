@@ -904,7 +904,7 @@ void dc3drender::drawtext(int x, int y, const wchar_t* text)
     pTextLayout->Release(); // 释放文本布局资源  
 }
 
-void dc3drender::drawselection(float x1, float y1, float x2, float y2)
+void dc3drender::drawselection(const float x1, const float y1, const float x2, const float y2)
 {
     if (!_canRender) return;
     if (!g_2dpRenderTarget) return;
@@ -915,14 +915,22 @@ void dc3drender::drawselection(float x1, float y1, float x2, float y2)
 
     // 创建选区矩形
     D2D1_RECT_F selectionRect = D2D1::RectF(
-        (x1),
-        (y1),
-        (x2),
-        (y2)
+        (x1 - 1.0f),
+        (y1 - 1.0f),
+        (x2 + 1.0f),
+        (y2 + 1.0f)
     );
+
+    D2D1_RECT_F selectionRectStroke = D2D1::RectF(
+        (x1 - 1.0f),
+        (y1 - 1.0f),
+        (x2 + 1.0f),
+        (y2 + 1.0f)
+    );
+
     // 绘制选区矩形
     g_2dpRenderTarget->FillRectangle(&selectionRect, g_pSelBrush);
-    g_2dpRenderTarget->DrawRectangle(&selectionRect, g_pSelBrush, 1.0f);
+    g_2dpRenderTarget->DrawRectangle(&selectionRectStroke, g_pSelBrush, 1.0f);
 
     HRESULT hr = g_2dpRenderTarget->EndDraw();
 }

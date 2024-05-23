@@ -4,7 +4,7 @@ public struct RectangleL
 {
     public SizeL Size;
     public PointL Location;
-    internal static readonly RectangleL Empty = new(0, 0, 0, 0);
+    internal static readonly RectangleL Empty = new(new PointL(0, 0), SizeL.Empty);
 
     public override string ToString()
     {
@@ -13,7 +13,7 @@ public struct RectangleL
 
     public long Area() => Size.Width * Size.Height;
 
-    public readonly bool IsEmpty => Size is { Width: 0, Height: 0 };
+    public readonly bool IsEmpty => Size.IsEmpty;
 
     public readonly PointL Location2 => new(Location.X + Size.Width - 1, Location.Y + Size.Height - 1);
 

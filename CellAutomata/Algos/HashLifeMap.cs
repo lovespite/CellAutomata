@@ -98,20 +98,17 @@ public class HashLifeMap : ILifeMap, IDcRender
                 throw new ArgumentException("Rule cannot be null or empty.");
             }
 
-            if (_rule != value)
-            {
-                if (_index >= 0)
-                {
-                    var ret = HashLifeMapStatic.SetUniverseRule(_index, value);
-                    if (ret != 0)
-                    {
-                        throw new InvalidOperationException(
-                            $"Failed to set HashLife universe rule: {value}, code: {ret}");
-                    }
+            if (_rule == value) return;
+            if (_index < 0) return;
 
-                    _rule = GetRule();
-                }
+            var ret = HashLifeMapStatic.SetUniverseRule(_index, value);
+            if (ret != 0)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to set HashLife universe rule: {value}, code: {ret}");
             }
+
+            _rule = GetRule();
         }
     }
 
@@ -232,7 +229,6 @@ public class HashLifeMap : ILifeMap, IDcRender
         }
     }
 
-
     public async Task ClearRegionAsync(RectangleL rect, IProgressReporter? reporter = null)
     {
         double total = rect.Width * rect.Height;
@@ -255,7 +251,6 @@ public class HashLifeMap : ILifeMap, IDcRender
             }
         }
     }
-
 
     public ILifeMap CreateSnapshot()
     {
@@ -280,12 +275,8 @@ public class HashLifeMap : ILifeMap, IDcRender
         var snapshot = new HashLifeMap(Rule);
 
         for (var row = rect.Top; row < rect.Bottom; row++)
-        {
-            for (var col = rect.Left; col < rect.Right; col++)
-            {
-                snapshot.Set(row - rect.Top, col - rect.Left, Get(row, col));
-            }
-        }
+        for (var col = rect.Left; col < rect.Right; col++)
+            snapshot.Set(row - rect.Top, col - rect.Left, Get(row, col));
 
         return snapshot;
     }
@@ -298,23 +289,18 @@ public class HashLifeMap : ILifeMap, IDcRender
         double count = 0;
 
         for (var row = rect.Top; row < rect.Bottom; row++)
+        for (var col = rect.Left; col < rect.Right; col++)
         {
-            for (var col = rect.Left; col < rect.Right; col++)
-            {
-                snapshot.Set(row - rect.Top, col - rect.Left, Get(row, col));
+            snapshot.Set(row - rect.Top, col - rect.Left, Get(row, col));
 
-                if (reporter is null) continue;
+            if (reporter is null) continue;
+            if (reporter.IsAborted) return snapshot;
+            if ((++count) % 100_000 != 0) continue;
 
-                if (reporter.IsAborted) return snapshot;
-
-                if ((++count) % 100_000 == 0)
-                {
-                    reporter.ReportProgress((float)(count / total), "Copying...", TimeSpan.Zero);
-                    await Task.Delay(1);
-                }
-            }
-        }
-
+            reporter.ReportProgress((float)(count / total), "Copying...", TimeSpan.Zero);
+            await Task.Delay(1);
+        } 
+        
         return snapshot;
     }
 

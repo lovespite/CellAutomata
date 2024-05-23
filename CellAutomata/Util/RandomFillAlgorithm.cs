@@ -16,9 +16,9 @@ public class RandomFillAlgorithm(double threshold = 0.5d) : IRandomFillAlgorithm
 
     public void Generate(RectangleL rect, I2DBitMutator bitmap)
     {
-        for (int y = 0; y < rect.Height - 1; y++)
+        for (int y = 0; y < rect.Height; y++)
         {
-            for (int x = 0; x < rect.Width - 1; x++)
+            for (int x = 0; x < rect.Width; x++)
             {
                 bitmap.Set(y + rect.Top, x + rect.Left, _random.NextDouble() <= _threshold);
             }

@@ -13,8 +13,8 @@
 #include "dllmain.h"
 #include "readpattern.h"
 
-std::string _version = "beta2.5.3";
-std::wstring _versionw = L"beta2.5.3";
+std::string _version = "beta2.5.4";
+std::wstring _versionw = L"beta2.5.4";
 typedef long long BigInt;
 
 static std::vector<lifealgo*> algos;
@@ -561,17 +561,13 @@ void drawframe(liferender* render, lifealgo* algo, viewport* vp, VIEWINFO* selec
 
     if (selection != nullptr && selection->EMPTY == 0)
     {
-        // draw selection
-        // need to convert selection(world position) to viewport coordinates
-
         const auto lt = vp->at(0, 0); // left-top cell position in world coordinates
-        VIEWINFO vw{};
 
-        const float x1 = -(-selection->psl_x1 + lt.first.toint64()) * pm_scale;
-        const float y1 = -(-selection->psl_y1 + lt.second.toint64()) * pm_scale;
+        const float x1 = (selection->psl_x1 - lt.first.toint64()) * pm_scale;
+        const float y1 = (selection->psl_y1 - lt.second.toint64()) * pm_scale;
 
-        const float x2 = -(-selection->psl_x2 + lt.first.toint64()) * pm_scale;
-        const float y2 = -(-selection->psl_y2 + lt.second.toint64()) * pm_scale;
+        const float x2 = (selection->psl_x2 - lt.first.toint64()) * pm_scale;
+        const float y2 = (selection->psl_y2 - lt.second.toint64()) * pm_scale;
 
         render->drawselection(x1, y1, x2, y2);
     }
