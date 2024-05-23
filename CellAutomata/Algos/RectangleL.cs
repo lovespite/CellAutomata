@@ -6,42 +6,41 @@ public struct RectangleL
     public PointL Location;
     internal static readonly RectangleL Empty = new(0, 0, 0, 0);
 
-    public readonly bool IsEmpty => Size.Width == 0 && Size.Height == 0;
+    public readonly bool IsEmpty => Size is { Width: 0, Height: 0 };
 
     public readonly PointL Location2 => new(Location.X + Size.Width - 1, Location.Y + Size.Height - 1);
 
     public long Top
     {
-        get { return Location.Y; }
-        set { Location.Y = value; }
+        get => Location.Y;
+        set => Location.Y = value;
     }
 
     public long X
     {
-        get { return Left; }
-        set { Left = value; }
+        get => Left;
+        set => Left = value;
     }
 
     public long Y
     {
-        get { return Top; }
-        set { Top = value; }
+        get => Top;
+        set => Top = value;
     }
 
     public long Left
     {
-        get { return Location.X; }
-        set { Location.X = value; }
+        get => Location.X;
+        set => Location.X = value;
     }
 
     public long Bottom
     {
-        get { return Location.Y + Size.Height - 1; }
+        get => Location.Y + Size.Height - 1;
         set
         {
-
             if (value < Location.Y)
-                throw new ArgumentOutOfRangeException("Bottom", "Bottom must be greater than or equal to Top");
+                throw new ArgumentOutOfRangeException(nameof(Bottom), @"Bottom must be greater than or equal to Top");
 
             Size.Height = value - Location.Y + 1;
         }
@@ -49,12 +48,11 @@ public struct RectangleL
 
     public long Right
     {
-        get { return Location.X + Size.Width - 1; }
+        get => Location.X + Size.Width - 1;
         set
         {
-
             if (value < Location.X)
-                throw new ArgumentOutOfRangeException("Right", "Right must be greater than or equal to Left");
+                throw new ArgumentOutOfRangeException(nameof(Right), @"Right must be greater than or equal to Left");
 
             Size.Width = value - Location.X + 1;
         }
@@ -62,12 +60,11 @@ public struct RectangleL
 
     public long Width
     {
-        get { return Size.Width; }
+        get => Size.Width;
         set
         {
-
             if (value < 0)
-                throw new ArgumentOutOfRangeException("Width", "Width must be greater than or equal to 0");
+                throw new ArgumentOutOfRangeException(nameof(Width), @"Width must be greater than or equal to 0");
 
             Size.Width = value;
         }
@@ -75,12 +72,11 @@ public struct RectangleL
 
     public long Height
     {
-        get { return Size.Height; }
+        get => Size.Height;
         set
         {
-
             if (value < 0)
-                throw new ArgumentOutOfRangeException("Height", "Height must be greater than or equal to 0");
+                throw new ArgumentOutOfRangeException(nameof(Height), @"Height must be greater than or equal to 0");
 
             Size.Height = value;
         }
@@ -98,7 +94,8 @@ public struct RectangleL
 
     public bool Contains(RectangleL rect)
     {
-        return (Location.X <= rect.Location.X) && (rect.Location.X + rect.Size.Width <= Location.X + Size.Width) && (Location.Y <= rect.Location.Y) && (rect.Location.Y + rect.Size.Height <= Location.Y + Size.Height);
+        return (Location.X <= rect.Location.X) && (rect.Location.X + rect.Size.Width <= Location.X + Size.Width) &&
+               (Location.Y <= rect.Location.Y) && (rect.Location.Y + rect.Size.Height <= Location.Y + Size.Height);
     }
 
     public RectangleL(PointL location, SizeL size)
@@ -123,4 +120,3 @@ public struct RectangleL
         return new RectangleL(rect.Top, rect.Left, rect.Bottom, rect.Right);
     }
 }
-

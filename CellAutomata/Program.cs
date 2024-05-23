@@ -1,6 +1,3 @@
-using Accessibility;
-using System.Runtime.InteropServices;
-
 namespace CellAutomata;
 
 internal static class Program

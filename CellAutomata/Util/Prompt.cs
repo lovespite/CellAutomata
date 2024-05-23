@@ -1,18 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-namespace CellAutomata.Util;
+﻿namespace CellAutomata.Util;
 internal delegate Exception? PromptValidator(string input);
 
 internal partial class Prompt : IDisposable
 {
-    private readonly string _title;
-    private readonly string _prompt;
-    private readonly string _default;
     private readonly Bitmap? _icon;
 
     private readonly Form _form;
@@ -26,21 +16,19 @@ internal partial class Prompt : IDisposable
 
     public Prompt(string title, string prompt, string? defaultText = null, Bitmap? icon = null)
     {
-        _title = title;
-        _prompt = prompt;
-        _default = defaultText ?? string.Empty;
+        var @default = defaultText ?? string.Empty;
         _icon = icon;
 
         var label = new Label
         {
-            Text = _prompt,
+            Text = prompt,
             AutoSize = true,
             Location = new Point(50, 20)
         };
 
         _input = new TextBox
         {
-            Text = _default,
+            Text = @default,
             Location = new Point(50, 50),
             Size = new Size(400, 20),
             Anchor = AnchorStyles.Left | AnchorStyles.Right
@@ -49,7 +37,7 @@ internal partial class Prompt : IDisposable
         _cancelButton = new Button
         {
             DialogResult = DialogResult.Cancel,
-            Text = "Cancel",
+            Text = @"Cancel",
             Location = new Point(375, 80),
             Size = new Size(75, 28)
         };
@@ -57,7 +45,7 @@ internal partial class Prompt : IDisposable
         _okButton = new Button
         {
             DialogResult = DialogResult.OK,
-            Text = "OK",
+            Text = @"OK",
             Location = new Point(300, 80),
             Size = new Size(75, 28)
         };
@@ -67,7 +55,7 @@ internal partial class Prompt : IDisposable
             Width = 500,
             Height = 160,
             FormBorderStyle = FormBorderStyle.FixedDialog,
-            Text = _title,
+            Text = title,
             StartPosition = FormStartPosition.CenterScreen,
             MaximizeBox = false,
             MinimizeBox = false,
@@ -81,7 +69,7 @@ internal partial class Prompt : IDisposable
 
     public void SetValidator(PromptValidator validator)
     {
-        _input.TextChanged += (sender, e) =>
+        _input.TextChanged += (_, _) =>
         {
             var error = validator(_input.Text);
             _okButton.Enabled = error is null;
@@ -101,17 +89,19 @@ internal partial class Prompt : IDisposable
         _okButton.Enabled = true;
         _form.AcceptButton = _okButton;
 
-        _okButton.Click += (sender, e) =>
-        {
+        _okButton.Click += (_, _) =>
+        { 
             Result = _input.Text;
-            DialogResult = DialogResult.OK;
+            DialogResult = DialogResult.OK; 
+            // ReSharper disable once AccessToDisposedClosure
             _form.Close();
         };
 
-        _cancelButton.Click += (sender, e) =>
+        _cancelButton.Click += (_, _) =>
         {
             Result = null;
             DialogResult = DialogResult.Cancel;
+            // ReSharper disable once AccessToDisposedClosure
             _form.Close();
         };
 

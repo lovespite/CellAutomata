@@ -1,11 +1,13 @@
-﻿namespace CellAutomata
+﻿using System.ComponentModel;
+
+namespace CellAutomata
 {
     partial class Form1
     {
         /// <summary>
         ///  Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        private IContainer components = null;
 
         /// <summary>
         ///  Clean up any resources being used.
@@ -699,7 +701,7 @@
             worlyToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Alt | Keys.W;
             worlyToolStripMenuItem.Size = new Size(216, 22);
             worlyToolStripMenuItem.Text = "&Worly";
-            worlyToolStripMenuItem.Click += Edit_FillWorly_Click;
+            worlyToolStripMenuItem.Click += Edit_FillWorley_Click;
             // 
             // Form1
             // 

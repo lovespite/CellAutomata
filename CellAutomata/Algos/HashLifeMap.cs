@@ -1,18 +1,14 @@
-﻿using SharpDX.Direct2D1;
-using SharpDX;
-using System.Buffers;
+﻿using System.Buffers;
 using System.Diagnostics;
 using System.Drawing.Imaging;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
-using System;
+using System.Text; 
 using CellAutomata.Render;
 using CellAutomata.Util;
 
 namespace CellAutomata.Algos;
 
-public partial class HashLifeMap : ILifeMap, IDCRender
+public class HashLifeMap : ILifeMap, IDcRender
 {
     public int GenInterval { get; set; } = 10;
 
@@ -26,13 +22,14 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         return new PointL(col, row);
     }
 
-    public IDCRender GetDCRender()
+    public IDcRender GetDcRender()
     {
         return this;
     }
 
     private bool _isSuspended = false;
     public bool IsSuspended => _isSuspended;
+
     public void Suspend()
     {
         _isSuspended = true;
@@ -45,13 +42,13 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         HashLifeMapStatic.ResumeRender(_renderContextId);
     }
 
-    public void DrawViewportDC(nint hWndCanvas, int mag, Size vwSize, Point center, ref VIEWINFO selection, string text)
+    public void DrawViewportDc(nint hWndCanvas, int mag, Size vwSize, Point center, ref ViewInfo selection, string text)
     {
         if (_isSuspended) return;
 
         if (_renderContextId < 0)
         {
-            _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas, Use3dRender);
+            _renderContextId = HashLifeMapStatic.CreateRender(vwSize.Width, vwSize.Height, hWndCanvas, 1);
             _vwSize = vwSize;
         }
         else if (_vwSize != vwSize)
@@ -71,19 +68,11 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         );
     }
 
-    private static readonly string _version;
-    private int _index = int.MinValue;
+    private int _index;
     public int AlgoIndex => _index;
 
-    static HashLifeMap()
-    {
-        var buffer = new byte[256];
-        HashLifeMapStatic.Version(buffer, buffer.Length);
-        _version = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
-        Debug.WriteLine($"Hashlifelib Version: {_version}");
-    }
+    private string _rule;
 
-    private string _rule = null!;
     public string Rule
     {
         get
@@ -109,6 +98,7 @@ public partial class HashLifeMap : ILifeMap, IDCRender
             {
                 throw new ArgumentException("Rule cannot be null or empty.");
             }
+
             if (_rule != value)
             {
                 if (_index >= 0)
@@ -116,8 +106,10 @@ public partial class HashLifeMap : ILifeMap, IDCRender
                     var ret = HashLifeMapStatic.SetUniverseRule(_index, value);
                     if (ret != 0)
                     {
-                        throw new InvalidOperationException($"Failed to set HashLife universe rule: {value}, code: {ret}");
+                        throw new InvalidOperationException(
+                            $"Failed to set HashLife universe rule: {value}, code: {ret}");
                     }
+
                     _rule = GetRule();
                 }
             }
@@ -125,6 +117,7 @@ public partial class HashLifeMap : ILifeMap, IDCRender
     }
 
     const int BufferSize = 256;
+
     private string GetRule()
     {
         nint bufferPtr = Marshal.AllocHGlobal(BufferSize);
@@ -141,10 +134,9 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         }
     }
 
-    private readonly int Use3dRender;
-    public HashLifeMap(string rule = "B3/S23", bool use3dRender = false)
+    public HashLifeMap(string rule = "B3/S23")
     {
-        Use3dRender = use3dRender ? 1 : 0;
+        Debug.WriteLine(HashLifeMapStatic.LibVersion);
         _index = HashLifeMapStatic.CreateNewUniverse(rule);
 
         if (_index < 0)
@@ -173,9 +165,12 @@ public partial class HashLifeMap : ILifeMap, IDCRender
     private ulong _population = 0;
 
     public long MsGenerationTime { get; private set; }
+
+    // ReSharper disable once UnusedAutoPropertyAccessor.Local
     public long MsMemoryCopyTime { get; private set; }
-    public long MsCPUTime => MsGenerationTime;
+    public long MsCpuTime => MsGenerationTime;
     public long Generation { get; private set; }
+
     public long Population
     {
         get
@@ -268,7 +263,7 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         return CreateRegionSnapshot(GetBounds());
     }
 
-    public Task<ILifeMap> CreateSnapshotAsync(IProgressReporter reporter)
+    public Task<ILifeMap> CreateSnapshotAsync(IProgressReporter? reporter)
     {
         return CreateRegionSnapshotAsync(GetBounds(), reporter);
     }
@@ -318,7 +313,6 @@ public partial class HashLifeMap : ILifeMap, IDCRender
                     reporter.ReportProgress((float)(count / total), "Copying...", TimeSpan.Zero);
                     await Task.Delay(1);
                 }
-
             }
         }
 
@@ -356,7 +350,8 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         }
     }
 
-    public async Task BlockCopyAsync(ILifeMap source, Size srcSize, Point dstLocation, CopyMode mode = CopyMode.Overwrite, IProgressReporter? reporter = null)
+    public async Task BlockCopyAsync(ILifeMap source, Size srcSize, Point dstLocation,
+        CopyMode mode = CopyMode.Overwrite, IProgressReporter? reporter = null)
     {
         double total = srcSize.Width * srcSize.Height;
         double count = 0;
@@ -416,41 +411,37 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         var buffer = ArrayPool<byte>.Shared.Rent(bufferLen);
         try
         {
-            var sw = Stopwatch.StartNew();
             HashLifeMapStatic.GetRegion(_index, rect.Left, rect.Top, rect.Width, rect.Height, buffer, buffer.Length);
-            var msGetRegion = sw.ElapsedMilliseconds;
-
-            sw.Restart();
-            // CollectBitMap(rect, points, buffer); 
             CollectBitMap2(rect, points, buffer, bufferLen);
-            var msCollect = sw.ElapsedMilliseconds;
-
-            sw.Stop();
-            // Debug.WriteLine($"> GetRegion: {msGetRegion} ms, Collect: {msCollect} ms");
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
         }
 
-
         return [.. points];
+    }
+
+    public async Task<Point[]> QueryRegionAsync(bool val, Rectangle rect, IProgressReporter? reporter = null)
+    {
+        return await Task.Run(() => QueryRegion(val, rect), reporter?.CancelToken ?? CancellationToken.None);
     }
 
     private static void CollectBitMap2(Rectangle rect, List<Point> points, byte[] buffer, int bufferLen)
     {
         int byteIndex;
-        int bitIndex;
         for (byteIndex = 0; byteIndex < bufferLen; byteIndex++)
         {
             byte b = buffer[byteIndex];
             if (b == 0) continue;
 
+            int bitIndex;
             for (bitIndex = 0; bitIndex < 8; bitIndex++)
             {
                 if ((b & 1 << bitIndex) != 0)
                 {
-                    points.Add(new Point((byteIndex * 8 + bitIndex) % rect.Width + rect.Left, (byteIndex * 8 + bitIndex) / rect.Width + rect.Top));
+                    points.Add(new((byteIndex * 8 + bitIndex) % rect.Width + rect.Left,
+                        (byteIndex * 8 + bitIndex) / rect.Width + rect.Top));
                 }
             }
         }
@@ -469,12 +460,26 @@ public partial class HashLifeMap : ILifeMap, IDCRender
                 }
             }
         }
+
         return count;
+    }
+
+    public async Task<long> QueryRegionCountAsync(bool val, Rectangle rect, IProgressReporter? reporter = null)
+    {
+        return await Task.Run(() => QueryRegionCount(val, rect), reporter?.CancelToken ?? CancellationToken.None);
     }
 
     public Point[] GetLocations(bool val)
     {
         var snapshot = CreateSnapshot();
+        var bounds = snapshot.GetBounds();
+
+        return snapshot.QueryRegion(val, bounds);
+    }
+
+    public async Task<Point[]> GetLocationsAsync(bool val, IProgressReporter? reporter = null)
+    {
+        var snapshot = await CreateSnapshotAsync(reporter);
         var bounds = snapshot.GetBounds();
 
         return snapshot.QueryRegion(val, bounds);
@@ -523,13 +528,13 @@ public partial class HashLifeMap : ILifeMap, IDCRender
 
     #region Drawing
 
-    public System.Drawing.Bitmap DrawRegionBitmap(Rectangle rect)
+    public Bitmap DrawRegionBitmap(Rectangle rect)
     {
-        System.Drawing.Bitmap bitmap = new(rect.Width, rect.Height, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+        Bitmap bitmap = new(rect.Width, rect.Height, PixelFormat.Format1bppIndexed);
 
         // 锁定位图的像素数据
         BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                                             ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format1bppIndexed);
+            ImageLockMode.WriteOnly, PixelFormat.Format1bppIndexed);
 
         // 获取位图缓冲区的指针
         nint bitmapPtr = bmpData.Scan0;
@@ -538,8 +543,8 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         long stride = bmpData.Stride;
         HashLifeMapStatic.
 
-                // 调用C++ DLL函数
-                DrawRegionBitmap(_index, bitmapPtr, stride, rect.X, rect.Y, rect.Width, rect.Height);
+            // 调用C++ DLL函数
+            DrawRegionBitmap(_index, bitmapPtr, stride, rect.X, rect.Y, rect.Width, rect.Height);
 
         // 解锁位图
         bitmap.UnlockBits(bmpData);
@@ -553,7 +558,7 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         return bitmap;
     }
 
-    public byte[] DrawRegionBitmapBGRA(Rectangle rect)
+    public byte[] DrawRegionBitmapBgra(Rectangle rect)
     {
         // 1. 创建BGRA的位图缓冲区
         int width = rect.Width;
@@ -566,8 +571,8 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         nint bitmapPtr = handle.AddrOfPinnedObject();
         HashLifeMapStatic.
 
-                // 3. 调用C++ DLL函数
-                DrawRegionBitmapBGRA(_index, bitmapPtr, stride, rect.X, rect.Y, width, height);
+            // 3. 调用C++ DLL函数
+            DrawRegionBitmapBGRA(_index, bitmapPtr, stride, rect.X, rect.Y, width, height);
 
         // 4. 释放数据指针
         handle.Free();
@@ -575,21 +580,5 @@ public partial class HashLifeMap : ILifeMap, IDCRender
         return bitmapData;
     }
 
-    public Task<Point[]> QueryRegionAsync(bool val, Rectangle rect, IProgressReporter? reporter = null)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<long> QueryRegionCountAsync(bool val, Rectangle rect, IProgressReporter? reporter = null)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Point[]> GetLocationsAsync(bool val, IProgressReporter? reporter = null)
-    {
-        throw new NotImplementedException();
-    }
-
     #endregion
 }
-

@@ -1,12 +1,6 @@
-﻿using SharpDX.Direct2D1;
+﻿using SharpDX;
+using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
-using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using SharpDX.Mathematics.Interop;
 
 namespace CellAutomata.Render;
@@ -18,8 +12,8 @@ public class TextRenderer : TextRendererBase
 
     public void AssignResources(RenderTarget renderTarget, SolidColorBrush defaultBrush)
     {
-        this._renderTarget = renderTarget;
-        this._defaultBrush = defaultBrush;
+        _renderTarget = renderTarget;
+        _defaultBrush = defaultBrush;
     }
 
     public override Result DrawGlyphRun(object clientDrawingContext, float baselineOriginX, float baselineOriginY, MeasuringMode measuringMode, GlyphRun glyphRun, GlyphRunDescription glyphRunDescription, ComObject clientDrawingEffect)

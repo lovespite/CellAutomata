@@ -1,10 +1,8 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.SymbolStore;
-using Timer = System.Threading.Timer;
 
 namespace CellAutomata.Util;
 
-public partial class TaskProgressReporter : Form, IProgressReporter
+public sealed partial class TaskProgressReporter : Form, IProgressReporter
 {
     private readonly TaskCompletionSource<object?> _formInit;
     private readonly CancellationTokenSource? _cts;
@@ -13,7 +11,7 @@ public partial class TaskProgressReporter : Form, IProgressReporter
 
     public CancellationToken CancelToken => _cts?.Token ?? CancellationToken.None;
 
-    public TaskProgressReporter(string title = "Task", string description = "Please wait ...", bool allowAbort = false)
+    private TaskProgressReporter(string title = "Task", string description = "Please wait ...", bool allowAbort = false)
     {
         InitializeComponent();
 
@@ -39,25 +37,27 @@ public partial class TaskProgressReporter : Form, IProgressReporter
         _formInit.SetResult(null); // form is ready
     }
 
-    public void Wait(Task task)
+    private void Wait(Task task)
     {
         if (IsDisposed) return; // already disposed
 
+        // ReSharper disable once MethodSupportsCancellation
         _formInit.Task.ContinueWith(_ =>
         {
             // close form when task is done
+            // ReSharper disable once MethodSupportsCancellation
             task.ContinueWith(_ => Invoke(Dispose));
         });
 
         Show();
     }
 
-    public new void Show()
+    private new void Show()
     {
         ShowDialog();
     }
 
-    public new void ShowDialog()
+    private new void ShowDialog()
     {
         if (IsDisposed) return;
         base.ShowDialog(); // blocking 
@@ -68,12 +68,12 @@ public partial class TaskProgressReporter : Form, IProgressReporter
         if (IsDisposed) return; // already disposed
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ReportProgress(progress)));
+            Invoke(() => ReportProgress(progress));
             return;
         }
 
         progressBar1.Value = (int)(Math.Clamp(progress, 0f, 1f) * 1000);
-        lbPercentage.Text = string.Format("{0:0.0%}", progress);
+        lbPercentage.Text = $@"{progress:0.0%}";
     }
 
     public void ReportTimeRemaining(TimeSpan timeRemaining)
@@ -81,11 +81,12 @@ public partial class TaskProgressReporter : Form, IProgressReporter
         if (IsDisposed) return; // already disposed
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ReportTimeRemaining(timeRemaining)));
+            Invoke(() => ReportTimeRemaining(timeRemaining));
             return;
         }
 
-        lbTimeRemaining.Text = $"{timeRemaining.Hours:D2}:{timeRemaining.Minutes:D2}:{timeRemaining.Seconds:D2} remaining.";
+        lbTimeRemaining.Text =
+            $@"{timeRemaining.Hours:D2}:{timeRemaining.Minutes:D2}:{timeRemaining.Seconds:D2} remaining.";
     }
 
     public void ReportStatus(string status)
@@ -93,33 +94,36 @@ public partial class TaskProgressReporter : Form, IProgressReporter
         if (IsDisposed) return; // already disposed
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ReportStatus(status)));
+            Invoke(() => ReportStatus(status));
             return;
         }
 
         lbStatus.Text = status;
     }
 
-    private Stopwatch _stopwatch = Stopwatch.StartNew();
+    private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+
     public void ReportProgress(float progress, string status, TimeSpan timeRemaining)
     {
         if (_stopwatch.ElapsedMilliseconds < 500) return; // avoid updating too frequently
         _stopwatch.Restart();
 
-        Debug.WriteLine($"{progress:0.0%} - {status} - {timeRemaining.Hours:D2}:{timeRemaining.Minutes:D2}:{timeRemaining.Seconds:D2} remaining.");
+        Debug.WriteLine(
+            $"{progress:0.0%} - {status} - {timeRemaining.Hours:D2}:{timeRemaining.Minutes:D2}:{timeRemaining.Seconds:D2} remaining.");
 
         if (IsDisposed) return;
         if (InvokeRequired)
         {
-            Invoke(new Action(() => ReportProgress(progress, status, timeRemaining)));
+            Invoke(() => ReportProgress(progress, status, timeRemaining));
             return;
         }
 
         progressBar1.Value = (int)(Math.Clamp(progress, 0f, 1f) * 1000);
         // progress is between 0 and 1
-        lbPercentage.Text = string.Format("{0:0.0%}", progress);
+        lbPercentage.Text = $@"{progress:0.0%}";
         lbStatus.Text = status;
-        lbTimeRemaining.Text = $"{timeRemaining.Hours:D2}:{timeRemaining.Minutes:D2}:{timeRemaining.Seconds:D2} remaining.";
+        lbTimeRemaining.Text =
+            @$"{timeRemaining.Hours:D2}:{timeRemaining.Minutes:D2}:{timeRemaining.Seconds:D2} remaining.";
     }
 
 
@@ -130,29 +134,17 @@ public partial class TaskProgressReporter : Form, IProgressReporter
         Dispose();
     }
 
-
-    public static void Watch(Func<IProgressReporter, Task> func, string title = "Task", string description = "Please wait ...")
+    public static void Watch(Func<IProgressReporter, Task> func, string title = "Task",
+        string description = "Please wait ...")
     {
         using var reporter = new TaskProgressReporter(title, description, true);
         reporter.Wait(func(reporter));
     }
 
-    public static void Watch(Action<IProgressReporter> action, string title = "Task", string description = "Please wait ...")
+    public static void WatchNoAbort(Func<IProgressReporter, Task> func, string title = "Task",
+        string description = "Please wait ...")
     {
-        using var reporter = new TaskProgressReporter(title, description, true);
-        reporter.Wait(Task.Run(() => action(reporter)));
-    }
-
-    public static void WatchNoAbort(Func<IProgressReporter, Task> func, string title = "Task", string description = "Please wait ...")
-    {
-        using var reporter = new TaskProgressReporter(title, description, false);
+        using var reporter = new TaskProgressReporter(title, description);
         reporter.Wait(func(reporter));
-    }
-
-    public static void WatchNoAbort(Action<IProgressReporter> action, string title = "Task", string description = "Please wait ...")
-    {
-        using var reporter = new TaskProgressReporter(title, description, false);
-        reporter.Wait(Task.Run(() => action(reporter)));
     }
 }
-

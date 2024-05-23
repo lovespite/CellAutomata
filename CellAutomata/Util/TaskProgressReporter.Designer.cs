@@ -1,11 +1,13 @@
-﻿namespace CellAutomata.Util
+﻿using System.ComponentModel;
+
+namespace CellAutomata.Util
 {
-    partial class TaskProgressReporter
+    sealed partial class TaskProgressReporter
     {
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        private IContainer components = null;
 
         /// <summary>
         /// Clean up any resources being used.

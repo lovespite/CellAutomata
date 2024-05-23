@@ -1,6 +1,5 @@
-﻿using CellAutomata.Algos;
-using SharpDX.Mathematics.Interop;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using CellAutomata.Algos;
 
 namespace CellAutomata.Render;
 
@@ -8,7 +7,7 @@ public class ViewWindow : ViewWindowBase
 {
     private readonly nint _canvas;
     public ViewWindow(CellEnvironment cells, Size vwSize, nint canvas)
-        : base(cells, vwSize.Width, vwSize.Height, 1)
+        : base(cells, vwSize.Width, vwSize.Height, 0)
     {
         if (cells.LifeMap is not HashLifeMap)
             throw new ArgumentException("ViewWindowDx2dRaw is only support for HashLifeMap");
@@ -24,8 +23,8 @@ public class ViewWindow : ViewWindowBase
 
     public override void MoveTo(int left, int top)
     {
-        _centerX = left;
-        _centerY = top;
+        CenterX = left;
+        CenterY = top;
 
         _center = new Point(left, top);
     }
@@ -39,41 +38,39 @@ public class ViewWindow : ViewWindowBase
 
     public override void Draw(Graphics? graphics)
     {
-        DrawMainView4(_cellEnvironment.LifeMap.GetDCRender());
+        DrawMainView4(CellEnvironment.LifeMap.GetDcRender());
     }
     private ulong _frames = 0;
     private readonly Stopwatch _sw = Stopwatch.StartNew();
     private readonly Stopwatch _sw2 = Stopwatch.StartNew();
 
     private float _fps; // frames per second 
-    private string text = string.Empty;
-    private void DrawMainView4(IDCRender render)
+    private string _text = string.Empty;
+    private void DrawMainView4(IDcRender render)
     {
         if (_canvas == 0) return;
 
-        var mag = _cellSize > 0
-            ? (int)Math.Log2(_cellSize)
-            : 0;
+        var mag = Magnify;
 
         var selection = GetSelection();
 
-        VIEWINFO selview = new();
+        ViewInfo sel = new();
 
         if (selection.IsEmpty)
         {
-            selview.EMPTY = 1;
+            sel.EMPTY = 1;
         }
         else
         {
-            selview.EMPTY = 0;
+            sel.EMPTY = 0;
 
-            selview.psl_x1 = selection.X;
-            selview.psl_y1 = selection.Y;
-            selview.psl_x2 = selection.Right;
-            selview.psl_y2 = selection.Bottom;
+            sel.psl_x1 = selection.X;
+            sel.psl_y1 = selection.Y;
+            sel.psl_x2 = selection.Right;
+            sel.psl_y2 = selection.Bottom;
         }
 
-        render.DrawViewportDC(_canvas, mag, _vwSize, _center, ref selview, text);
+        render.DrawViewportDc(_canvas, mag, _vwSize, _center, ref sel, _text);
 
         if (_sw.ElapsedMilliseconds > 500)
         {
@@ -85,11 +82,11 @@ public class ViewWindow : ViewWindowBase
 
         if (_sw2.ElapsedMilliseconds > 100)
         {
-            text =
-                $"{_cellEnvironment.LifeMap.GetType().Name}, {_cellEnvironment.LifeMap.Rule}\n" +
-                $"Population: {_cellEnvironment.Population:#,0}, Generation: {_cellEnvironment.Generation:#,0}\n" +
+            _text =
+                $"{CellEnvironment.LifeMap.GetType().Name}, {CellEnvironment.LifeMap.Rule}\n" +
+                $"Population: {CellEnvironment.Population:#,0}, Generation: {CellEnvironment.Generation:#,0}\n" +
                 $"Position: {MouseCellPoint}  Mag: {mag}, View: {_center}\n" +
-                $"CPU Time: {_cellEnvironment.MsCPUTime:#,0} ms  FPS: {_fps:0.0}";
+                $"CPU Time: {CellEnvironment.MsCpuTime:#,0} ms  FPS: {_fps:0.0}";
 
             _sw2.Restart();
         }

@@ -18,14 +18,14 @@ public interface ILifeMap : I2DBitMutator, IDisposable
 
     long MsGenerationTime { get; }
     long MsMemoryCopyTime { get; }
-    long MsCPUTime { get; }
+    long MsCpuTime { get; }
     long Generation { get; }
     long Population { get; }
 
     int GenInterval { get; set; }
     string Rule { get; set; }
 
-    IDCRender GetDCRender();
+    IDcRender GetDcRender();
 
     ILifeMap CreateSnapshot();
     Task<ILifeMap> CreateSnapshotAsync(IProgressReporter reporter);
@@ -52,7 +52,7 @@ public interface ILifeMap : I2DBitMutator, IDisposable
     void ReadRle(string filename);
 
     Bitmap DrawRegionBitmap(Rectangle rectangle);
-    byte[] DrawRegionBitmapBGRA(Rectangle rectangle);
+    byte[] DrawRegionBitmapBgra(Rectangle rectangle);
 
     PointL At(int x, int y);
 }

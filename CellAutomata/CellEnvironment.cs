@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Drawing.Printing;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using CellAutomata.Algos;
 using CellAutomata.Render;
 using CellAutomata.Util;
@@ -9,37 +7,35 @@ namespace CellAutomata;
 
 public class CellEnvironment(ILifeMap bitmap)
 {
-    private readonly ILifeMap _lifemap = bitmap;
-
     /// <summary>
     /// Milliseconds
     /// </summary>
     public int MsGenInterval
     {
-        get => _lifemap.GenInterval;
+        get => bitmap.GenInterval;
         set
         {
             if (value < 10)
             {
-                _lifemap.GenInterval = 10;
+                bitmap.GenInterval = 10;
             }
             else if (value > 10_000)
             {
-                _lifemap.GenInterval = 10_000;
+                bitmap.GenInterval = 10_000;
             }
             else
             {
-                _lifemap.GenInterval = value;
+                bitmap.GenInterval = value;
             }
         }
     }
 
-    public IDCRender GetDCRender()
+    public IDcRender GetDcRender()
     {
-        return LifeMap.GetDCRender();
+        return LifeMap.GetDcRender();
     }
 
-    public ILifeMap LifeMap => _lifemap;
+    public ILifeMap LifeMap => bitmap;
 
     private readonly object _lock = new();
 
@@ -47,30 +43,28 @@ public class CellEnvironment(ILifeMap bitmap)
     {
         lock (_lock)
         {
-            action(_lifemap);
+            action(bitmap);
         }
     }
 
-    public long Population => _lifemap.Population;
-    public long Generation
-    {
-        get => _lifemap.Generation;
-    }
+    public long Population => bitmap.Population;
+
+    public long Generation => bitmap.Generation;
 
     public int ThreadCount
     {
-        get => _lifemap.ThreadCount;
-        set => _lifemap.ThreadCount = value;
+        get => bitmap.ThreadCount;
+        set => bitmap.ThreadCount = value;
     }
 
-    public long MsCPUTime => _lifemap.MsCPUTime; // milliseconds 
+    public long MsCpuTime => bitmap.MsCpuTime; // milliseconds 
 
 
     public void NextGeneration()
     {
         lock (_lock)
         {
-            _lifemap.NextGeneration();
+            bitmap.NextGeneration();
         }
     }
 
@@ -78,7 +72,7 @@ public class CellEnvironment(ILifeMap bitmap)
     {
         lock (_lock)
         {
-            return _lifemap.QueryRegion(true, rect);
+            return bitmap.QueryRegion(true, rect);
         }
     }
 
@@ -119,8 +113,8 @@ public class CellEnvironment(ILifeMap bitmap)
         progress?.ReportProgress(0, "Collecting...", TimeSpan.Zero);
         await Task.Delay(100);
 
-        var cells = _lifemap.GetLocations(true);
-        using var fs = File.Create(file);
+        var cells = await bitmap.GetLocationsAsync(true, progress);
+        await using var fs = File.Create(file);
 
         var buffer = new byte[Marshal.SizeOf<int>() * 2];
         float totalCount = cells.Length;
@@ -157,17 +151,18 @@ public class CellEnvironment(ILifeMap bitmap)
     {
         progress?.ReportProgress(0, "Reading file...", TimeSpan.Zero);
         var buffer = new byte[Marshal.SizeOf<int>() * 2];
-        using var fs = File.OpenRead(file);
+        await using var fs = File.OpenRead(file);
         using var br = new BinaryReader(fs);
 
         await Task.Delay(1000);
-        float totalCount = fs.Length / buffer.Length;
+        float totalCount = fs.Length / (float)buffer.Length;
         var count = 0;
         while (fs.Position < fs.Length)
         {
             if (progress?.IsAborted ?? false) return;
 
-            await fs.ReadAsync(buffer);
+            var readAsync = await fs.ReadAsync(buffer);
+            if (readAsync < buffer.Length) break; // EOF
             unsafe
             {
                 fixed (byte* ptr = buffer)
@@ -191,26 +186,26 @@ public class CellEnvironment(ILifeMap bitmap)
         await Task.Delay(100);
     }
 
-    #region Internal Methods 
+    #region Internal Methods
 
     private void ActivateCellInternal(int row, int col)
     {
-        _lifemap.Set(row, col, true);
+        bitmap.Set(row, col, true);
     }
 
     private void DeactivateCellInternal(int row, int col)
     {
-        _lifemap.Set(row, col, false);
+        bitmap.Set(row, col, false);
     }
 
     private void ResetInternal()
     {
-        _lifemap.Clear();
+        bitmap.Clear();
     }
 
     private ILifeMap CreateSnapshotInternal()
     {
-        return _lifemap.CreateSnapshot();
+        return bitmap.CreateSnapshot();
     }
 
     #endregion

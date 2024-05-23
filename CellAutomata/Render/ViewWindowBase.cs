@@ -1,131 +1,110 @@
-﻿using CellAutomata.Algos;
-using System.Diagnostics;
-using System.Drawing;
+﻿using System.Diagnostics;
 
 namespace CellAutomata.Render;
+
 public abstract class ViewWindowBase
 {
-    protected readonly CellEnvironment _cellEnvironment;
+    protected readonly CellEnvironment CellEnvironment;
 
-    protected int _pxViewWidth;
-    protected int _pxViewHeight;
+    protected int PxViewWidth;
+    protected int PxViewHeight;
 
-    protected float _cellSize;
-    public float CellSize => _cellSize;
+    protected int Magnify = 0;
+    public float CellSize => Magnify >= 0 ? 1 << Magnify : 1f / (1 << -Magnify);
 
-    protected Point _selStart;
-    protected Point _selEnd;
-    protected int _selected = 0;
-    protected readonly Font _font = new("Arial", 9);
+    protected Point SelStart;
+    protected Point SelEnd;
+    protected int Selected = 0;
+    protected readonly Font DefaultFont = new("Arial", 9);
 
-    protected int _centerX = 0;
-    protected int _centerY = 0;
+    protected int CenterX = 0;
+    protected int CenterY = 0;
 
-    protected float _gps; // generations per second
+    protected float GenPerSecond; // generations per second
 
     public float Gps
     {
-        set => _gps = value;
+        set => GenPerSecond = value;
     }
 
-    public ViewWindowBase(CellEnvironment cellEnvironment, int pixelViewWidth, int pixelViewHeight, float cellSize)
+    public ViewWindowBase(CellEnvironment cellEnvironment, int pixelViewWidth, int pixelViewHeight, int magnify)
     {
-        _cellEnvironment = cellEnvironment;
-        _pxViewWidth = pixelViewWidth;
-        _pxViewHeight = pixelViewHeight;
-        _cellSize = cellSize;
+        CellEnvironment = cellEnvironment;
+        PxViewWidth = pixelViewWidth;
+        PxViewHeight = pixelViewHeight;
+        Magnify = magnify;
     }
 
     public void ZoomIn()
     {
-        var isMoveView = MousePoint.X >= 0 && MousePoint.Y >= 0;
-        var mcp = MouseCellPoint; // current mouse cell point
-
-        if (_cellSize < 21)
-            _cellSize *= 2;
-
-        //if (!isMoveView) return;
-        //var newMcp = MouseCellPoint; // new mouse cell point
-
-        //var dx = mcp.X - newMcp.X;
-        //var dy = mcp.Y - newMcp.Y;
-
-        //_centerX += dx;
-        //_centerY += dy;
+        if (Magnify < 6)
+        {
+            Magnify++;
+        }
     }
 
     public void ZoomOut()
     {
-        var isMoveView = MousePoint.X >= 0 && MousePoint.Y >= 0;
-        var mcp = MouseCellPoint;
-
-        if (_cellSize > 1)
+        if (Magnify > -31)
         {
-            _cellSize /= 2;
+            Magnify--;
         }
-
-        //if (!isMoveView) return;
-        //var newMcp = MouseCellPoint;
-
-        //var dx = mcp.X - newMcp.X;
-        //var dy = mcp.Y - newMcp.Y;
-
-        //_centerX += dx;
-        //_centerY += dy;
     }
 
     public Point MousePoint { get; set; }
+
     public Point MouseCellPoint
     {
         get
         {
             try
             {
-                return _cellEnvironment.LifeMap.At(MousePoint.X, MousePoint.Y);
+                return CellEnvironment.LifeMap.At(MousePoint.X, MousePoint.Y);
             }
             catch (NotImplementedException)
             {
                 Debug.WriteLine("Fallback to MouseCellPoint");
+                double cs = CellSize;
 
-                var relX = (MousePoint.X - _pxViewWidth / 2) / _cellSize;
-                var relY = (MousePoint.Y - _pxViewHeight / 2) / _cellSize;
+                var relX = (MousePoint.X - PxViewWidth / 2d) / cs;
+                var relY = (MousePoint.Y - PxViewHeight / 2d) / cs;
 
                 if (relX < 0) relX -= 1;
                 if (relY < 0) relY -= 1;
 
-                return new Point(_centerX + (int)relX, _centerY + (int)relY);
+                return new Point(CenterX + (int)relX, CenterY + (int)relY);
             }
         }
     }
 
-    public bool IsSelected => _selected > 0;
+    public bool IsSelected => Selected > 0;
 
-    public int Left => _centerX;
-    public Point Location => new(_centerX, _centerY);
-    public Point SelectionEnd => _selEnd;
+    public int Left => CenterX;
+    public Point Location => new(CenterX, CenterY);
+    public Point SelectionEnd => SelEnd;
 
-    public Point SelectionStart => _selStart;
+    public Point SelectionStart => SelStart;
 
     public int ThumbnailWidth { get; set; } = 120;
-    public int Top => _centerY;
+    public int Top => CenterY;
 
     public event EventHandler? SelectionChanged;
 
     public void ClearSelection()
     {
-        _selected = 0;
+        Selected = 0;
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public Rectangle GetSelection()
     {
-        if (_selected == 0)
+        if (Selected == 0)
         {
             return Rectangle.Empty;
         }
 
-        var ps = _selStart;
-        var pe = _selEnd;
+        var ps = SelStart;
+        var pe = SelEnd;
 
         var x1 = Math.Min(ps.X, pe.X);
         var y1 = Math.Min(ps.Y, pe.Y);
@@ -140,22 +119,22 @@ public abstract class ViewWindowBase
 
     public virtual void MoveTo(int cx, int cy)
     {
-        _centerX = cx;
-        _centerY = cy;
+        CenterX = cx;
+        CenterY = cy;
     }
 
     public virtual void Resize(int pxViewWidth, int pxViewHeight)
     {
-        _pxViewWidth = pxViewWidth;
-        _pxViewHeight = pxViewHeight;
+        PxViewWidth = pxViewWidth;
+        PxViewHeight = pxViewHeight;
     }
 
     public void SetSelection(Point p1, Point p2)
     {
-        _selStart = p1;
-        _selEnd = p2;
+        SelStart = p1;
+        SelEnd = p2;
 
-        _selected = 1;
+        Selected = 1;
 
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }

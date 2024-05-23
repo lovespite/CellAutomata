@@ -1,10 +1,8 @@
-﻿using CellAutomata.Render;
-using SharpDX;
+﻿using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
-
 using AlphaMode = SharpDX.Direct2D1.AlphaMode;
 using Device = SharpDX.Direct3D11.Device;
 using Factory = SharpDX.DXGI.Factory;
@@ -48,14 +46,15 @@ public class D2dWindowContext : ID2dContext, IDisposable
             //Usage = RenderTargetUsage.None,
             //MinLevel = SharpDX.Direct2D1.FeatureLevel.Level_DEFAULT,
         };
-        var hwndRenderTargetProperties = new HwndRenderTargetProperties
+        var hWndRenderTargetProperties = new HwndRenderTargetProperties
         {
             Hwnd = hWnd,
             PixelSize = new Size2(width, height),
             PresentOptions = PresentOptions.Immediately,
         };
 
-        _renderTarget = new WindowRenderTarget(new SharpDX.Direct2D1.Factory(), renderTargetProperties, hwndRenderTargetProperties)
+        _renderTarget = new WindowRenderTarget(new SharpDX.Direct2D1.Factory(), renderTargetProperties,
+            hWndRenderTargetProperties)
         {
             AntialiasMode = AntialiasMode.PerPrimitive,
             TextAntialiasMode = TextAntialiasMode.Cleartype
@@ -73,22 +72,22 @@ public class D2dContext : IDisposable, ID2dContext
     public int Width { get; private set; }
     public int Height { get; private set; }
 
-    private Texture2D _backBuffer = null!;
-    private SwapChain _swapChain = null!;
-    private Factory _factory = null!;
-    private Device _device = null!;
+    private readonly Texture2D _backBuffer = null!;
+    private readonly SwapChain _swapChain = null!;
+    private readonly Factory _factory = null!;
+    private readonly Device _device = null!;
     private RenderTargetView _renderView = null!;
 
     private RenderTarget _d2dRenderTarget = null!;
 
-    private readonly nint hWnd = IntPtr.Zero;
-    private readonly SharpDX.Direct2D1.Factory d2dFactory = new();
+    private readonly nint _hWnd;
+    private readonly SharpDX.Direct2D1.Factory _d2dFactory = new();
 
     public D2dContext(int width, int height, nint hWnd)
     {
-        this.Width = width;
-        this.Height = height;
-        this.hWnd = hWnd;
+        Width = width;
+        Height = height;
+        this._hWnd = hWnd;
 
         CreateRender(width, height, hWnd);
     }
@@ -106,7 +105,7 @@ public class D2dContext : IDisposable, ID2dContext
         }
 
         DisposeInternal();
-        CreateRender(width, height, hWnd);
+        CreateRender(width, height, _hWnd);
     }
 
     private void CreateRender(int width, int height, nint hWnd)
@@ -121,16 +120,17 @@ public class D2dContext : IDisposable, ID2dContext
             IsWindowed = true
         };
 
-        Device.CreateWithSwapChain(DriverType.Hardware, DeviceCreationFlags.BgraSupport, swapChainDescription, out Device device, out SwapChain swapChain);
+        Device.CreateWithSwapChain(DriverType.Hardware, DeviceCreationFlags.BgraSupport, swapChainDescription,
+            out Device device, out SwapChain swapChain);
 
-
+        // ReSharper disable once AccessToStaticMemberViaDerivedType
         Texture2D backBuffer = Texture2D.FromSwapChain<Texture2D>(swapChain, 0);
         _renderView = new RenderTargetView(device, backBuffer);
 
         Surface surface = backBuffer.QueryInterface<Surface>();
 
-        _d2dRenderTarget = new RenderTarget(d2dFactory, surface,
-           new RenderTargetProperties(new PixelFormat(Format.Unknown, AlphaMode.Premultiplied)));
+        _d2dRenderTarget = new RenderTarget(_d2dFactory, surface,
+            new RenderTargetProperties(new PixelFormat(Format.Unknown, AlphaMode.Premultiplied)));
     }
 
     public void Dispose()

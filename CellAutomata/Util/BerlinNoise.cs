@@ -1,6 +1,4 @@
 ﻿using CellAutomata.Algos;
-using System;
-using System.Linq;
 
 namespace CellAutomata.Util;
 
@@ -9,16 +7,16 @@ public class BerlinNoise : IRandomFillAlgorithm
     public static readonly BerlinNoise Shared = new();
     public static BerlinNoise Create(float threshold = 0.1f) => new BerlinNoise(threshold);
 
-    private readonly Random random = new();
-    private readonly float _threshold = 0.1f;
+    private readonly Random _random = new();
+    private readonly float _threshold;
 
-    private int[] _permutation = Enumerable.Range(0, 512).ToArray();
+    private readonly int[] _permutation = Enumerable.Range(0, 512).ToArray();
 
     public BerlinNoise(float threshold = 0.1f)
     {
         for (int i = 0; i < 256; i++)
         {
-            int j = random.Next(256);
+            int j = _random.Next(256);
             (_permutation[j], _permutation[i]) = (_permutation[i], _permutation[j]);
         }
 
@@ -28,6 +26,7 @@ public class BerlinNoise : IRandomFillAlgorithm
 
     private double Noise(double x, double y, double z)
     {
+        // ReSharper disable InconsistentNaming
         int X = (int)Math.Floor(x) & 255;
         int Y = (int)Math.Floor(y) & 255;
         int Z = (int)Math.Floor(z) & 255;
@@ -55,6 +54,7 @@ public class BerlinNoise : IRandomFillAlgorithm
         Grad(_permutation[BA + 1], x - 1, y, z - 1)),
         Lerp(u, Grad(_permutation[AB + 1], x, y - 1, z - 1),
         Grad(_permutation[BB + 1], x - 1, y - 1, z - 1))));
+        // ReSharper restore InconsistentNaming
     }
 
     private static double Fade(double t)

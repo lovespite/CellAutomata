@@ -4,29 +4,33 @@ namespace CellAutomata.Util;
 
 public class GaborFillAlgorithm : IRandomFillAlgorithm
 {
-    private readonly double frequency = 2.0d; // 控制频率
-    private readonly double orientation = Math.PI / 4; // 方向
-    private readonly double amplitude = 0.5d; // 振幅
+    private readonly double _frequency = 2.0d; // 控制频率
+    private readonly double _orientation = Math.PI / 4; // 方向
+    private readonly double _amplitude = 0.5d; // 振幅
 
-    private readonly double sigma = 100; // 标准差，控制核的大小
+    private readonly double _sigma; // 标准差，控制核的大小
+
     public GaborFillAlgorithm(double frequency, double orientation, double sigma, double amplitude)
     {
-        this.frequency = frequency;
-        this.orientation = orientation;
-        this.amplitude = amplitude;
-        this.sigma = sigma;
+        this._frequency = frequency;
+        this._orientation = orientation;
+        this._amplitude = amplitude;
+        this._sigma = sigma;
     }
+
+    private readonly Rectangle _rectangle;
 
     public static GaborFillAlgorithm Create(Rectangle rect)
     {
         var sigma = Math.Min(rect.Width, rect.Height) / 4;
 
-        return new GaborFillAlgorithm(sigma);
+        return new GaborFillAlgorithm(sigma, rect);
     }
 
-    public GaborFillAlgorithm(double sigma)
+    private GaborFillAlgorithm(double sigma, Rectangle rect)
     {
-        this.sigma = sigma;
+        _sigma = sigma;
+        _rectangle = rect;
     }
 
     public void Generate(Rectangle rect, I2DBitMutator bitmap)
@@ -35,7 +39,7 @@ public class GaborFillAlgorithm : IRandomFillAlgorithm
         {
             for (int x = rect.Left; x < rect.Left + rect.Width; x++)
             {
-                double value = Gabor(x - rect.Left - rect.Width / 2, y - rect.Top - rect.Height / 2);
+                double value = Gabor(x - rect.Left - rect.Width / 2f, y - rect.Top - rect.Height / 2f);
                 bitmap.Set(y, x, Math.Abs(value) >= 0.1d);
             }
         }
@@ -43,16 +47,18 @@ public class GaborFillAlgorithm : IRandomFillAlgorithm
 
     public bool GetNoise(int x, int y, int z)
     {
-        return Math.Abs(Gabor(x, y)) >= 0.1d;
+        return Math.Abs(Gabor(
+            x - _rectangle.Left - _rectangle.Width / 2f,
+            y - _rectangle.Top - _rectangle.Height / 2f
+        )) >= 0.1d;
     }
 
     private double Gabor(double x, double y)
     {
-        double xPrime = x * Math.Cos(orientation) + y * Math.Sin(orientation);
-        double yPrime = -x * Math.Sin(orientation) + y * Math.Cos(orientation);
-        double gaussian = Math.Exp(-(xPrime * xPrime + yPrime * yPrime) / (2 * sigma * sigma));
-        double sinusoidal = Math.Cos(2 * Math.PI * frequency * xPrime);
-        return amplitude * gaussian * sinusoidal;
+        double xPrime = x * Math.Cos(_orientation) + y * Math.Sin(_orientation);
+        double yPrime = -x * Math.Sin(_orientation) + y * Math.Cos(_orientation);
+        double gaussian = Math.Exp(-(xPrime * xPrime + yPrime * yPrime) / (2 * _sigma * _sigma));
+        double sinusoidal = Math.Cos(2 * Math.PI * _frequency * xPrime);
+        return _amplitude * gaussian * sinusoidal;
     }
-
 }
