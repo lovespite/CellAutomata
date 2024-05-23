@@ -131,7 +131,6 @@ public sealed partial class TaskProgressReporter : Form, IProgressReporter
     {
         if (IsDisposed) return; // already disposed
         _cts?.Cancel();
-        Dispose();
     }
 
     public static void Watch(Func<IProgressReporter, Task> func, string title = "Task",

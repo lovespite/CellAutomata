@@ -14,18 +14,18 @@ public class RandomFillAlgorithm(double threshold = 0.5d) : IRandomFillAlgorithm
 
     private readonly Random _random = new();
 
-    public void Generate(Rectangle rect, I2DBitMutator bitmap)
+    public void Generate(RectangleL rect, I2DBitMutator bitmap)
     {
-        for (int y = 0; y < rect.Height; y++)
+        for (int y = 0; y < rect.Height - 1; y++)
         {
-            for (int x = 0; x < rect.Width; x++)
+            for (int x = 0; x < rect.Width - 1; x++)
             {
                 bitmap.Set(y + rect.Top, x + rect.Left, _random.NextDouble() <= _threshold);
             }
         }
     }
 
-    public bool GetNoise(int x, int y, int z)
+    public bool GetNoise(long x, long y, long z)
     {
         return _random.NextDouble() <= _threshold;
     }

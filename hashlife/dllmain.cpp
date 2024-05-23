@@ -1,14 +1,14 @@
 ﻿// dllmain.cpp : 定义 DLL 应用程序的入口点。
 #include "pch.h"
-#include "hlifealgo.h" 
+#include "hlifealgo.h"
 
 #include <Windows.h>
 #include <string>
 #include <algorithm>
 #include <vector>
-#include <cmath> 
+#include <cmath>
 #include <cstringt.h>
-#include "liferender.h" 
+#include "liferender.h"
 #include "dc3drender.h"
 #include "dllmain.h"
 #include "readpattern.h"
@@ -28,7 +28,6 @@ extern "C" __declspec(dllexport) void Version(char* versionBuffer, int bufferSiz
 
 extern "C" __declspec(dllexport) size_t CreateNewUniverse(const char* rule)
 {
-
     auto algo = new hlifealgo();
     algo->init(0, 0);
     algo->setinc(1);
@@ -128,7 +127,7 @@ extern "C" __declspec(dllexport) int GetCell(int index, int x, int y)
     return algo->getcell(x, y);
 }
 
-extern "C" __declspec(dllexport) void NextStep(int index, BIGINT * pop)
+extern "C" __declspec(dllexport) void NextStep(int index, BIGINT* pop)
 {
     if (index < 0 || index >= algos.size())
     {
@@ -145,7 +144,7 @@ extern "C" __declspec(dllexport) void NextStep(int index, BIGINT * pop)
     *pop = algo->nextstep();
 }
 
-extern "C" __declspec(dllexport) void GetPopulation(int index, BIGINT * pop)
+extern "C" __declspec(dllexport) void GetPopulation(int index, BIGINT* pop)
 {
     if (index < 0 || index >= algos.size())
     {
@@ -180,7 +179,7 @@ extern "C" __declspec(dllexport) void DestroyUniverse(int index)
     }
 }
 
-extern "C" __declspec(dllexport) BIGINT GetRegion(int index, int x, int y, int w, int h, BYTE * buffer, long bufferLen)
+extern "C" __declspec(dllexport) BIGINT GetRegion(int index, int x, int y, int w, int h, BYTE* buffer, long bufferLen)
 {
     if (index < 0 || index >= algos.size())
     {
@@ -232,7 +231,7 @@ extern "C" __declspec(dllexport) BIGINT GetRegion(int index, int x, int y, int w
     return pop;
 }
 
-extern "C" __declspec(dllexport) void SetRegion(int index, int x, int y, int w, int h, BYTE * buffer, long bufferLen)
+extern "C" __declspec(dllexport) void SetRegion(int index, int x, int y, int w, int h, BYTE* buffer, long bufferLen)
 {
     if (index < 0 || index >= algos.size())
     {
@@ -278,7 +277,7 @@ extern "C" __declspec(dllexport) void SetRegion(int index, int x, int y, int w, 
     }
 }
 
-extern "C" __declspec(dllexport) void FindEdges(int index, BigInt * t, BigInt * l, BigInt * b, BigInt * r)
+extern "C" __declspec(dllexport) void FindEdges(int index, BigInt* t, BigInt* l, BigInt* b, BigInt* r)
 {
     if (index < 0 || index >= algos.size())
     {
@@ -301,7 +300,8 @@ extern "C" __declspec(dllexport) void FindEdges(int index, BigInt * t, BigInt * 
     *r = right.toint64();
 }
 
-extern "C" __declspec(dllexport) void DrawRegionBitmap(int index, BYTE * bitmapBuffer, long stride, int x, int y, int w, int h)
+extern "C" __declspec(dllexport) void DrawRegionBitmap(int index, BYTE* bitmapBuffer, long stride, int x, int y, int w,
+                                                       int h)
 {
     // 检查生命游戏实例索引是否有效
 
@@ -345,7 +345,8 @@ extern "C" __declspec(dllexport) void DrawRegionBitmap(int index, BYTE * bitmapB
     }
 }
 
-extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(int index, uint8_t * bitmapBuffer, int stride, int x, int y, int w, int h)
+extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(int index, uint8_t* bitmapBuffer, int stride, int x, int y,
+                                                           int w, int h)
 {
     // 检查生命游戏实例索引是否有效
     if (index < 0 || index >= algos.size())
@@ -372,14 +373,14 @@ extern "C" __declspec(dllexport) void DrawRegionBitmapBGRA(int index, uint8_t * 
 
             if (algo->getcell(x + col, y + row))
             {
-                bitmapBuffer[pixelOffset] = 255;     // B
+                bitmapBuffer[pixelOffset] = 255; // B
                 bitmapBuffer[pixelOffset + 1] = 255; // G
                 bitmapBuffer[pixelOffset + 2] = 255; // R
                 bitmapBuffer[pixelOffset + 3] = 255; // A
             }
             else
             {
-                bitmapBuffer[pixelOffset] = 0;     // B
+                bitmapBuffer[pixelOffset] = 0; // B
                 bitmapBuffer[pixelOffset + 1] = 0; // G
                 bitmapBuffer[pixelOffset + 2] = 0; // R
                 bitmapBuffer[pixelOffset + 3] = 255; // A
@@ -430,7 +431,8 @@ extern "C" __declspec(dllexport) void ResumeRender(int index)
     }
 }
 
-extern "C" __declspec(dllexport) int ReadRleFile(int index, const char* filename, char* errbuffer, size_t errbufferlen) {
+extern "C" __declspec(dllexport) int ReadRleFile(int index, const char* filename, char* errbuffer, size_t errbufferlen)
+{
     if (index < 0 || index >= algos.size())
     {
         return -1;
@@ -502,8 +504,8 @@ extern "C" __declspec(dllexport) void ResizeViewport(int rctxindex, int w, int h
     render->resize(w, h);
 }
 
-extern "C" __declspec(dllexport) void AtViewport(int rctxindex, int px, int py, INT64 * row, INT64 * col) {
-
+extern "C" __declspec(dllexport) void AtViewport(int rctxindex, int px, int py, INT64* row, INT64* col)
+{
     // 检查渲染上下文索引是否有效
     if (rctxindex < 0 || rctxindex >= renderctxs.size()) return;
 
@@ -514,10 +516,11 @@ extern "C" __declspec(dllexport) void AtViewport(int rctxindex, int px, int py, 
     auto lt = vp->at(px, py);
 
     *row = lt.second.toint64(); // y
-    *col = lt.first.toint64();  // x
+    *col = lt.first.toint64(); // x
 }
 
-extern "C" __declspec(dllexport) void DrawViewport(int rctxindex, int algoindex, int mag, int x, int y, int w, int h, VIEWINFO * selection, const wchar_t* text)
+extern "C" __declspec(dllexport) void DrawViewport(int rctxindex, int algoindex, int mag, int x, int y, int w, int h,
+                                                   VIEWINFO* selection, const wchar_t* text)
 {
     // 检查生命游戏实例索引是否有效
     if (algoindex < 0 || algoindex >= algos.size()) return;
@@ -542,41 +545,48 @@ extern "C" __declspec(dllexport) void DrawViewport(int rctxindex, int algoindex,
 
 void drawframe(liferender* render, lifealgo* algo, viewport* vp, VIEWINFO* selection, const wchar_t* text)
 {
-    int pmscale = 1 << vp->getmag(); // 2^mag, cell size 
-    render->setpmscale(float(pmscale));
+    const int mag = vp->getmag();
+    const float pm_scale =
+        mag >= 0
+            ? static_cast<float>(1 << mag)
+            : 1.0f / static_cast<float>(1 << -mag);
+
+    render->setpmscale(pm_scale);
     render->begindraw();
     render->clear();
 
     algo->draw(*vp, *render);
 
-    if (vp->getmag() > 3) render->drawgridlines(pmscale);
+    if (vp->getmag() > 3) render->drawgridlines(static_cast<int>(pm_scale));
 
     if (selection != nullptr && selection->EMPTY == 0)
     {
         // draw selection
         // need to convert selection(world position) to viewport coordinates
 
-        auto lt = vp->at(0, 0); // left-top cell position in world coordinates
+        const auto lt = vp->at(0, 0); // left-top cell position in world coordinates
         VIEWINFO vw{};
 
-        vw.psl_x1 = -(-selection->psl_x1 + lt.first.toint64()) * pmscale;
-        vw.psl_y1 = -(-selection->psl_y1 + lt.second.toint64()) * pmscale;
+        const float x1 = -(-selection->psl_x1 + lt.first.toint64()) * pm_scale;
+        const float y1 = -(-selection->psl_y1 + lt.second.toint64()) * pm_scale;
 
-        vw.psl_x2 = -(-selection->psl_x2 + lt.first.toint64()) * pmscale;
-        vw.psl_y2 = -(-selection->psl_y2 + lt.second.toint64()) * pmscale;
+        const float x2 = -(-selection->psl_x2 + lt.first.toint64()) * pm_scale;
+        const float y2 = -(-selection->psl_y2 + lt.second.toint64()) * pm_scale;
 
-        render->drawselection(&vw);
+        render->drawselection(x1, y1, x2, y2);
     }
 
     render->drawtext(2, 2, text);
-    render->drawtext(2, vp->getheight() - 30, (std::wstring(L"Lib Ver.: ") + _versionw + L"\n" + std::wstring(L"Feature: ") + std::wstring(render->renderinfo ? render->renderinfo : L"Unknown")).c_str());
+    render->drawtext(2, vp->getheight() - 30,
+                     (std::wstring(L"Lib Ver.: ") + _versionw + L"\n" + std::wstring(L"Feature: ") + std::wstring(
+                         render->renderinfo ? render->renderinfo : L"Unknown")).c_str());
 
     render->drawlogo();
     render->enddraw();
 }
 
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
     switch (ul_reason_for_call)
     {

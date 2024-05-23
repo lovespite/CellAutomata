@@ -7,7 +7,7 @@
 #include <wincodec.h>
 #pragma comment(lib, "windowscodecs.lib")
 
-#include "d2d1.h" 
+#include "d2d1.h"
 #include <dwrite.h>
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dwrite.lib")
@@ -45,23 +45,28 @@
 #ifndef LIFERENDER_H
 #define LIFERENDER_H
 
-static uint32_t RGBToInt(uint8_t r, uint8_t g, uint8_t b) {
+static uint32_t RGBToInt(uint8_t r, uint8_t g, uint8_t b)
+{
     return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
 }
 
 struct VIEWINFO
 {
     INT32 EMPTY;
-    INT32 psl_x1; // selection rect point 1
-    INT32 psl_y1; // selection rect point 1
-    INT32 psl_x2; // selection rect point 2
-    INT32 psl_y2; // selection rect point 2
+    INT64 psl_x1; // selection rect point 1
+    INT64 psl_y1; // selection rect point 1
+    INT64 psl_x2; // selection rect point 2
+    INT64 psl_y2; // selection rect point 2
 };
 
-const UINT32 MAX_CELLS = 256 * 256; // ×î´óÏ¸°ûÊý
-class liferender {
+const UINT32 MAX_CELLS = 256 * 256; // æœ€å¤§ç»†èƒžæ•°
+class liferender
+{
 public:
-    liferender() {}
+    liferender()
+    {
+    }
+
     virtual ~liferender();
 
     float pmscale = 1.0f;
@@ -92,7 +97,7 @@ public:
     virtual void drawtext(int x, int y, const wchar_t* text) = 0;
 
     // draw the selection rectangle
-    virtual void drawselection(VIEWINFO* pvi) = 0;
+    virtual void drawselection(float x1, float y1, float x2, float y2) = 0;
 
     // draw grid lines at the given cell size
     virtual void drawgridlines(int cellsize) = 0;
@@ -107,11 +112,11 @@ public:
     virtual bool isdrawing() = 0;
     virtual void waitfordrawing() = 0;
 };
+
 const unsigned char colors[] = {
     0, 255, // r: dead, alive 
     0, 255, // g: dead, alive
-    0, 255  // b: dead, alive
+    0, 255 // b: dead, alive
 };
 
 #endif
-

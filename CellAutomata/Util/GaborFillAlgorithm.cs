@@ -18,26 +18,26 @@ public class GaborFillAlgorithm : IRandomFillAlgorithm
         this._sigma = sigma;
     }
 
-    private readonly Rectangle _rectangle;
+    private readonly RectangleL _rectangle;
 
-    public static GaborFillAlgorithm Create(Rectangle rect)
+    public static GaborFillAlgorithm Create(RectangleL rect)
     {
         var sigma = Math.Min(rect.Width, rect.Height) / 4;
 
         return new GaborFillAlgorithm(sigma, rect);
     }
 
-    private GaborFillAlgorithm(double sigma, Rectangle rect)
+    private GaborFillAlgorithm(double sigma, RectangleL rect)
     {
         _sigma = sigma;
         _rectangle = rect;
     }
 
-    public void Generate(Rectangle rect, I2DBitMutator bitmap)
+    public void Generate(RectangleL rect, I2DBitMutator bitmap)
     {
-        for (int y = rect.Top; y < rect.Top + rect.Height; y++)
+        for (var y = rect.Top; y < rect.Top + rect.Height; y++)
         {
-            for (int x = rect.Left; x < rect.Left + rect.Width; x++)
+            for (var x = rect.Left; x < rect.Left + rect.Width; x++)
             {
                 double value = Gabor(x - rect.Left - rect.Width / 2f, y - rect.Top - rect.Height / 2f);
                 bitmap.Set(y, x, Math.Abs(value) >= 0.1d);
@@ -45,7 +45,7 @@ public class GaborFillAlgorithm : IRandomFillAlgorithm
         }
     }
 
-    public bool GetNoise(int x, int y, int z)
+    public bool GetNoise(long x, long y, long z)
     {
         return Math.Abs(Gabor(
             x - _rectangle.Left - _rectangle.Width / 2f,

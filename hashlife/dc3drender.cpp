@@ -7,12 +7,13 @@
 template <class T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
 
-void fatal(const char* msg, HRESULT hr, bool exit = true) {
-
+void fatal(const char* msg, HRESULT hr, bool exit = true)
+{
 #if defined(DEBUG) || defined(_DEBUG)
     auto message = std::string(msg) + " " + std::to_string(hr);
     MessageBoxA(NULL, message.c_str(), "Error", MB_OK);
-    if (exit) {
+    if (exit)
+    {
         TerminateProcess(GetCurrentProcess(), 0);
     }
 #endif
@@ -23,7 +24,8 @@ static HRESULT CompileShaderFromFile(
     const char* entry,
     const char* model,
     ID3DBlob** ppBlobOut
-) {
+)
+{
     // 从文件编译着色器
 
     DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
@@ -44,8 +46,10 @@ static HRESULT CompileShaderFromFile(
         &pErrorBlob
     );
 
-    if (FAILED(hr)) {
-        if (pErrorBlob) {
+    if (FAILED(hr))
+    {
+        if (pErrorBlob)
+        {
             OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
             pErrorBlob->Release();
         }
@@ -74,7 +78,7 @@ static bool InitDirect3D(
 
     // 创建D3D设备 和 D3D设备上下文
     UINT createDeviceFlags = D3D10_CREATE_DEVICE_BGRA_SUPPORT; // 添加 BGRA 支持标志
-#if defined(DEBUG) || defined(_DEBUG)  
+#if defined(DEBUG) || defined(_DEBUG)
     createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
     // 驱动类型数组
@@ -100,13 +104,16 @@ static bool InitDirect3D(
     {
         d3dDriverType = driverTypes[driverTypeIndex];
         hr = D3D11CreateDevice(nullptr, d3dDriverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
-            D3D11_SDK_VERSION, m_pd3dDevice.GetAddressOf(), &featureLevel, m_pd3dImmediateContext.GetAddressOf());
+                               D3D11_SDK_VERSION, m_pd3dDevice.GetAddressOf(), &featureLevel,
+                               m_pd3dImmediateContext.GetAddressOf());
 
         if (hr == E_INVALIDARG)
         {
             // Direct3D 11.0 的API不承认D3D_FEATURE_LEVEL_11_1，所以我们需要尝试特性等级11.0以及以下的版本
-            hr = D3D11CreateDevice(nullptr, d3dDriverType, nullptr, createDeviceFlags, &featureLevels[1], numFeatureLevels - 1,
-                D3D11_SDK_VERSION, m_pd3dDevice.GetAddressOf(), &featureLevel, m_pd3dImmediateContext.GetAddressOf());
+            hr = D3D11CreateDevice(nullptr, d3dDriverType, nullptr, createDeviceFlags, &featureLevels[1],
+                                   numFeatureLevels - 1,
+                                   D3D11_SDK_VERSION, m_pd3dDevice.GetAddressOf(), &featureLevel,
+                                   m_pd3dImmediateContext.GetAddressOf());
         }
 
         if (SUCCEEDED(hr))
@@ -128,7 +135,7 @@ static bool InitDirect3D(
 
     ComPtr<IDXGIDevice> dxgiDevice = nullptr;
     ComPtr<IDXGIAdapter> dxgiAdapter = nullptr;
-    ComPtr<IDXGIFactory1> dxgiFactory1 = nullptr;	// D3D11.0(包含DXGI1.1)的接口类 
+    ComPtr<IDXGIFactory1> dxgiFactory1 = nullptr; // D3D11.0(包含DXGI1.1)的接口类 
 
     // 为了正确创建 DXGI交换链，首先我们需要获取创建 D3D设备 的 DXGI工厂，否则会引发报错：
     // "IDXGIFactory::CreateSwapChain: This function is being called with a device from a different IDXGIFactory."
@@ -157,7 +164,7 @@ static bool InitDirect3D(
     sd.Flags = 0;
     HR(dxgiFactory1->CreateSwapChain(m_pd3dDevice.Get(), &sd, m_pSwapChain.GetAddressOf()));
 
-    *g_pd3dDevice = m_pd3dDevice.Detach();// 释放ComPtr对象的所有权
+    *g_pd3dDevice = m_pd3dDevice.Detach(); // 释放ComPtr对象的所有权
     *g_pd3dImmediateContext = m_pd3dImmediateContext.Detach();
     *g_pSwapChain = m_pSwapChain.Detach();
 
@@ -166,31 +173,36 @@ static bool InitDirect3D(
 
 void dc3drender::CleanupDirect3D()
 {
-    if (g_pCellVertexBuffer) {
+    if (g_pCellVertexBuffer)
+    {
         g_pCellVertexBuffer->Release();
         g_pCellVertexBuffer = nullptr;
     }
 
-    if (g_pInstanceBuffer) {
+    if (g_pInstanceBuffer)
+    {
         g_pInstanceBuffer->Release();
         g_pInstanceBuffer = nullptr;
     }
 
-    if (g_pRenderTargetView) {
+    if (g_pRenderTargetView)
+    {
         g_pRenderTargetView->Release();
         g_pRenderTargetView = nullptr;
     }
 
-    if (g_pSwapChain) {
+    if (g_pSwapChain)
+    {
         // 释放交换链
         g_pSwapChain->Release();
         g_pSwapChain = nullptr;
         OutputDebugString(L"Release SwapChain\n");
     }
 
-    if (g_pImmediateContext) {
-        g_pImmediateContext->ClearState();// 清除设备上下文的状态
-        g_pImmediateContext->Flush();// 强制提交所有未提交的命令 
+    if (g_pImmediateContext)
+    {
+        g_pImmediateContext->ClearState(); // 清除设备上下文的状态
+        g_pImmediateContext->Flush(); // 强制提交所有未提交的命令 
 
         OutputDebugStringW(L"ClearState and Flush\n");
         WaitForGPU(); // 等待GPU完成所有任务
@@ -199,22 +211,26 @@ void dc3drender::CleanupDirect3D()
         g_pImmediateContext = nullptr;
     }
 
-    if (g_pDevice) {
+    if (g_pDevice)
+    {
         g_pDevice->Release();
         g_pDevice = nullptr;
     }
 
-    if (g_pVertexShader) {
+    if (g_pVertexShader)
+    {
         g_pVertexShader->Release();
         g_pVertexShader = nullptr;
     }
 
-    if (g_pPixelShader) {
+    if (g_pPixelShader)
+    {
         g_pPixelShader->Release();
         g_pPixelShader = nullptr;
     }
 
-    if (g_pVertexLayout) {
+    if (g_pVertexLayout)
+    {
         g_pVertexLayout->Release();
         g_pVertexLayout = nullptr;
     }
@@ -233,15 +249,16 @@ void dc3drender::CleanupDirect3D()
 void dc3drender::UpdateConstantBuffer(float pmscale, DirectX::XMUINT2 canvasSize)
 {
     if (!g_pImmediateContext) return;
-    DirectX::XMFLOAT4 rwhscale = DirectX::XMFLOAT4(pmscale, pmscale / canvasSize.x * 2, pmscale / canvasSize.y * 2, 0.0f);
+    DirectX::XMFLOAT4 rwhscale = DirectX::XMFLOAT4(pmscale, pmscale / canvasSize.x * 2, pmscale / canvasSize.y * 2,
+                                                   0.0f);
 
     // 数据
     ConstantBuffer cb;
     cb.rwhscale = rwhscale;
     cb.canvasSize = DirectX::XMFLOAT4((float)canvasSize.x, (float)canvasSize.y, 0.0f, 0.0f);
 
-    if (!g_pConstantBuffer) {
-
+    if (!g_pConstantBuffer)
+    {
         auto cbSize = sizeof(ConstantBuffer);
 
         // 创建常量缓冲区
@@ -256,7 +273,8 @@ void dc3drender::UpdateConstantBuffer(float pmscale, DirectX::XMUINT2 canvasSize
 
         HRESULT hr = g_pDevice->CreateBuffer(&bufferDesc, &initData, &g_pConstantBuffer);
 
-        if (FAILED(hr)) {
+        if (FAILED(hr))
+        {
             fatal("Create Constant Buffer failed", hr);
             return;
         }
@@ -270,16 +288,19 @@ void dc3drender::UpdateConstantBuffer(float pmscale, DirectX::XMUINT2 canvasSize
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     HRESULT hr = g_pImmediateContext->Map(g_pConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         fatal("Map constant buffer failed", hr);
         return;
     }
 
-    if (mappedResource.pData) {
+    if (mappedResource.pData)
+    {
         memcpy(mappedResource.pData, &cb, sizeof(ConstantBuffer));
         g_pImmediateContext->Unmap(g_pConstantBuffer, 0);
     }
-    else {
+    else
+    {
         fatal("Map failed", 0);
     }
 
@@ -292,21 +313,25 @@ void dc3drender::UpdateInstanceBuffer(InstanceData* pInstanceData, int numInstan
 
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     HRESULT hr = g_pImmediateContext->Map(g_pInstanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         fatal("Map instance buffer failed", hr);
         return;
     }
 
-    if (mappedResource.pData) {
+    if (mappedResource.pData)
+    {
         memcpy(mappedResource.pData, pInstanceData, sizeof(InstanceData) * numInstances);
         g_pImmediateContext->Unmap(g_pInstanceBuffer, 0);
     }
-    else {
+    else
+    {
         fatal("Map failed", 0);
     }
 }
 
-HRESULT dc3drender::LoadShaders() {
+HRESULT dc3drender::LoadShaders()
+{
     HRESULT hr = S_OK;
 
     // 编译顶点着色器
@@ -321,8 +346,10 @@ HRESULT dc3drender::LoadShaders() {
     dwShaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
-    hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "VS", "vs_5_0", dwShaderFlags, 0, &pVSBlob, &errorBlob); // 编译顶点着色器
-    if (FAILED(hr)) {
+    hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "VS", "vs_5_0", dwShaderFlags, 0, &pVSBlob, &errorBlob);
+    // 编译顶点着色器
+    if (FAILED(hr))
+    {
         if (errorBlob != nullptr)
         {
             auto message = (char*)errorBlob->GetBufferPointer();
@@ -331,13 +358,17 @@ HRESULT dc3drender::LoadShaders() {
             errorBlob->Release();
             return hr;
         }
-        fatal("VS: The FX file cannot be compiled. Please run this executable from the directory that contains the FX file.", hr);
+        fatal(
+            "VS: The FX file cannot be compiled. Please run this executable from the directory that contains the FX file.",
+            hr);
         return hr;
     }
 
     // 创建顶点着色器
-    hr = g_pDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &g_pVertexShader);
-    if (FAILED(hr)) {
+    hr = g_pDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr,
+                                       &g_pVertexShader);
+    if (FAILED(hr))
+    {
         pVSBlob->Release();
         fatal("CreateVertexShader failed", hr);
         return hr;
@@ -346,27 +377,30 @@ HRESULT dc3drender::LoadShaders() {
     // 定义输入布局
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         // 顶点数据
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
         // 实例数据
-        { "INSTANCE_POSITION", 0, DXGI_FORMAT_R32G32B32A32_SINT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+        {"INSTANCE_POSITION", 0, DXGI_FORMAT_R32G32B32A32_SINT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
     };
 
     UINT numElements = ARRAYSIZE(layout);
 
     // 创建输入布局
-    hr = g_pDevice->CreateInputLayout(layout, numElements, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &g_pVertexLayout);
+    hr = g_pDevice->CreateInputLayout(layout, numElements, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(),
+                                      &g_pVertexLayout);
     pVSBlob->Release();
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         fatal("CreateInputLayout failed", hr);
         return hr;
     }
 
     // 编译像素着色器
     ID3DBlob* pPSBlob = nullptr;
-    hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "PS", "ps_5_0", dwShaderFlags, 0, &pPSBlob, &errorBlob); // 编译像素着色器
-    if (FAILED(hr)) {
-
+    hr = D3DCompileFromFile(L"shader.fx", nullptr, nullptr, "PS", "ps_5_0", dwShaderFlags, 0, &pPSBlob, &errorBlob);
+    // 编译像素着色器
+    if (FAILED(hr))
+    {
         if (errorBlob != nullptr)
         {
             auto message = (char*)errorBlob->GetBufferPointer();
@@ -376,14 +410,17 @@ HRESULT dc3drender::LoadShaders() {
             return hr;
         }
 
-        fatal("PS: The FX file cannot be compiled. Please run this executable from the directory that contains the FX file.", hr);
+        fatal(
+            "PS: The FX file cannot be compiled. Please run this executable from the directory that contains the FX file.",
+            hr);
         return hr;
     }
 
     // 创建像素着色器
     hr = g_pDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &g_pPixelShader);
     pPSBlob->Release();
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         fatal("CreatePixelShader failed", hr);
         return hr;
     }
@@ -391,7 +428,8 @@ HRESULT dc3drender::LoadShaders() {
     return S_OK;
 }
 
-HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
+HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd)
+{
     HRESULT hr = S_OK;
 
 
@@ -413,7 +451,7 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
     sd.Windowed = TRUE;
     sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     // 创建设备、交换链和设备上下文    
-    UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;  // 添加 BGRA 支持标志
+    UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT; // 添加 BGRA 支持标志
 
 #if defined(DEBUG) || defined(_DEBUG)
 
@@ -440,7 +478,8 @@ HRESULT dc3drender::EnsureDirect3DResources(HWND hWnd) {
         )
     );
 
-    if (renderinfo != nullptr) {
+    if (renderinfo != nullptr)
+    {
         swprintf((wchar_t*)renderinfo, 256, L"Direct3D 11.0");
     }
 
@@ -510,12 +549,12 @@ HRESULT dc3drender::InitializeVertexBuffer()
         //{ XMFLOAT3(0.5f, -0.5f, 0.0f), *pLiveColor },
         //{ XMFLOAT3(-0.5f, -0.5f, 0.0f), *pLiveColor },
 
-        { XMFLOAT3(-0.0f, 1.0f, 0.0f), *pLiveColor },
-        { XMFLOAT3(1.0f, 1.0f, 0.0f), *pLiveColor },
-        { XMFLOAT3(1.0f, -0.0f, 0.0f), *pLiveColor },
-        { XMFLOAT3(-0.0f, 1.0f, 0.0f), *pLiveColor },
-        { XMFLOAT3(1.0f, -0.0f, 0.0f), *pLiveColor },
-        { XMFLOAT3(-0.0f, -0.0f, 0.0f), *pLiveColor },
+        {XMFLOAT3(-0.0f, 1.0f, 0.0f), *pLiveColor},
+        {XMFLOAT3(1.0f, 1.0f, 0.0f), *pLiveColor},
+        {XMFLOAT3(1.0f, -0.0f, 0.0f), *pLiveColor},
+        {XMFLOAT3(-0.0f, 1.0f, 0.0f), *pLiveColor},
+        {XMFLOAT3(1.0f, -0.0f, 0.0f), *pLiveColor},
+        {XMFLOAT3(-0.0f, -0.0f, 0.0f), *pLiveColor},
     };
 
     // 创建顶点缓冲区
@@ -529,7 +568,8 @@ HRESULT dc3drender::InitializeVertexBuffer()
     initData.pSysMem = cellVertices;
 
     hr = g_pDevice->CreateBuffer(&bufferDesc, &initData, &g_pCellVertexBuffer);
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         fatal("Create Cell Vertex Buffer failed", hr);
     }
     return S_OK;
@@ -545,21 +585,24 @@ HRESULT dc3drender::InitializeInstanceBuffer()
     bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
     HRESULT hr = g_pDevice->CreateBuffer(&bufferDesc, nullptr, &g_pInstanceBuffer);
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         fatal("Create Instance Buffer failed", hr);
     }
 
     return hr;
 }
 
-HRESULT dc3drender::InitializeDirectWrite() {
+HRESULT dc3drender::InitializeDirectWrite()
+{
     HRESULT hr = S_OK;
 
     // 创建 Direct2D 工厂
     HR(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &g_pD2DFactory));
 
     // 创建 DirectWrite 工厂
-    HR(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&g_pDWriteFactory)));
+    HR(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown**>(&
+        g_pDWriteFactory)));
 
     // 创建文本格式
     HR(
@@ -624,8 +667,10 @@ void dc3drender::CleanupDirectWrite()
     if (g_pGridline) g_pGridline->Release();
 }
 
-void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h) {
-    if (!g_2dpRenderTarget) {
+void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int h)
+{
+    if (!g_2dpRenderTarget)
+    {
         return;
     }
 
@@ -633,7 +678,7 @@ void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int 
     D2D1_BITMAP_PROPERTIES bitmapProperties = D2D1::BitmapProperties(
         D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
         96.0f, // DPI
-        96.0f  // DPI
+        96.0f // DPI
     );
 
     // 创建 Direct2D 位图
@@ -646,7 +691,8 @@ void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int 
         &pBitmap
     );
 
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         return;
     }
 
@@ -663,7 +709,8 @@ void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int 
     g_2dpRenderTarget->DrawBitmap(pBitmap, destinationRect);
 
     hr = g_2dpRenderTarget->EndDraw();
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         // 处理绘制错误
     }
 
@@ -671,8 +718,10 @@ void dc3drender::DrawRGBAData(unsigned char* rgbadata, int x, int y, int w, int 
     pBitmap->Release();
 }
 
-void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int pmscale) {
-    if (!g_pImmediateContext || !g_pDevice || !g_pVertexShader || !g_pPixelShader || !g_pVertexLayout) {
+void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, int pmscale)
+{
+    if (!g_pImmediateContext || !g_pDevice || !g_pVertexShader || !g_pPixelShader || !g_pVertexLayout)
+    {
         fatal("DrawCells failed", 0);
         return;
     }
@@ -681,12 +730,16 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
     UINT instanceCount = 0;
 
     // 生成顶点数据
-    for (int i = 0; i < h; ++i) { // 行 row
-        for (int j = 0; j < w; ++j) { // 列 column
+    for (int i = 0; i < h; ++i)
+    {
+        // 行 row
+        for (int j = 0; j < w; ++j)
+        {
+            // 列 column
             int index = i * w + j;
             if (pmdata[index] == 0) continue;
 
-            instanceData[instanceCount++] = { XMINT4(x, y, j, i) };
+            instanceData[instanceCount++] = {XMINT4(x, y, j, i)};
         }
     }
 
@@ -698,9 +751,9 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
     UpdateInstanceBuffer(instanceData.data(), instanceCount);
 
     // 设置顶点缓冲区
-    static UINT strides[2] = { sizeof(Vertex), sizeof(InstanceData) };
-    static UINT offsets[2] = { 0, 0 };
-    static ID3D11Buffer* buffers[2] = { g_pCellVertexBuffer, g_pInstanceBuffer };
+    static UINT strides[2] = {sizeof(Vertex), sizeof(InstanceData)};
+    static UINT offsets[2] = {0, 0};
+    static ID3D11Buffer* buffers[2] = {g_pCellVertexBuffer, g_pInstanceBuffer};
 
     g_pImmediateContext->IASetVertexBuffers(0, 2, buffers, strides, offsets);
     // 设置图元拓扑结构
@@ -710,8 +763,8 @@ void dc3drender::DrawCells(unsigned char* pmdata, int x, int y, int w, int h, in
     g_pImmediateContext->DrawInstanced(6, instanceCount, 0, 0);
 }
 
-void dc3drender::resize(int w, int h) {
-
+void dc3drender::resize(int w, int h)
+{
     waitfordrawing(); // 等待绘制完成
     bool wasSuspended = _suspend;
     suspend(); // 暂停绘制
@@ -726,7 +779,7 @@ void dc3drender::resize(int w, int h) {
     // 清理资源 
     g_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
     g_pImmediateContext->ClearState();
-    g_pImmediateContext->Flush();// 强制提交所有未提交的命令 
+    g_pImmediateContext->Flush(); // 强制提交所有未提交的命令 
 
     HR(g_pSwapChain->ResizeBuffers(2, currwd, currht, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
 
@@ -737,7 +790,8 @@ void dc3drender::resize(int w, int h) {
 
     g_vp->Width = float(currwd);
     g_vp->Height = float(currht);
-    if (g_pImmediateContext) {
+    if (g_pImmediateContext)
+    {
         g_pImmediateContext->RSSetViewports(1, g_vp);
     }
 
@@ -746,7 +800,8 @@ void dc3drender::resize(int w, int h) {
     if (!wasSuspended) resume(); // 恢复绘制
 }
 
-void dc3drender::begindraw() {
+void dc3drender::begindraw()
+{
     if (_suspend) return;
     initialize();
     vertices = 0;
@@ -773,10 +828,13 @@ void dc3drender::begindraw() {
     _isDrawing = true;
 }
 
-void dc3drender::enddraw() {
-    if (g_pSwapChain) {
+void dc3drender::enddraw()
+{
+    if (g_pSwapChain)
+    {
         auto hr = g_pSwapChain->Present(0, 0);
-        if (FAILED(hr)) {
+        if (FAILED(hr))
+        {
             fatal("Present failed", hr);
         }
 
@@ -794,18 +852,19 @@ void dc3drender::enddraw() {
 void dc3drender::drawtext(int x, int y, const wchar_t* text)
 {
     if (!_canRender) return;
-    if (!g_2dpRenderTarget || !g_pTextFormat) {
+    if (!g_2dpRenderTarget || !g_pTextFormat)
+    {
         return;
     }
 
     // 创建文本布局以便测量文本
     IDWriteTextLayout* pTextLayout = nullptr;
     HRESULT hr = g_pDWriteFactory->CreateTextLayout(
-        text,        // 要渲染的文本
-        wcslen(text),// 文本的长度
-        g_pTextFormat,// 文本格式
-        currwd,      // 最大宽度 
-        currht,      // 最大高度 
+        text, // 要渲染的文本
+        wcslen(text), // 文本的长度
+        g_pTextFormat, // 文本格式
+        currwd, // 最大宽度 
+        currht, // 最大高度 
         &pTextLayout // 输出的文本布局
     );
 
@@ -813,7 +872,8 @@ void dc3drender::drawtext(int x, int y, const wchar_t* text)
 
     DWRITE_TEXT_METRICS textMetrics;
     hr = pTextLayout->GetMetrics(&textMetrics);
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         pTextLayout->Release();
         return;
     }
@@ -844,7 +904,7 @@ void dc3drender::drawtext(int x, int y, const wchar_t* text)
     pTextLayout->Release(); // 释放文本布局资源  
 }
 
-void dc3drender::drawselection(VIEWINFO* pvi)
+void dc3drender::drawselection(float x1, float y1, float x2, float y2)
 {
     if (!_canRender) return;
     if (!g_2dpRenderTarget) return;
@@ -855,12 +915,11 @@ void dc3drender::drawselection(VIEWINFO* pvi)
 
     // 创建选区矩形
     D2D1_RECT_F selectionRect = D2D1::RectF(
-        static_cast<float>(pvi->psl_x1),
-        static_cast<float>(pvi->psl_y1),
-        static_cast<float>(pvi->psl_x2),
-        static_cast<float>(pvi->psl_y2)
+        (x1),
+        (y1),
+        (x2),
+        (y2)
     );
-
     // 绘制选区矩形
     g_2dpRenderTarget->FillRectangle(&selectionRect, g_pSelBrush);
     g_2dpRenderTarget->DrawRectangle(&selectionRect, g_pSelBrush, 1.0f);
@@ -878,7 +937,8 @@ void dc3drender::drawgridlines(int cellsize)
     // g_2dpRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 
     // 0 -> ht
-    for (float dy = 0.0f; dy <= currht; dy += cellsize) {
+    for (float dy = 0.0f; dy <= currht; dy += cellsize)
+    {
         g_2dpRenderTarget->DrawLine(
             D2D1::Point2F(0.0f, dy),
             D2D1::Point2F(static_cast<float>(currwd), dy),
@@ -887,7 +947,8 @@ void dc3drender::drawgridlines(int cellsize)
         );
     }
 
-    for (float dx = 0.0f; dx <= currwd; dx += cellsize) {
+    for (float dx = 0.0f; dx <= currwd; dx += cellsize)
+    {
         g_2dpRenderTarget->DrawLine(
             D2D1::Point2F(dx, 0.0f),
             D2D1::Point2F(dx, static_cast<float>(currht)),
@@ -910,11 +971,13 @@ void dc3drender::pixblit(int x, int y, int w, int h, unsigned char* pmdata, int 
     if (x >= currwd || y >= currht) return;
     if (x + w <= 0 || y + h <= 0) return;
 
-    if (pmscale == 1) {
+    if (pmscale == 1)
+    {
         // draw RGBA pixel data at scale 1:1
         DrawRGBAData(pmdata, x, y, w, h);
     }
-    else {
+    else
+    {
         // draw magnified cells, assuming pmdata contains (w/pmscale)*(h/pmscale) bytes
         // where each byte contains a cell state
         DrawCells(pmdata, x, y, w / pmscale, h / pmscale, pmscale);

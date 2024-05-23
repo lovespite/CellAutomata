@@ -47,13 +47,13 @@ public class BerlinNoise : IRandomFillAlgorithm
         int BB = _permutation[B + 1] + Z;
 
         return Lerp(w, Lerp(v, Lerp(u, Grad(_permutation[AA], x, y, z),
-        Grad(_permutation[BA], x - 1, y, z)),
-        Lerp(u, Grad(_permutation[AB], x, y - 1, z),
-        Grad(_permutation[BB], x - 1, y - 1, z))),
-        Lerp(v, Lerp(u, Grad(_permutation[AA + 1], x, y, z - 1),
-        Grad(_permutation[BA + 1], x - 1, y, z - 1)),
-        Lerp(u, Grad(_permutation[AB + 1], x, y - 1, z - 1),
-        Grad(_permutation[BB + 1], x - 1, y - 1, z - 1))));
+                    Grad(_permutation[BA], x - 1, y, z)),
+                Lerp(u, Grad(_permutation[AB], x, y - 1, z),
+                    Grad(_permutation[BB], x - 1, y - 1, z))),
+            Lerp(v, Lerp(u, Grad(_permutation[AA + 1], x, y, z - 1),
+                    Grad(_permutation[BA + 1], x - 1, y, z - 1)),
+                Lerp(u, Grad(_permutation[AB + 1], x, y - 1, z - 1),
+                    Grad(_permutation[BB + 1], x - 1, y - 1, z - 1))));
         // ReSharper restore InconsistentNaming
     }
 
@@ -95,11 +95,11 @@ public class BerlinNoise : IRandomFillAlgorithm
         return total / maxValue;
     }
 
-    public void Generate(Rectangle rect, I2DBitMutator bitmap)
+    public void Generate(RectangleL rect, I2DBitMutator bitmap)
     {
-        for (int y = 0; y < rect.Height; y++)
+        for (var y = 0; y < rect.Height - 1; y++)
         {
-            for (int x = 0; x < rect.Width; x++)
+            for (var x = 0; x < rect.Width - 1; x++)
             {
                 double value = OctaveNoise(x * 0.1, y * 0.1, 0, 8, 0.5);
                 bitmap.Set(y + rect.Top, x + rect.Left, value >= _threshold);
@@ -107,7 +107,7 @@ public class BerlinNoise : IRandomFillAlgorithm
         }
     }
 
-    public bool GetNoise(int x, int y, int z)
+    public bool GetNoise(long x, long y, long z)
     {
         return OctaveNoise(x * 0.1, y * 0.1, z * 0.1, 8, 0.5) >= _threshold;
     }

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using CellAutomata.Algos;
 
 namespace CellAutomata.Render;
 
@@ -12,13 +13,13 @@ public abstract class ViewWindowBase
     protected int Magnify = 0;
     public float CellSize => Magnify >= 0 ? 1 << Magnify : 1f / (1 << -Magnify);
 
-    protected Point SelStart;
-    protected Point SelEnd;
-    protected int Selected = 0;
+    protected PointL SelStart;
+    protected PointL SelEnd;
+    protected long Selected = 0;
     protected readonly Font DefaultFont = new("Arial", 9);
 
-    protected int CenterX = 0;
-    protected int CenterY = 0;
+    protected long CenterX = 0;
+    protected long CenterY = 0;
 
     protected float GenPerSecond; // generations per second
 
@@ -45,7 +46,7 @@ public abstract class ViewWindowBase
 
     public void ZoomOut()
     {
-        if (Magnify > -31)
+        if (Magnify > -16)
         {
             Magnify--;
         }
@@ -53,7 +54,7 @@ public abstract class ViewWindowBase
 
     public Point MousePoint { get; set; }
 
-    public Point MouseCellPoint
+    public PointL MouseCellPoint
     {
         get
         {
@@ -72,21 +73,17 @@ public abstract class ViewWindowBase
                 if (relX < 0) relX -= 1;
                 if (relY < 0) relY -= 1;
 
-                return new Point(CenterX + (int)relX, CenterY + (int)relY);
+                return new PointL(CenterX + (long)relX, CenterY + (long)relY);
             }
         }
     }
 
     public bool IsSelected => Selected > 0;
 
-    public int Left => CenterX;
-    public Point Location => new(CenterX, CenterY);
-    public Point SelectionEnd => SelEnd;
+    public PointL Location => new(CenterX, CenterY);
+    public PointL SelectionEnd => SelEnd;
 
-    public Point SelectionStart => SelStart;
-
-    public int ThumbnailWidth { get; set; } = 120;
-    public int Top => CenterY;
+    public PointL SelectionStart => SelStart;
 
     public event EventHandler? SelectionChanged;
 
@@ -96,11 +93,11 @@ public abstract class ViewWindowBase
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public Rectangle GetSelection()
+    public RectangleL GetSelection()
     {
         if (Selected == 0)
         {
-            return Rectangle.Empty;
+            return RectangleL.Empty;
         }
 
         var ps = SelStart;
@@ -114,10 +111,10 @@ public abstract class ViewWindowBase
         var w = x2 - x1 + 1;
         var h = y2 - y1 + 1;
 
-        return new Rectangle(x1, y1, w, h);
+        return new RectangleL(new PointL(x1, y1), new SizeL(w, h));
     }
 
-    public virtual void MoveTo(int cx, int cy)
+    public virtual void MoveTo(long cx, long cy)
     {
         CenterX = cx;
         CenterY = cy;
@@ -129,7 +126,7 @@ public abstract class ViewWindowBase
         PxViewHeight = pxViewHeight;
     }
 
-    public void SetSelection(Point p1, Point p2)
+    public void SetSelection(PointL p1, PointL p2)
     {
         SelStart = p1;
         SelEnd = p2;

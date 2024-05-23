@@ -4,15 +4,14 @@ namespace CellAutomata.Algos;
 
 public interface I2DBitMutator
 {
-    byte this[int x, int y] { get; set; }
+    byte this[long x, long y] { get; set; }
     void Clear();
-    void ClearRegion(Rectangle rect);
-    Task ClearRegionAsync(Rectangle rect, IProgressReporter? reporter = null);
+    void ClearRegion(RectangleL rect);
+    Task ClearRegionAsync(RectangleL rect, IProgressReporter? reporter = null);
 
-    bool Get(int row, int col);
-    void Set(int row, int col, bool value);
+    bool Get(long row, long col);
+    void Set(long row, long col, bool value);
 
-    bool Get(ref Point point);
-    void Set(ref Point point, bool value);
+    bool Get(PointL point);
+    void Set(PointL point, bool value);
 }
-

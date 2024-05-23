@@ -5,7 +5,12 @@ public struct SizeL
     public long Width;
     public long Height;
 
-    public readonly long Area => Width * Height;
+    public override string ToString()
+    {
+        return $"width={Width}, height={Height}";
+    }
+
+    public long Area() => Width * Height;
 
     public SizeL(long width, long height)
     {
@@ -18,4 +23,3 @@ public struct SizeL
         return new Size((int)size.Width, (int)size.Height);
     }
 }
-

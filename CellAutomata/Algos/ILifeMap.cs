@@ -30,20 +30,20 @@ public interface ILifeMap : I2DBitMutator, IDisposable
     ILifeMap CreateSnapshot();
     Task<ILifeMap> CreateSnapshotAsync(IProgressReporter reporter);
 
-    ILifeMap CreateRegionSnapshot(Rectangle rect);
-    Task<ILifeMap> CreateRegionSnapshotAsync(Rectangle rect, IProgressReporter? reporter = null);
+    ILifeMap CreateRegionSnapshot(RectangleL rect);
+    Task<ILifeMap> CreateRegionSnapshotAsync(RectangleL rect, IProgressReporter? reporter = null);
 
-    void BlockCopy(ILifeMap source, Size srcSize, Point dstLocation, CopyMode mode = CopyMode.Overwrite);
-    Task BlockCopyAsync(ILifeMap source, Size srcSize, Point dstLocation, CopyMode mode = CopyMode.Overwrite, IProgressReporter? reporter = null);
+    void BlockCopy(ILifeMap source, SizeL srcSize, PointL dstLocation, CopyMode mode = CopyMode.Overwrite);
+    Task BlockCopyAsync(ILifeMap source, SizeL srcSize, PointL dstLocation, CopyMode mode = CopyMode.Overwrite, IProgressReporter? reporter = null);
 
-    Point[] QueryRegion(bool val, Rectangle rect);
-    Task<Point[]> QueryRegionAsync(bool val, Rectangle rect, IProgressReporter? reporter = null);
+    PointL[] QueryRegion(bool val, RectangleL rect);
+    Task<PointL[]> QueryRegionAsync(bool val, RectangleL rect, IProgressReporter? reporter = null);
 
-    long QueryRegionCount(bool val, Rectangle rect);
-    Task<long> QueryRegionCountAsync(bool val, Rectangle rect, IProgressReporter? reporter = null);
+    long QueryRegionCount(bool val, RectangleL rect);
+    Task<long> QueryRegionCountAsync(bool val, RectangleL rect, IProgressReporter? reporter = null);
 
-    Point[] GetLocations(bool val);
-    Task<Point[]> GetLocationsAsync(bool val, IProgressReporter? reporter = null);
+    PointL[] GetLocations(bool val);
+    Task<PointL[]> GetLocationsAsync(bool val, IProgressReporter? reporter = null);
 
     RectangleL GetBounds();
 
@@ -51,8 +51,8 @@ public interface ILifeMap : I2DBitMutator, IDisposable
 
     void ReadRle(string filename);
 
-    Bitmap DrawRegionBitmap(Rectangle rectangle);
-    byte[] DrawRegionBitmapBgra(Rectangle rectangle);
+    Bitmap DrawRegionBitmap(RectangleL rectangle);
+    byte[] DrawRegionBitmapBgra(RectangleL rectangle);
 
     PointL At(int x, int y);
 }

@@ -6,6 +6,13 @@ public struct RectangleL
     public PointL Location;
     internal static readonly RectangleL Empty = new(0, 0, 0, 0);
 
+    public override string ToString()
+    {
+        return $"x={Location.X}, y={Location.Y}, width={Size.Width}, height={Size.Height}";
+    }
+
+    public long Area() => Size.Width * Size.Height;
+
     public readonly bool IsEmpty => Size is { Width: 0, Height: 0 };
 
     public readonly PointL Location2 => new(Location.X + Size.Width - 1, Location.Y + Size.Height - 1);
@@ -36,25 +43,25 @@ public struct RectangleL
 
     public long Bottom
     {
-        get => Location.Y + Size.Height - 1;
+        get => Location.Y + Size.Height;
         set
         {
             if (value < Location.Y)
                 throw new ArgumentOutOfRangeException(nameof(Bottom), @"Bottom must be greater than or equal to Top");
 
-            Size.Height = value - Location.Y + 1;
+            Size.Height = value - Location.Y;
         }
     }
 
     public long Right
     {
-        get => Location.X + Size.Width - 1;
+        get => Location.X + Size.Width;
         set
         {
             if (value < Location.X)
                 throw new ArgumentOutOfRangeException(nameof(Right), @"Right must be greater than or equal to Left");
 
-            Size.Width = value - Location.X + 1;
+            Size.Width = value - Location.X;
         }
     }
 

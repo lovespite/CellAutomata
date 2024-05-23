@@ -1,28 +1,29 @@
 ﻿using CellAutomata.Algos;
 
 namespace CellAutomata.Util;
+
 internal class WorleyFillAlgorithm : IRandomFillAlgorithm
 {
     private readonly Random _random = new Random();
-    private readonly List<Point> _featurePoints;
+    private readonly List<PointL> _featurePoints;
 
-    public WorleyFillAlgorithm(int numPoints, Rectangle bounds)
+    public WorleyFillAlgorithm(int numPoints, RectangleL bounds)
     {
         // 在指定区域内生成特征点
         _featurePoints = [];
         for (int i = 0; i < numPoints; i++)
         {
-            int x = _random.Next(bounds.Left, bounds.Right);
-            int y = _random.Next(bounds.Top, bounds.Bottom);
-            _featurePoints.Add(new Point(x, y));
+            var x = _random.NextDouble() * bounds.Width + bounds.Left;
+            var y = _random.NextDouble() * bounds.Height + bounds.Top;
+            _featurePoints.Add(new PointL((long)x, (long)y));
         }
     }
 
-    public void Generate(Rectangle rect, I2DBitMutator bitmap)
+    public void Generate(RectangleL rect, I2DBitMutator bitmap)
     {
-        for (int y = rect.Top; y < rect.Top + rect.Height; y++)
+        for (var y = rect.Top; y < rect.Top + rect.Height; y++)
         {
-            for (int x = rect.Left; x < rect.Left + rect.Width; x++)
+            for (var x = rect.Left; x < rect.Left + rect.Width; x++)
             {
                 double minDist = double.MaxValue;
                 foreach (var point in _featurePoints)
@@ -44,7 +45,7 @@ internal class WorleyFillAlgorithm : IRandomFillAlgorithm
         }
     }
 
-    public bool GetNoise(int x, int y, int z)
+    public bool GetNoise(long x, long y, long z)
     {
         double minDist = double.MaxValue;
         foreach (var point in _featurePoints)
@@ -55,7 +56,7 @@ internal class WorleyFillAlgorithm : IRandomFillAlgorithm
                 minDist = dist;
             }
         }
+
         return minDist < 6 && _random.NextDouble() < 0.5;
     }
-
 }

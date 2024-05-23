@@ -68,7 +68,7 @@ public class CellEnvironment(ILifeMap bitmap)
         }
     }
 
-    public IReadOnlyCollection<Point> GetRegionAliveCells(Rectangle rect)
+    public IReadOnlyCollection<PointL> GetRegionAliveCells(RectangleL rect)
     {
         lock (_lock)
         {
@@ -76,7 +76,7 @@ public class CellEnvironment(ILifeMap bitmap)
         }
     }
 
-    public void ActivateCell(int row, int col)
+    public void ActivateCell(long row, long col)
     {
         lock (_lock)
         {
@@ -84,7 +84,7 @@ public class CellEnvironment(ILifeMap bitmap)
         }
     }
 
-    public void DeactivateCell(int row, int col)
+    public void DeactivateCell(long row, long col)
     {
         lock (_lock)
         {
@@ -130,8 +130,8 @@ public class CellEnvironment(ILifeMap bitmap)
                 fixed (byte* ptr = buffer)
                 {
                     var p = (int*)ptr;
-                    p[0] = cell.X;
-                    p[1] = cell.Y;
+                    p[0] = (int)cell.X;
+                    p[1] = (int)cell.Y;
                 }
             }
 
@@ -188,12 +188,12 @@ public class CellEnvironment(ILifeMap bitmap)
 
     #region Internal Methods
 
-    private void ActivateCellInternal(int row, int col)
+    private void ActivateCellInternal(long row, long col)
     {
         bitmap.Set(row, col, true);
     }
 
-    private void DeactivateCellInternal(int row, int col)
+    private void DeactivateCellInternal(long row, long col)
     {
         bitmap.Set(row, col, false);
     }

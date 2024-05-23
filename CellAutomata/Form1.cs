@@ -30,7 +30,7 @@ public partial class Form1 : Form
     private bool _isSelecting = false;
     private bool _isDraggingView = false;
 
-    private (ILifeMap, Size)? _clipboard;
+    private (ILifeMap, SizeL)? _clipboard;
 
     private readonly Thread _painting;
 
@@ -257,7 +257,7 @@ public partial class Form1 : Form
         Debug.WriteLine("Started");
     }
 
-    private void SetClipboard(Rectangle rect)
+    private void SetClipboard(RectangleL rect)
     {
         if (rect.Area() > AsyncAreaThreshold)
         {
@@ -275,7 +275,7 @@ public partial class Form1 : Form
         }
     }
 
-    private void ClearRegion(Rectangle rect)
+    private void ClearRegion(RectangleL rect)
     {
         if (rect.IsEmpty) return;
 
@@ -291,17 +291,17 @@ public partial class Form1 : Form
         }
     }
 
-    private async Task RotateRegionAsync(Rectangle selection, IProgressReporter? reporter)
+    private async Task RotateRegionAsync(RectangleL selection, IProgressReporter? reporter)
     {
         var snapshot = await _env.LifeMap.CreateRegionSnapshotAsync(selection, reporter);
 
         _env.LifeMap.ClearRegion(selection);
 
         // 获取选区中心点 
-        int centerX = selection.Left + (int)Math.Floor(selection.Width / 2.0);
-        int centerY = selection.Top + (int)Math.Floor(selection.Height / 2.0);
+        var centerX = selection.Left + (long)Math.Floor(selection.Width / 2.0d);
+        var centerY = selection.Top + (long)Math.Floor(selection.Height / 2.0d);
 
-        var prList = new List<Point>();
+        var prList = new List<PointL>();
 
         double total = selection.Area();
         double count = 0;
@@ -314,18 +314,18 @@ public partial class Form1 : Form
                 if (reporter?.IsAborted == true) return;
 
                 // 相对于选区中心的坐标
-                int relX = col - centerX;
-                int relY = row - centerY;
+                var relX = col - centerX;
+                var relY = row - centerY;
 
                 // 旋转坐标
-                int rotatedX = -relY;
-                int rotatedY = relX;
+                var rotatedX = -relY;
+                var rotatedY = relX;
 
                 // 计算新位置的绝对坐标
-                var p2 = new Point(centerX + rotatedX, centerY + rotatedY);
-                var p0 = new Point(col - selection.Left, row - selection.Top);
+                var p2 = new PointL(centerX + rotatedX, centerY + rotatedY);
+                var p0 = new PointL(col - selection.Left, row - selection.Top);
 
-                _env.LifeMap.Set(ref p2, snapshot.Get(ref p0));
+                _env.LifeMap.Set(p2, snapshot.Get(p0));
 
                 if (
                     row == selection.Top
@@ -352,10 +352,10 @@ public partial class Form1 : Form
         var pc1 = prList.Min(p => p.Y);
         var pc2 = prList.Max(p => p.Y);
 
-        _view.SetSelection(new Point(pr1, pc1), new Point(pr2, pc2));
+        _view.SetSelection(new PointL(pr1, pc1), new PointL(pr2, pc2));
     }
 
-    private async Task FlipRegionUpDown(Rectangle selection, IProgressReporter? reporter)
+    private async Task FlipRegionUpDown(RectangleL selection, IProgressReporter? reporter)
     {
         var snapshot = await _env.LifeMap.CreateRegionSnapshotAsync(selection, reporter);
 
@@ -370,10 +370,10 @@ public partial class Form1 : Form
             {
                 if (reporter?.IsAborted == true) return;
 
-                var p0 = new Point(col - selection.Left, row - selection.Top);
-                var p1 = new Point(col, selection.Bottom - 1 - (row - selection.Top));
+                var p0 = new PointL(col - selection.Left, row - selection.Top);
+                var p1 = new PointL(col, selection.Bottom - 1 - (row - selection.Top));
 
-                _env.LifeMap.Set(ref p1, snapshot.Get(ref p0));
+                _env.LifeMap.Set(p1, snapshot.Get(p0));
 
                 if (reporter is null) continue;
 
@@ -386,7 +386,7 @@ public partial class Form1 : Form
         }
     }
 
-    private async Task FlipRegionLeftRight(Rectangle selection, IProgressReporter? reporter)
+    private async Task FlipRegionLeftRight(RectangleL selection, IProgressReporter? reporter)
     {
         var snapshot = await _env.LifeMap.CreateRegionSnapshotAsync(selection, reporter);
 
@@ -401,10 +401,10 @@ public partial class Form1 : Form
             {
                 if (reporter?.IsAborted == true) return;
 
-                var p0 = new Point(col - selection.Left, row - selection.Top);
-                var p1 = new Point(selection.Right - 1 - (col - selection.Left), row);
+                var p0 = new PointL(col - selection.Left, row - selection.Top);
+                var p1 = new PointL(selection.Right - 1 - (col - selection.Left), row);
 
-                _env.LifeMap.Set(ref p1, snapshot.Get(ref p0));
+                _env.LifeMap.Set(p1, snapshot.Get(p0));
 
                 if (reporter is null) continue;
 
@@ -417,10 +417,9 @@ public partial class Form1 : Form
         }
     }
 
-    private void RandomFill(Rectangle selection, IRandomFillAlgorithm algo)
+    private void RandomFill(RectangleL selection, IRandomFillAlgorithm algo)
     {
         if (selection.IsEmpty) return;
-
         if (selection.Area() > AsyncAreaThreshold)
         {
             TaskProgressReporter.Watch(async reporter =>
@@ -769,7 +768,7 @@ public partial class Form1 : Form
 
         var bounds = _env.LifeMap.GetBounds();
 
-        if (bounds.Size.Area > AsyncAreaThreshold)
+        if (bounds.Size.Area() > AsyncAreaThreshold)
         {
             TaskProgressReporter.Watch(async reporter =>
             {
@@ -784,7 +783,7 @@ public partial class Form1 : Form
 
         async Task Clear(IProgressReporter? reporter = null)
         {
-            double total = bounds.Size.Area;
+            double total = bounds.Size.Area();
             double count = 0;
             for (var row = bounds.Top; row <= bounds.Bottom; row++)
             {
@@ -824,12 +823,12 @@ public partial class Form1 : Form
 
         if (aliveCells.Count != 0)
         {
-            var p1 = new Point(
+            var p1 = new PointL(
                 x: aliveCells.Min(p => p.X),
                 y: aliveCells.Min(p => p.Y)
             );
 
-            var p2 = new Point(
+            var p2 = new PointL(
                 x: aliveCells.Max(p => p.X),
                 y: aliveCells.Max(p => p.Y)
             );
@@ -870,7 +869,7 @@ public partial class Form1 : Form
         if (_clipboard is null) return;
 
         ILifeMap data;
-        Size size;
+        SizeL size;
 
         (data, size) = _clipboard.Value;
 
@@ -889,7 +888,7 @@ public partial class Form1 : Form
             Suspend(() => _env.LifeMap.BlockCopy(data, size, p, _mode));
         }
 
-        _view.SetSelection(p, new Point(p.X + size.Width - 1, p.Y + size.Height - 1));
+        _view.SetSelection(p, new PointL(p.X + size.Width - 1, p.Y + size.Height - 1));
     }
 
     private void Edit_ChangePasteMethods_Click(object sender, EventArgs e)
@@ -1107,7 +1106,7 @@ public partial class Form1 : Form
         var selection = _view.GetSelection();
         if (selection.IsEmpty) return;
 
-        var center = new Point(
+        var center = new PointL(
             selection.Left + (int)Math.Floor(selection.Width / 2.0),
             selection.Top + (int)Math.Floor(selection.Height / 2.0)
         );
@@ -1122,15 +1121,15 @@ public partial class Form1 : Form
 
         try
         {
-            var coord = coordStr!
+            var array = coordStr!
                 .Split(',')
                 .Select(x => x.Trim())
                 .Select(int.Parse)
                 .ToArray();
 
-            if (coord.Length != 2) throw new FormatException();
+            if (array.Length != 2) throw new FormatException();
 
-            _view.MoveTo(coord[0], coord[1]);
+            _view.MoveTo(array[0], array[1]);
         }
         catch (Exception ex)
         {

@@ -5,10 +5,10 @@ namespace CellAutomata.Render;
 public struct ViewInfo
 {
     public int EMPTY;
-    public int psl_x1; // selection rect point 1
-    public int psl_y1; // selection rect point 1
-    public int psl_x2; // selection rect point 2
-    public int psl_y2; // selection rect point 2 
+    public Int64 psl_x1; // selection rect point 1
+    public Int64 psl_y1; // selection rect point 1
+    public Int64 psl_x2; // selection rect point 2
+    public Int64 psl_y2; // selection rect point 2 
 }
 public interface IDcRender
 {

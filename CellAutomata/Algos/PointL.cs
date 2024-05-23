@@ -5,6 +5,11 @@ public struct PointL
     public long X;
     public long Y;
 
+    public override string ToString()
+    {
+        return $"x={X}, y={Y}";
+    }
+
     public long Row
     {
         get => Y;

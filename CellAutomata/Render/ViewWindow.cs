@@ -6,6 +6,7 @@ namespace CellAutomata.Render;
 public class ViewWindow : ViewWindowBase
 {
     private readonly nint _canvas;
+
     public ViewWindow(CellEnvironment cells, Size vwSize, nint canvas)
         : base(cells, vwSize.Width, vwSize.Height, 0)
     {
@@ -15,18 +16,18 @@ public class ViewWindow : ViewWindowBase
         _canvas = canvas;
 
         _vwSize = vwSize;
-        _center = new Point(0, 0);
+        _center = new PointL(0, 0);
     }
 
     private Size _vwSize;
-    private Point _center;
+    private PointL _center; 
 
-    public override void MoveTo(int left, int top)
+    public override void MoveTo(long left, long top)
     {
         CenterX = left;
         CenterY = top;
 
-        _center = new Point(left, top);
+        _center = new PointL(left, top);
     }
 
     public override void Resize(int pixelViewWidth, int pixelViewHeight)
@@ -40,12 +41,14 @@ public class ViewWindow : ViewWindowBase
     {
         DrawMainView4(CellEnvironment.LifeMap.GetDcRender());
     }
+
     private ulong _frames = 0;
     private readonly Stopwatch _sw = Stopwatch.StartNew();
     private readonly Stopwatch _sw2 = Stopwatch.StartNew();
 
     private float _fps; // frames per second 
     private string _text = string.Empty;
+
     private void DrawMainView4(IDcRender render)
     {
         if (_canvas == 0) return;
@@ -77,7 +80,6 @@ public class ViewWindow : ViewWindowBase
             _fps = (float)(_frames / _sw.Elapsed.TotalSeconds);
             _frames = 0;
             _sw.Restart();
-
         }
 
         if (_sw2.ElapsedMilliseconds > 100)
