@@ -38,7 +38,7 @@ public abstract class ViewWindowBase
 
     public void ZoomIn()
     {
-        if (Magnify < 6)
+        if (Magnify < 5)
         {
             Magnify++;
         }

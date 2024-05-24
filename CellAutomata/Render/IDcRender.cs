@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using CellAutomata.Algos;
 
 namespace CellAutomata.Render;
 [StructLayout(LayoutKind.Sequential)]
@@ -14,7 +15,7 @@ public interface IDcRender
 {
     bool IsSuspended { get; }
 
-    void DrawViewportDc(nint hWndCanvas, int mag, Size vwSize, Point center, ref ViewInfo selection, string text);
+    void DrawViewportDc(nint hWndCanvas, int mag, Size vwSize, PointL center, ref ViewInfo selection, string text);
     void Suspend();
     void Resume();
 }

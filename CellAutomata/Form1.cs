@@ -291,59 +291,59 @@ public partial class Form1 : Form
         }
     }
 
-    private async Task RotateRegionAsync(RectangleL selection, IProgressReporter? reporter)
+    private async Task RotateRegionAsync(RectangleL rect, IProgressReporter? reporter)
     {
-        var snapshot = await _env.LifeMap.CreateRegionSnapshotAsync(selection, reporter);
+        var snapshot = await _env.LifeMap.CreateRegionSnapshotAsync(rect, reporter);
 
-        _env.LifeMap.ClearRegion(selection);
+        _env.LifeMap.ClearRegion(rect);
 
-        // 获取选区中心点 
-        var centerX = selection.Left + (long)Math.Floor(selection.Width / 2.0d);
-        var centerY = selection.Top + (long)Math.Floor(selection.Height / 2.0d);
+        var isOddHeight = rect.Height % 2 > 0;
+        var isOddWidth = rect.Width % 2 > 0;
+        // 获取选区锚点
+        var anchorX = isOddWidth
+            ? rect.Left + (long)Math.Floor(rect.Width / 2.0d) // 奇数, 取中心点
+            : rect.Left + rect.Width / 2 - 1; // 偶数, 取中心点的左边一个
+
+        var anchorY = isOddHeight
+            ? rect.Top + (long)Math.Floor(rect.Height / 2.0d) // 奇数, 取中心点
+            : rect.Top + rect.Height / 2 - 1; // 偶数, 取中心点的上边一个
 
         var prList = new List<PointL>();
 
-        double total = selection.Area();
+        double total = rect.Area();
         double count = 0;
 
         // 90度顺时针旋转
-        for (var row = selection.Top; row < selection.Bottom; row++)
+        for (var row = rect.Top; row < rect.Bottom; row++)
         {
-            for (var col = selection.Left; col < selection.Right; col++)
+            for (var col = rect.Left; col < rect.Right; col++)
             {
                 if (reporter?.IsAborted == true) return;
 
                 // 相对于选区中心的坐标
-                var relX = col - centerX;
-                var relY = row - centerY;
+                var relX = col - anchorX;
+                var relY = row - anchorY;
 
                 // 旋转坐标
-                var rotatedX = -relY;
+                var rotatedX = -relY
+                               // 如果高度是偶数，必须向右整体偏移，避免图像在旋转过程中一直向左偏移
+                               + (!isOddHeight ? 1 : 0);
                 var rotatedY = relX;
 
                 // 计算新位置的绝对坐标
-                var p2 = new PointL(centerX + rotatedX, centerY + rotatedY);
-                var p0 = new PointL(col - selection.Left, row - selection.Top);
+                var p2 = new PointL(anchorX + rotatedX, anchorY + rotatedY);
+                var p0 = new PointL(col - rect.Left, row - rect.Top);
 
                 _env.LifeMap.Set(p2, snapshot.Get(p0));
 
-                if (
-                    row == selection.Top
-                    || row == selection.Bottom - 1
-                    || col == selection.Left
-                    || col == selection.Right - 1
-                )
-                {
-                    prList.Add(p2);
-                }
+                if (row == rect.Top || row == rect.Bottom - 1 ||
+                    col == rect.Left || col == rect.Right - 1) prList.Add(p2); // 保存选区的四个顶点坐标
 
                 if (reporter is null) continue;
+                if ((++count) % ReportInterval != 0) continue;
 
-                if ((++count) % ReportInterval == 0)
-                {
-                    reporter.ReportProgress((float)(count / total), "Rotating ...", TimeSpan.Zero);
-                    await Task.Delay(1);
-                }
+                reporter.ReportProgress((float)(count / total), "Rotating ...", TimeSpan.Zero);
+                await Task.Delay(1);
             }
         }
 

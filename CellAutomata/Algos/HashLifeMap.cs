@@ -41,7 +41,7 @@ public class HashLifeMap : ILifeMap, IDcRender
         HashLifeMapStatic.ResumeRender(_renderContextId);
     }
 
-    public void DrawViewportDc(nint hWndCanvas, int mag, Size vwSize, Point center, ref ViewInfo selection, string text)
+    public void DrawViewportDc(nint hWndCanvas, int mag, Size vwSize, PointL center, ref ViewInfo selection, string text)
     {
         if (_isSuspended) return;
 
@@ -61,7 +61,7 @@ public class HashLifeMap : ILifeMap, IDcRender
 
         HashLifeMapStatic.DrawViewport(
             _renderContextId,
-            _index, mag, center.X, center.Y, vwSize.Width, vwSize.Height,
+            _index, mag, (int)center.X, (int)center.Y, vwSize.Width, vwSize.Height,
             ref selection,
             text
         );
