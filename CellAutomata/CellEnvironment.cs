@@ -37,16 +37,6 @@ public class CellEnvironment(ILifeMap bitmap)
 
     public ILifeMap LifeMap => bitmap;
 
-    private readonly object _lock = new();
-
-    public void Lock(Action<ILifeMap> action)
-    {
-        lock (_lock)
-        {
-            action(bitmap);
-        }
-    }
-
     public long Population => bitmap.Population;
 
     public long Generation => bitmap.Generation;
@@ -62,50 +52,7 @@ public class CellEnvironment(ILifeMap bitmap)
 
     public void NextGeneration()
     {
-        lock (_lock)
-        {
-            bitmap.NextGeneration();
-        }
-    }
-
-    public IReadOnlyCollection<PointL> GetRegionAliveCells(RectangleL rect)
-    {
-        lock (_lock)
-        {
-            return bitmap.QueryRegion(true, rect);
-        }
-    }
-
-    public void ActivateCell(long row, long col)
-    {
-        lock (_lock)
-        {
-            ActivateCellInternal(row, col);
-        }
-    }
-
-    public void DeactivateCell(long row, long col)
-    {
-        lock (_lock)
-        {
-            DeactivateCellInternal(row, col);
-        }
-    }
-
-    public void Reset()
-    {
-        lock (_lock)
-        {
-            ResetInternal();
-        }
-    }
-
-    public ILifeMap CreateSnapshot()
-    {
-        lock (_lock)
-        {
-            return CreateSnapshotInternal();
-        }
+        bitmap.NextGeneration();
     }
 
     public async Task SaveTo(string file, IProgressReporter? progress = null)
@@ -137,11 +84,10 @@ public class CellEnvironment(ILifeMap bitmap)
 
             await fs.WriteAsync(buffer);
 
-            if (i % 10_000 == 0)
-            {
-                progress?.ReportProgress(i / totalCount, $"Saving data... {i}", TimeSpan.Zero);
-                await Task.Delay(1);
-            }
+            if (progress is null) continue;
+            if (i % 10_000 != 0) continue;
+            progress.ReportProgress(i / totalCount, $"Saving data... {i}", TimeSpan.Zero);
+            await Task.Delay(1);
         }
 
         progress?.ReportProgress(1, "Done.", TimeSpan.Zero);
@@ -169,44 +115,19 @@ public class CellEnvironment(ILifeMap bitmap)
                 {
                     var p = (int*)ptr;
 
-                    ActivateCell(p[1], p[0]);
+                    LifeMap.Set(p[1], p[0], true);
                 }
             }
 
-            count++;
-            if (count % 10000 == 0)
-            {
-                progress?.ReportProgress(count / totalCount, $"Loading... {count}", TimeSpan.Zero);
-                await Task.Delay(1);
-            }
+            if (progress is null) continue;
+            if (++count % 10_000 != 0) continue;
+
+            progress.ReportProgress(count / totalCount, $"Loading... {count}", TimeSpan.Zero);
+            await Task.Delay(1);
         }
 
         progress?.ReportProgress(1, "Done.", TimeSpan.Zero);
 
         await Task.Delay(100);
     }
-
-    #region Internal Methods
-
-    private void ActivateCellInternal(long row, long col)
-    {
-        bitmap.Set(row, col, true);
-    }
-
-    private void DeactivateCellInternal(long row, long col)
-    {
-        bitmap.Set(row, col, false);
-    }
-
-    private void ResetInternal()
-    {
-        bitmap.Clear();
-    }
-
-    private ILifeMap CreateSnapshotInternal()
-    {
-        return bitmap.CreateSnapshot();
-    }
-
-    #endregion
 }

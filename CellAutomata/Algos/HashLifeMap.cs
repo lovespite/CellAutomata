@@ -41,7 +41,7 @@ public class HashLifeMap : ILifeMap, IDcRender
         HashLifeMapStatic.ResumeRender(_renderContextId);
     }
 
-    public void DrawViewportDc(nint hWndCanvas, int mag, Size vwSize, PointL center, ref ViewInfo selection, string text)
+    public void DrawViewportDc(nint hWndCanvas, int mag, Size vwSize, PointL center, ViewInfo selection, string text)
     {
         if (_isSuspended) return;
 
@@ -299,8 +299,8 @@ public class HashLifeMap : ILifeMap, IDcRender
 
             reporter.ReportProgress((float)(count / total), "Copying...", TimeSpan.Zero);
             await Task.Delay(1);
-        } 
-        
+        }
+
         return snapshot;
     }
 

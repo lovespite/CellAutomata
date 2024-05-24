@@ -198,10 +198,11 @@ public partial class Form1 : Form
         {
             Thread.Sleep(10); // 100 fps max
             if (_view is null) continue;
-
+            // _view.DrawFrame();
             try
             {
-                Invoke((MethodInvoker)delegate { _view.Draw(null); });
+                Invoke(_view.DrawFrame);
+                // Invoke((MethodInvoker)delegate { _view.Draw(null); });
             }
             catch
             {
@@ -210,7 +211,7 @@ public partial class Form1 : Form
         }
     }
 
-    private void EvolutionThread()
+    private void Evolve()
     {
         var gens = 0ul;
         var sw = Stopwatch.StartNew();
@@ -231,8 +232,6 @@ public partial class Form1 : Form
 
             Thread.Sleep(_env.MsGenInterval);
         }
-
-        Debug.WriteLine("EvolutionThread stopped");
     }
 
     private void Stop()
@@ -251,7 +250,7 @@ public partial class Form1 : Form
     private void Start()
     {
         _cts = new CancellationTokenSource();
-        _evolutionThread = new Thread(EvolutionThread);
+        _evolutionThread = new Thread(Evolve);
         btnStartStop.Text = @"Stop";
         _evolutionThread.Start();
         Debug.WriteLine("Started");
@@ -376,12 +375,10 @@ public partial class Form1 : Form
                 _env.LifeMap.Set(p1, snapshot.Get(p0));
 
                 if (reporter is null) continue;
+                if ((++count) % ReportInterval != 0) continue;
 
-                if ((++count) % ReportInterval == 0)
-                {
-                    reporter.ReportProgress((float)(count / total), "Flipping ...", TimeSpan.Zero);
-                    await Task.Delay(1);
-                }
+                reporter.ReportProgress((float)(count / total), "Flipping ...", TimeSpan.Zero);
+                await Task.Delay(1);
             }
         }
     }
@@ -407,12 +404,10 @@ public partial class Form1 : Form
                 _env.LifeMap.Set(p1, snapshot.Get(p0));
 
                 if (reporter is null) continue;
+                if ((++count) % ReportInterval != 0) continue;
 
-                if ((++count) % ReportInterval == 0)
-                {
-                    reporter.ReportProgress((float)(count / total), "Flipping ...", TimeSpan.Zero);
-                    await Task.Delay(1);
-                }
+                reporter.ReportProgress((float)(count / total), "Flipping ...", TimeSpan.Zero);
+                await Task.Delay(1);
             }
         }
     }
@@ -445,16 +440,14 @@ public partial class Form1 : Form
 
                     if (algo.GetNoise(col, row, 0))
                     {
-                        _env.ActivateCell(row, col);
+                        _env.LifeMap.Set(row, col, true);
                     }
 
                     if (reporter is null) continue;
+                    if (++count % ReportInterval != 0) continue;
 
-                    if (++count % ReportInterval == 0)
-                    {
-                        reporter.ReportProgress((float)(count / total), "Filling ...", TimeSpan.Zero);
-                        await Task.Delay(1);
-                    }
+                    reporter.ReportProgress((float)(count / total), "Filling ...", TimeSpan.Zero);
+                    await Task.Delay(1);
                 }
             }
         }
@@ -492,6 +485,29 @@ public partial class Form1 : Form
             await Task.Delay(100);
             await SuspendAsync(() => _env.SaveTo(file, reporter));
         }, "Saving");
+    }
+
+    private async Task ShrinkSelection(RectangleL selection)
+    {
+        var aliveCells = await _env.LifeMap.QueryRegionAsync(true, selection);
+
+        if (aliveCells.Length == 0)
+        {
+            _view.ClearSelection();
+            return;
+        }
+
+        var p1 = new PointL(
+            x: aliveCells.Min(p => p.X),
+            y: aliveCells.Min(p => p.Y)
+        );
+
+        var p2 = new PointL(
+            x: aliveCells.Max(p => p.X),
+            y: aliveCells.Max(p => p.Y)
+        );
+
+        _view.SetSelection(p1, p2);
     }
 
     #endregion
@@ -745,7 +761,7 @@ public partial class Form1 : Form
     private void Edit_Reset_Click(object sender, EventArgs e)
     {
         Stop();
-        Suspend(_env.Reset); // clear all cells
+        Suspend(_env.LifeMap.Clear); // clear all cells
     }
 
     private void Edit_SelectAll_Click(object sender, EventArgs e)
@@ -781,6 +797,8 @@ public partial class Form1 : Form
             _ = SuspendAsync(() => Clear());
         }
 
+        return;
+
         async Task Clear(IProgressReporter? reporter = null)
         {
             double total = bounds.Size.Area();
@@ -791,17 +809,16 @@ public partial class Form1 : Form
                 {
                     if (reporter?.IsAborted == true) return;
 
-                    if (!selection.Contains((int)col, (int)row))
+                    if (!selection.Contains(col, row))
                     {
-                        _env.DeactivateCell((int)row, (int)col);
+                        _env.LifeMap.Set(row, col, false);
                     }
 
                     if (reporter is null) continue;
-                    if ((++count) % ReportInterval == 0)
-                    {
-                        reporter.ReportProgress((float)(count / total), "Clearing ...", TimeSpan.Zero);
-                        await Task.Delay(1);
-                    }
+                    if ((++count) % ReportInterval != 0) continue;
+
+                    reporter.ReportProgress((float)(count / total), "Clearing ...", TimeSpan.Zero);
+                    await Task.Delay(1);
                 }
             }
         }
@@ -819,25 +836,15 @@ public partial class Form1 : Form
 
         var selection = _view.GetSelection();
 
-        var aliveCells = _env.GetRegionAliveCells(selection);
-
-        if (aliveCells.Count != 0)
+        if (selection.Area() > AsyncAreaThreshold)
         {
-            var p1 = new PointL(
-                x: aliveCells.Min(p => p.X),
-                y: aliveCells.Min(p => p.Y)
-            );
-
-            var p2 = new PointL(
-                x: aliveCells.Max(p => p.X),
-                y: aliveCells.Max(p => p.Y)
-            );
-
-            _view.SetSelection(p1, p2);
+            TaskProgressReporter.WatchNoAbort(
+                async reporter => { await SuspendAsync(() => ShrinkSelection(selection)); },
+                "Shrinking");
         }
         else
         {
-            _view.ClearSelection();
+            _ = SuspendAsync(() => ShrinkSelection(selection));
         }
     }
 
@@ -924,11 +931,8 @@ public partial class Form1 : Form
         if (selection.IsEmpty) return;
         if (selection.Area() > AsyncAreaThreshold)
         {
-            TaskProgressReporter.Watch(async reporter =>
-            {
-                await Task.Delay(100);
-                await SuspendAsync(() => RotateRegionAsync(selection, reporter));
-            }, "Rotating");
+            TaskProgressReporter.Watch(
+                async reporter => { await SuspendAsync(() => RotateRegionAsync(selection, reporter)); }, "Rotating");
         }
         else
         {
@@ -1040,10 +1044,7 @@ public partial class Form1 : Form
 
     private void Action_NextGeneration_Click(object sender, EventArgs e)
     {
-        if (_cts is not null)
-        {
-            return;
-        }
+        if (_cts is not null) return; // running
 
         _env.NextGeneration();
     }
@@ -1064,11 +1065,11 @@ public partial class Form1 : Form
     {
         Suspend(() =>
         {
-            var ret = Prompt.Show("Set Rule", "Rule string, like: b3/s23", out var newRule, _env.LifeMap.Rule);
-            if (ret != DialogResult.OK)
-            {
-                return;
-            }
+            var ret = Prompt.Show(
+                "Set Rule", "Rule string, like: b3/s23",
+                out var newRule, _env.LifeMap.Rule
+            );
+            if (ret != DialogResult.OK) return;
 
             _env.LifeMap.Rule = newRule!;
         });
@@ -1089,8 +1090,8 @@ public partial class Form1 : Form
         {
             var bounds = _env.LifeMap.GetBounds();
             _view.MoveTo(
-                (int)bounds.Left + (int)bounds.Width / 2,
-                (int)bounds.Top + (int)bounds.Height / 2
+                bounds.Left + bounds.Width / 2,
+                bounds.Top + bounds.Height / 2
             );
         });
     }
@@ -1107,8 +1108,8 @@ public partial class Form1 : Form
         if (selection.IsEmpty) return;
 
         var center = new PointL(
-            selection.Left + (int)Math.Floor(selection.Width / 2.0),
-            selection.Top + (int)Math.Floor(selection.Height / 2.0)
+            selection.Left + (long)Math.Floor(selection.Width / 2.0),
+            selection.Top + (long)Math.Floor(selection.Height / 2.0)
         );
 
         _view.MoveTo(center.X, center.Y);

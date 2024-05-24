@@ -136,5 +136,7 @@ public abstract class ViewWindowBase
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public abstract void Draw(Graphics? graphics);
+    protected abstract void Draw(Graphics? graphics);
+    
+    public virtual void DrawFrame() => Draw(null);
 }

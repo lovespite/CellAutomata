@@ -520,7 +520,7 @@ extern "C" __declspec(dllexport) void AtViewport(int rctxindex, int px, int py, 
 }
 
 extern "C" __declspec(dllexport) void DrawViewport(int rctxindex, int algoindex, int mag, int x, int y, int w, int h,
-                                                   VIEWINFO* selection, const wchar_t* text)
+                                                   VIEWINFO selection, const wchar_t* text)
 {
     // 检查生命游戏实例索引是否有效
     if (algoindex < 0 || algoindex >= algos.size()) return;
@@ -540,10 +540,10 @@ extern "C" __declspec(dllexport) void DrawViewport(int rctxindex, int algoindex,
     vp->moveto(x, y);
     vp->setmag(mag);
 
-    drawframe(render, algo, vp, selection, text);
+    drawframe(render, algo, vp, &selection, text);
 }
 
-void drawframe(liferender* render, lifealgo* algo, viewport* vp, VIEWINFO* selection, const wchar_t* text)
+void drawframe(liferender* render, lifealgo* algo, viewport* vp, const VIEWINFO* selection, const wchar_t* text)
 {
     const int mag = vp->getmag();
     const float pm_scale =

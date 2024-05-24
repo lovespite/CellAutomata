@@ -37,7 +37,7 @@ public class ViewWindow : ViewWindowBase
         base.Resize(pixelViewWidth, pixelViewHeight);
     }
 
-    public override void Draw(Graphics? graphics)
+    protected override void Draw(Graphics? graphics)
     {
         DrawMainView4(CellEnvironment.LifeMap.GetDcRender());
     }
@@ -73,7 +73,7 @@ public class ViewWindow : ViewWindowBase
             sel.psl_y2 = selection.Bottom;
         }
 
-        render.DrawViewportDc(_canvas, mag, _vwSize, _center, ref sel, _text);
+        render.DrawViewportDc(_canvas, mag, _vwSize, _center, sel, _text);
 
         if (_sw.ElapsedMilliseconds > 500)
         {

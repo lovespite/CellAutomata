@@ -2,6 +2,7 @@
 using CellAutomata.Algos;
 
 namespace CellAutomata.Render;
+
 [StructLayout(LayoutKind.Sequential)]
 public struct ViewInfo
 {
@@ -11,12 +12,12 @@ public struct ViewInfo
     public Int64 psl_x2; // selection rect point 2
     public Int64 psl_y2; // selection rect point 2 
 }
+
 public interface IDcRender
 {
     bool IsSuspended { get; }
 
-    void DrawViewportDc(nint hWndCanvas, int mag, Size vwSize, PointL center, ref ViewInfo selection, string text);
+    void DrawViewportDc(nint hWndCanvas, int mag, Size vwSize, PointL center, ViewInfo selection, string text);
     void Suspend();
     void Resume();
 }
-
